@@ -18,10 +18,22 @@ Update this file after every meaningful implementation change.
 - Cache shape decided (append-only history over single
   overwritten row).
 - Encryption question resolved.
+- Unit conversion factors, response envelope shape, and validation
+  library decided (see Architecture Decisions).
 
 ## In Progress
 
-- None yet.
+- `lib/constants/units.ts` — created per the conversion-factors
+  decision below, then modified outside this session. The derived
+  `CHI_PER_TROY_OZ` and `DAMLUNG_PER_TROY_OZ` constants and the
+  verification comment on `GRAMS_PER_CHI` are gone from the file
+  on disk, though the Architecture Decisions entry below still
+  describes both as present. Flagged to the user twice, unresolved
+  as of this session. Before writing anything that depends on unit
+  conversion (`lib/calc`, chi/damlung display on the dashboard) or
+  editing this file again, confirm with the user whether the
+  removal was intentional — do not silently restore it and do not
+  silently accept it as the new spec.
 
 ## Next Up
 

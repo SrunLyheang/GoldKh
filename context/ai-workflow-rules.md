@@ -24,6 +24,23 @@ describing what to build and waiting for it to be written by hand.
   the one before it is known to work — proving a single price
   provider works before adding rotation, for example.
 
+## Applying a Decision Batch
+
+When the user hands over a batch of decisions to fold into the
+context files:
+
+- Work one file at a time. Show the diff, then wait for
+  confirmation before moving to the next file. Do not batch
+  multiple files into one turn unless told to.
+- Push back before editing anything if a decision looks wrong, or
+  doesn't fit what's already in the files. State the objection and
+  the reasoning — don't just note the disagreement and comply.
+- If applying a decision would touch a file outside what the user
+  named, stop and say which file and why before proceeding.
+- When resolving an item out of `progress-tracker.md`'s Open
+  Questions, move it into Architecture Decisions with the
+  reasoning, not just the conclusion.
+
 ## When to Split Work
 
 Split an implementation step if it combines:
