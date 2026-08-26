@@ -1,22 +1,12 @@
-import { Coins } from "lucide-react";
-import {
-  TransactionDialog,
-  type AddSettledResult,
-  type EditableTransaction,
-} from "./transaction-dialog";
+import { Coins, Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
-// Forwards the same optimistic-add callbacks TransactionHistory uses —
-// DashboardContent renders whichever of these two is showing, and both
-// need to feed the same merged `rows` so the very first transaction
-// flips this screen over to the real dashboard content instantly rather
-// than waiting on router.refresh().
-export function EmptyState({
-  onOptimisticAdd,
-  onAddSettled,
-}: {
-  onOptimisticAdd: (row: EditableTransaction) => void;
-  onAddSettled: (tempId: string, result: AddSettledResult) => void;
-}) {
+// Trigger-only — the actual dialog is a single shared instance owned by
+// DashboardContent (see transaction-dialog.tsx's header comment for why:
+// a dialog rendered here would get unmounted mid-request the instant the
+// first optimistic add flips DashboardContent from this screen to the
+// real table).
+export function EmptyState({ onAddClick }: { onAddClick: () => void }) {
   return (
     <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border py-16 text-center">
       <div className="flex h-10 w-10 items-center justify-center rounded-md bg-muted">
@@ -30,10 +20,10 @@ export function EmptyState({
         spot price.
       </p>
       <div className="mt-5">
-        <TransactionDialog
-          onOptimisticAdd={onOptimisticAdd}
-          onAddSettled={onAddSettled}
-        />
+        <Button size="sm" onClick={onAddClick}>
+          <Plus className="h-4 w-4" />
+          Add transaction
+        </Button>
       </div>
     </div>
   );

@@ -17,11 +17,83 @@ interface PriceHistoryChartProps {
   points: ChartPoint[];
   breakEvenPerDamlung?: number;
 }
+// "Nice" step sizes to pick from when sizing y-axis gridlines.
+const NICE_STEPS = [5, 10, 20, 25, 50, 100, 200, 250, 500, 1000, 2000, 5000];
+const TARGET_TICK_COUNT = 5;
 
-function dateLabel(iso: string): string {
+function niceStep(range: number): number {
+  if (range <= 0) {
+    return NICE_STEPS[0];
+  }
+  const rough = range / TARGET_TICK_COUNT;
+  return (
+    NICE_STEPS.find((step) => step >= rough) ??
+    NICE_STEPS[NICE_STEPS.length - 1]
+  );
+}
+
+function computeYAxis(
+  points: ChartPoint[],
+  breakEvenPerDamlung?: number,
+): {
+  domain: [number, number];
+  ticks: number[];
+} {
+  const values = points.map((p) => p.pricePerDamlung);
+  if (breakEvenPerDamlung !== undefined) {
+    values.push(breakEvenPerDamlung);
+  }
+  const dataMin = Math.min(...values);
+  const dataMax = Math.max(...values);
+  const range = dataMax - dataMin;
+  const step = niceStep(range);
+  const padding = Math.max(range * 0.1, step * 0.5);
+  const domainMin = dataMin - padding;
+  const domainMax = dataMax + padding;
+
+  const firstTick = Math.floor(domainMin / step) * step;
+  const lastTick = Math.ceil(domainMax / step) * step;
+  const ticks: number[] = [];
+  for (let tick = firstTick; tick <= lastTick; tick += step) {
+    ticks.push(tick);
+  }
+
+  return { domain: [domainMin, domainMax], ticks };
+}
+
+function makeDateLabel(points: ChartPoint[]): (iso: string) => string {
+  const times = points.map((p) => new Date(p.date).getTime());
+  const spanMs = Math.max(...times) - Math.min(...times);
+  const oneDay = 24 * 60 * 60 * 1000;
+
+  if (spanMs < oneDay) {
+    return (iso: string) =>
+      new Intl.DateTimeFormat("en-US", {
+        hour: "numeric",
+        minute: "2-digit",
+      }).format(new Date(iso));
+  }
+  if (spanMs < 3 * oneDay) {
+    return (iso: string) =>
+      new Intl.DateTimeFormat("en-US", {
+        month: "short",
+        day: "numeric",
+        hour: "numeric",
+      }).format(new Date(iso));
+  }
+  return (iso: string) =>
+    new Intl.DateTimeFormat("en-US", {
+      month: "short",
+      day: "numeric",
+    }).format(new Date(iso));
+}
+
+function tooltipDateLabel(iso: string): string {
   return new Intl.DateTimeFormat("en-US", {
     month: "short",
     day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
   }).format(new Date(iso));
 }
 
@@ -39,7 +111,7 @@ function TooltipContent({
   return (
     <div className="rounded-md border border-border bg-popover px-3 py-2 text-popover-foreground shadow-none">
       <p className="font-mono text-[12px] tabular-nums text-muted-foreground">
-        {dateLabel(point.date)}
+        {tooltipDateLabel(point.date)}
       </p>
       <p className="font-mono text-[13.5px] font-semibold tabular-nums text-foreground">
         {formatUsd(String(point.pricePerDamlung))}/damlung
@@ -54,7 +126,7 @@ export function PriceHistoryChart({
 }: PriceHistoryChartProps) {
   if (points.length < 2) {
     return (
-      <div className="flex h-[220px] items-center justify-center rounded-xl border border-border bg-card">
+      <div className="flex h-70 items-center justify-center rounded-xl border border-border bg-card">
         <p className="text-[12.5px] text-muted-foreground">
           Not enough price history yet — check back after a few refreshes.
         </p>
@@ -62,14 +134,20 @@ export function PriceHistoryChart({
     );
   }
 
+  const { domain, ticks } = computeYAxis(points, breakEvenPerDamlung);
+  const xAxisDateLabel = makeDateLabel(points);
+
   return (
     <div className="rounded-xl border border-border bg-card p-4">
       <h2 className="mb-3 text-[15px] font-semibold text-foreground">
         Price History
       </h2>
-      <div className="h-[220px] w-full">
+      <div className="h-70 w-full">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={points} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
+          <LineChart
+            data={points}
+            margin={{ top: 4, right: 8, bottom: 0, left: 0 }}
+          >
             <CartesianGrid
               stroke="var(--border)"
               strokeDasharray="3 3"
@@ -77,7 +155,7 @@ export function PriceHistoryChart({
             />
             <XAxis
               dataKey="date"
-              tickFormatter={dateLabel}
+              tickFormatter={xAxisDateLabel}
               tick={{ fontSize: 11.5, fill: "var(--muted-foreground)" }}
               tickLine={false}
               axisLine={false}
@@ -89,17 +167,13 @@ export function PriceHistoryChart({
               axisLine={false}
               width={56}
               tickFormatter={(value: number) => `$${Math.round(value)}`}
-              domain={([dataMin, dataMax]: readonly [number, number]) => {
-                // Fixed "auto" hugs the data so tightly the line reads as
-                // flat even when it moved meaningfully — pad both ends by
-                // 15% of the range (or 2% of the value itself when the
-                // range is ~0, e.g. only one distinct price so far).
-                const range = dataMax - dataMin;
-                const padding = range > 0 ? range * 0.15 : dataMax * 0.02;
-                return [dataMin - padding, dataMax + padding];
-              }}
+              domain={domain}
+              ticks={ticks}
             />
-            <Tooltip content={<TooltipContent />} cursor={{ stroke: "var(--border)" }} />
+            <Tooltip
+              content={<TooltipContent />}
+              cursor={{ stroke: "var(--border)" }}
+            />
             {breakEvenPerDamlung !== undefined && (
               <ReferenceLine
                 y={breakEvenPerDamlung}
@@ -121,7 +195,8 @@ export function PriceHistoryChart({
       </div>
       {breakEvenPerDamlung !== undefined && (
         <p className="mt-2 text-[11.5px] text-muted-foreground">
-          Dashed line = your average cost ({formatUsd(String(breakEvenPerDamlung))}/damlung).
+          Dashed line = your average cost (
+          {formatUsd(String(breakEvenPerDamlung))}/damlung).
         </p>
       )}
     </div>

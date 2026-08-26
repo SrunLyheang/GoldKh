@@ -24,7 +24,7 @@ async function getLatestSnapshot(): Promise<PriceResult | undefined> {
 // concurrency guard decision. If a concurrent request already inserted a
 // fresh row between our staleness check and this insert, the WHERE NOT
 // EXISTS clause makes this a no-op instead of writing a redundant row.
-// The 5-minute literal below must match PRICE_STALENESS_MS — SQL can't
+// The 30-minute literal below must match PRICE_STALENESS_MS — SQL can't
 // reference the JS constant directly.
 interface RawSnapshotRow {
   id: string;
@@ -41,7 +41,7 @@ async function insertIfStillStale(
     SELECT ${price.pricePerTroyOz}, ${price.source}
     WHERE NOT EXISTS (
       SELECT 1 FROM price_snapshots
-      WHERE captured_at > now() - interval '5 minutes'
+      WHERE captured_at > now() - interval '30 minutes'
     )
     RETURNING id, price_per_troy_oz AS "pricePerTroyOz", source, captured_at AS "capturedAt"
   `);

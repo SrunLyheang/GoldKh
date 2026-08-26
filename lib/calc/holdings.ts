@@ -8,6 +8,13 @@ export interface TransactionLike {
   pricePerUnit: string;
 }
 
+// Lets a caller exclude one specific row (e.g. "compute holdings as if
+// the row currently being edited didn't exist yet") without a circular
+// import between the calc layer and the transaction components.
+export interface TransactionWithId extends TransactionLike {
+  id: string;
+}
+
 export interface Holdings {
   totalTroyOz: string;
   averageCostPerTroyOz: string;

@@ -103,8 +103,10 @@ Open Questions.
 A one-line disclaimer belongs near the price header: local
 Cambodian gold shops sell above spot, so a position may show as a
 "loss" against spot that is really dealer premium, not an actual
-loss. Exact copy is not yet decided — a UI copy detail, not a
-blocked decision.
+loss. Placement confirmed via a 2026-08-26 grilling session — a
+one-liner here, not a more prominent first-login notice, even
+though the app is open to public signup. Exact copy is still not
+decided — a UI copy detail, not a blocked decision.
 
 **Stat row** — Four equal columns, 16px gap. Each card is a
 muted 11.5px label, over a 19px mono value at weight 600, over a

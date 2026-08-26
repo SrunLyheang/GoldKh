@@ -67,15 +67,23 @@ delete), trimmed-trailing-zero quantity display, a padded
 price-chart Y-axis, and removal of the sidebar's "History" nav
 item. Remaining, not started:
 
-1. Rate limiting on the transaction-mutating routes — see below.
+Priority order confirmed via a 2026-08-26 grilling session — items
+1-3 are the actual next work; 4-5 stay deferred until they cause a
+real problem, not on a fixed timeline:
+
+1. Rate limiting on the transaction-mutating routes — hard block
+   (429), keyed on Clerk `user_id`. See the Architecture Decisions
+   entry above; now the top priority given open public signup.
 2. Clerk `user.deleted` webhook.
-3. Pagination or an alternate treatment for transaction lists
+3. UI/component test coverage (see Architecture Decisions) —
+   after 1 and 2, before new features.
+4. Pagination or an alternate treatment for transaction lists
    long enough to make the `max-h-80` scroll container feel
    cramped — no user has enough rows yet to know if scroll-only
    is sufficient.
-4. Backfilling the price-history chart's gaps, if they turn out
+5. Backfilling the price-history chart's gaps, if they turn out
    to matter — see the Architecture Decisions entry on the chart.
-5. A real, separate History page/route. The sidebar's "History"
+6. A real, separate History page/route. The sidebar's "History"
    link was removed this session (it only pointed at
    `/dashboard#history`, an anchor on the same page, not a real
    route) — add a genuine nav item back if/when history becomes
@@ -84,22 +92,29 @@ item. Remaining, not started:
 
 ## Open Questions
 
+- **goldapi.io free-tier quota (100 req/month) vs. staleness
+  interval.** 30 minutes (see Architecture Decisions) is sized for
+  sporadic checking, not a dashboard left open all day continuously —
+  revisit if the user's actual usage pattern turns out to burn through
+  the quota faster than expected.
 - Clerk `user.deleted` webhook — a deleted user currently leaves
-  orphaned transaction rows. Not urgent, but unhandled.
-- Rate limiting — not yet designed. If implemented, key on Clerk
-  `user_id`, not IP (every route is already authenticated). Watch
-  for the serverless trap: an in-memory `Map` counter works
-  locally and silently enforces nothing in production, since each
-  invocation may be a fresh instance — shared state (database or
-  external store) is required. `POST /api/transactions` is now a
-  live public mutating route with no rate limit — should be
-  resolved soon.
+  orphaned transaction rows. Priority raised: see Architecture
+  Decisions ("Audience: open public signup") — strangers can now
+  create and later delete accounts, so this is the next item after
+  rate limiting, not an indefinitely-deferred one.
 - Live 24h price % change was described in `ui-context.md`'s hero
   card layout but not implemented — `price_snapshots` doesn't
   currently support looking up "the snapshot from ~24h ago"
   efficiently, and inventing a number would violate
   ai-workflow-rules.md's "don't invent product behavior" rule.
   The hero card renders without it. Resolve if this is wanted.
+- **Notes-field content sanitization/injection hardening** — flagged
+  by the user as future work, not built. `lib/validation/transaction.ts`'s
+  `notes` field is length-capped (500 chars) only, no content
+  sanitization. Not a live vulnerability today — React escapes JSX
+  text by default and Drizzle parameterizes queries — but worth
+  revisiting if notes content is ever rendered via
+  `dangerouslySetInnerHTML`, exported, or fed into another system.
 
 ## Architecture Decisions
 
@@ -425,6 +440,47 @@ item. Remaining, not started:
   very first transaction flips it over to the real dashboard
   instantly instead of waiting on a refresh.
 
+- **One shared loading component (`components/ui/loading.tsx`):
+  `Spinner` (a bordered ring, sizes xs–lg) and `LoadingScreen`
+  (centers a large `Spinner` with a label).** Built from existing
+  `--border`/`--primary` tokens, no new color. User asked for a
+  single component design used everywhere something needs a
+  loading state, rather than each spot inventing its own treatment.
+  Wired into: the transaction dialog's submit button (`Spinner`
+  next to "Saving…", replacing bare disabled text), `RefreshButton`
+  (swaps `RefreshCw` for `Spinner` while `isPending` — also let the
+  old fixed 600ms fake-spin timeout be deleted in favor of
+  `useTransition`'s real `isPending`), and a new
+  `app/dashboard/loading.tsx` (Next.js route-level loading UI,
+  shown automatically while `page.tsx`'s auth check + `getPrice()`
+  + DB queries are in flight — matters most on a cold Neon
+  connection). `/` redirects immediately and sign-in/sign-up are
+  Clerk-managed, so neither needed one.
+
+- **`TransactionDialog` always shows a full `LoadingScreen` in
+  place of the form while `submitting`, for every mode — the
+  earlier "gate it on `!isOptimistic`" version (below, corrected)
+  meant Add never showed it, since the dialog used to close in the
+  same tick it opened. Reverted after the user reported "still no
+  loading screen after clicking add transaction."**
+  `onOptimisticAdd` still fires immediately so the dashboard
+  reflects the new row right away, but the dialog itself no longer
+  closes early — it stays open through the request and closes only
+  on success (or reverts to the form with an error on failure,
+  same as every other path). This also exposed a real bug: the Add
+  dialog used to be rendered separately inside both `EmptyState`
+  and `TransactionHistory`'s header. The instant the first
+  optimistic row landed, `DashboardContent` swapped `EmptyState`
+  out for the real table — unmounting whichever dialog instance
+  was open mid-request. Fixed by lifting `TransactionDialog` to a
+  single shared instance owned by `DashboardContent` (new `addOpen`
+  state), with `EmptyState` and `TransactionHistory`'s header
+  reduced to trigger-only buttons (`onAddClick`) that open it.
+  `TransactionDialog` is now always fully controlled
+  (`open`/`onOpenChange` required, no built-in trigger in either
+  mode) — the per-row Edit dialog in `RowActions` was already
+  controlled correctly and needed no change.
+
 - **Date entry is a hand-rolled calendar popover, not a new
   dependency.** Built `components/ui/popover.tsx` (wraps
   `@base-ui/react/popover`, mirroring `dialog.tsx`'s wrapper
@@ -454,6 +510,49 @@ item. Remaining, not started:
   broken. Chose visible feedback over bypassing the cache (offered
   as the alternative) to avoid burning extra goldapi.io calls.
 
+- **Sidebar converted to `fixed` positioning, highest z-index.**
+  Per `context/design-specs/01-ui-ux`: the nav bar should be fixed
+  height and stack above everything else. `Sidebar`
+  (`components/dashboard/sidebar.tsx`) changed from a normal flex
+  child to `fixed inset-y-0 left-0 z-50`; `DashboardLayout`
+  (`app/dashboard/layout.tsx`) added `ml-59` to `<main>` so content
+  no longer sits under the now-fixed sidebar. The `UserButton`
+  block was already the last child after `flex-1` on the nav list,
+  so it already pins to the bottom of the fixed column — no
+  additional change needed for that half of the spec. Uncommitted.
+
+- **Price staleness raised from 5 minutes to 30 minutes
+  (`lib/constants/staleness.ts`).** Per `context/design-specs/02-Table`
+  ("the api limit refresh every 5 minute is too much, help me find a
+  good number"). User confirmed the goldapi.io plan is the free tier
+  (100 requests/month). At 5 minutes, a continuously-open dashboard
+  could call the provider up to ~8,640 times/month — far over quota.
+  30 minutes cuts that worst case to ~1,440/month and comfortably
+  covers realistic sporadic-checking usage (well under 100/month) at
+  the cost of the price being up to 30 minutes stale on a cold cache.
+  If usage patterns change (e.g. the dashboard is left open all day,
+  every day) this may still need raising further — `getPrice()`
+  already falls back to the last cached price rather than erroring if
+  the quota is exceeded, so hitting the cap degrades gracefully rather
+  than breaking the app. The raw SQL literal in
+  `insertIfStillStale` (`lib/price/getPrice.ts`) was updated to match
+  (`'5 minutes'` → `'30 minutes'`) since SQL can't reference the JS
+  constant directly.
+
+- **Price-history chart Y-axis snapped to fixed $100 gridlines
+  instead of Recharts' auto-derived ticks.** Per
+  `context/design-specs/02-Table` ("make the y price have more
+  difference every 100$" — the auto ticks landed on uneven values
+  that made real price movement hard to read at a glance). Added
+  `computeYAxis()` (`components/dashboard/price-history-chart.tsx`),
+  which keeps the existing 15%-padded domain logic but also returns
+  an explicit `ticks` array stepped by `$100` and floored/ceiled to
+  the nearest hundred, passed to Recharts' `YAxis` via `domain`/
+  `ticks` instead of the old inline `domain` function. Chart height
+  also raised from `220px` to `h-70` (280px) for more visual room
+  between gridlines, applied to both the chart and its "not enough
+  history yet" placeholder for consistency.
+
 - **Sidebar's "History" nav item removed, not repointed.** It
   only ever linked to `/dashboard#history`, an anchor on the same
   page — never a distinct route — so it was misleading rather than
@@ -462,6 +561,107 @@ item. Remaining, not started:
   removed, only the redundant nav entry pointing at an anchor on
   the page it's already on. A real History nav item can be added
   back if/when it becomes an actual separate page.
+
+- **Transaction dialog fields lifted from `defaultValue`-based
+  uncontrolled inputs to `useState`-controlled state.** Root-cause
+  fix for "a failed submit wipes everything you typed" — the
+  dialog's `submitting ? LoadingScreen : form` swap was already
+  unmounting/remounting the form DOM on every submit, and an
+  uncontrolled input remounts from its original default, not from
+  what the user typed. `type` was already state (survived this)
+  which is what exposed the pattern. Controlled state also enabled,
+  in the same change: client-side validation against the existing
+  `transactionInputSchema` (per-field, shown once a field is
+  touched or submit's been attempted, blocking the `fetch` call
+  entirely on failure — no wasted round trip), a live total-cost +
+  current-spot-price preview (unit-aware via `priceFromTroyOz`), and
+  a sell-exceeds-current-holdings warning. The `<form action={...}>`
+  FormData mechanism was replaced with a plain `onSubmit` building
+  the payload from state directly — this was never wired to a real
+  Next.js server action, just used as a convenient callback shape.
+
+- **Sell-exceeds-holdings: warn, don't hard-block.** User decision.
+  `computeHoldings`'s weighted-average model doesn't error on a
+  resulting negative balance, the server has no matching rule (a
+  client hard-block would be bypassable via direct API call), and a
+  single-user personal tracker has legitimate reasons to enter
+  transactions out of chronological order (backfilling history,
+  fixing an earlier mis-entered buy before this sell). Added
+  `TransactionWithId` to `lib/calc/holdings.ts` so the dialog can
+  compute holdings excluding the row currently being edited (a
+  no-op filter in add-mode) — editing a sell row compares against
+  holdings as if that row didn't exist yet, the only comparison
+  that's actually meaningful.
+
+- **Success confirmation reuses the existing dismissible-banner
+  pattern** (`dashboard-content.tsx`'s `successMessage` state,
+  identical 5s-auto-clear `useEffect` already used for `error`) —
+  no new Toast/notification component. Styled with the gold
+  `--primary` accent, not green: `ui-context.md` reserves green/red
+  strictly for buy/sell and gain/loss semantics, and a generic
+  "saved" confirmation is decorative, not one of those meanings.
+
+- **KHR and USD-sell "—" cells (Current Value/P&L columns) get
+  distinct `title` tooltips** instead of looking identical with no
+  explanation — "KHR entries aren't converted to USD yet" vs. "Sell
+  rows show proceeds, not an ongoing position." Native `title`
+  attribute, no new Tooltip component.
+
+- **Audience: open public signup, not a gated/trusted circle.**
+  User decision, surfaced via a grilling session on 2026-08-26.
+  GoldKh is meant to let other people track their own gold, not
+  just the developer — anyone can create a Clerk account, though
+  it isn't being actively promoted yet. This raises the stakes on
+  every "acceptable for personal use" tradeoff made earlier
+  (rate limiting, the `user.deleted` webhook, UI test coverage)
+  since real strangers, not just the developer, can now mutate
+  data and see numbers they might act on. "Done" for this project
+  means people actually trust and rely on the dashboard, not just
+  passing the mechanical Success Criteria in
+  `project-overview.md`.
+
+- **Rate limiting: hard block (HTTP 429) once exceeded, keyed on
+  Clerk `user_id`.** Resolves the Open Questions entry above.
+  Prioritized as the next implementation unit, ahead of the
+  `user.deleted` webhook and UI/component tests, because open
+  public signup means `POST /api/transactions` is now exposed to
+  strangers, not just the developer. Still subject to the
+  serverless trap noted in the (now-resolved) open question: an
+  in-memory counter enforces nothing across invocations, so the
+  limit must be backed by shared state (the database or an
+  external store), not a local `Map`.
+
+- **UI/component test coverage: planned, sequenced after rate
+  limiting and the `user.deleted` webhook.** Reverses the earlier
+  "add later if UI regressions become a problem" framing recorded
+  above (see the Vitest entry) — now that wrong numbers could
+  plausibly drive a real financial decision for a stranger, not
+  just the developer, correctness of the UI wiring around
+  `lib/calc`/`lib/price` is worth locking down proactively rather
+  than reactively.
+
+- **Unit system stays hardcoded to Cambodia/gold-only; no
+  generalization work now.** Confirmed, not just assumed: even
+  though other markets/metals might be supported someday, building
+  a configurable unit/metal system now would be exactly the kind
+  of speculative abstraction `ai-workflow-rules.md` and
+  `code-standards.md` warn against. Refactor `lib/constants/units.ts`
+  into something configurable only when a real second market is
+  actually requested.
+
+- **Spot-vs-shop-premium disclaimer: confirmed as a one-liner near
+  the price header, not a more prominent first-login notice.**
+  Resolves the "exact copy is still open" note above — the
+  placement was already the plan; this confirms it's the final
+  placement decision, not a placeholder pending something more
+  assertive. Exact wording is still an open UI-copy detail.
+
+- **Free-tier ceilings (Clerk MAU, Neon storage): no upfront
+  plan.** Given open public signup, usage could in principle
+  approach Clerk's 10,000 MAU cap or Neon's 0.5 GB storage cap —
+  deliberately not planning an upgrade path or a signup cutoff now.
+  Revisit only if usage actually approaches either limit; see
+  Known Constraints for the Neon storage math.
 
 ## Known Constraints
 

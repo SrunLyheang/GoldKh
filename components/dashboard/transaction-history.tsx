@@ -18,11 +18,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  TransactionDialog,
-  type AddSettledResult,
-  type EditableTransaction,
-} from "./transaction-dialog";
+import { Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { TransactionDialog } from "./transaction-dialog";
 
 export interface TransactionRow extends TransactionRowLike {
   id: string;
@@ -32,10 +30,16 @@ export interface TransactionRow extends TransactionRowLike {
 
 function RowActions({
   row,
+  allRows,
+  currentPricePerTroyOz,
   onDelete,
+  onEditSuccess,
 }: {
   row: TransactionRow;
+  allRows: TransactionRow[];
+  currentPricePerTroyOz: string;
   onDelete: (row: TransactionRow) => void;
+  onEditSuccess: () => void;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
@@ -94,6 +98,9 @@ function RowActions({
         transaction={row}
         open={editOpen}
         onOpenChange={setEditOpen}
+        onEditSuccess={onEditSuccess}
+        currentPricePerTroyOz={currentPricePerTroyOz}
+        existingTransactions={allRows}
       />
     </>
   );
@@ -101,17 +108,31 @@ function RowActions({
 
 function Row({
   row,
+  allRows,
   currentPricePerTroyOz,
   onDelete,
+  onEditSuccess,
 }: {
   row: TransactionRow;
+  allRows: TransactionRow[];
   currentPricePerTroyOz: string;
   onDelete: (row: TransactionRow) => void;
+  onEditSuccess: () => void;
 }) {
   const isBuy = row.type === "buy";
   const isPending = row.id.startsWith("temp-");
   const valuation = computeRowValuation(row, currentPricePerTroyOz);
   const isGain = valuation.pnlUsd !== null && Number(valuation.pnlUsd) >= 0;
+  // Both cells fall back to "—" for two different reasons that used to
+  // look identical: KHR conversion is deferred entirely (project-
+  // overview.md), and a sell row simply has no ongoing position to
+  // value. The title distinguishes them without a new Tooltip component.
+  const blankValueReason =
+    row.currency !== "USD"
+      ? "KHR entries aren't converted to USD yet"
+      : row.type === "sell"
+        ? "Sell rows show proceeds, not an ongoing position"
+        : undefined;
 
   return (
     <tr
@@ -153,7 +174,11 @@ function Row({
         {formatUsd(valuation.pricePerDamlung)}
       </td>
       <td className="py-2.5 pr-3 text-right font-mono text-[13px] tabular-nums text-foreground">
-        {valuation.currentValueUsd ? formatUsd(valuation.currentValueUsd) : "—"}
+        {valuation.currentValueUsd ? (
+          formatUsd(valuation.currentValueUsd)
+        ) : (
+          <span title={blankValueReason} className="cursor-help">—</span>
+        )}
       </td>
       <td
         className={cn(
@@ -162,13 +187,23 @@ function Row({
           valuation.pnlUsd !== null && (isGain ? "text-state-gain" : "text-destructive")
         )}
       >
-        {valuation.pnlUsd ? formatUsd(valuation.pnlUsd) : "—"}
+        {valuation.pnlUsd ? (
+          formatUsd(valuation.pnlUsd)
+        ) : (
+          <span title={blankValueReason} className="cursor-help">—</span>
+        )}
       </td>
       <td className="py-2.5 pl-1 text-right">
         {isPending ? (
           <span className="text-[11.5px] text-muted-foreground">Saving…</span>
         ) : (
-          <RowActions row={row} onDelete={onDelete} />
+          <RowActions
+            row={row}
+            allRows={allRows}
+            currentPricePerTroyOz={currentPricePerTroyOz}
+            onDelete={onDelete}
+            onEditSuccess={onEditSuccess}
+          />
         )}
       </td>
     </tr>
@@ -183,16 +218,18 @@ export function TransactionHistory({
   rows,
   currentPricePerTroyOz,
   error,
+  successMessage,
   onDelete,
-  onOptimisticAdd,
-  onAddSettled,
+  onAddClick,
+  onEditSuccess,
 }: {
   rows: TransactionRow[];
   currentPricePerTroyOz: string;
   error: string | null;
+  successMessage: string | null;
   onDelete: (row: TransactionRow) => void;
-  onOptimisticAdd: (row: EditableTransaction) => void;
-  onAddSettled: (tempId: string, result: AddSettledResult) => void;
+  onAddClick: () => void;
+  onEditSuccess: () => void;
 }) {
   return (
     <div>
@@ -200,14 +237,19 @@ export function TransactionHistory({
         <h2 className="text-[15px] font-semibold text-foreground">
           Transaction History
         </h2>
-        <TransactionDialog
-          onOptimisticAdd={onOptimisticAdd}
-          onAddSettled={onAddSettled}
-        />
+        <Button size="sm" onClick={onAddClick}>
+          <Plus className="h-4 w-4" />
+          Add transaction
+        </Button>
       </div>
       {error && (
         <div className="mb-2 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-[12.5px] text-destructive">
           {error}
+        </div>
+      )}
+      {successMessage && (
+        <div className="mb-2 rounded-md border border-primary/40 bg-primary/10 px-3 py-2 text-[12.5px] text-primary">
+          {successMessage}
         </div>
       )}
       <div className="max-h-80 overflow-auto rounded-lg border border-border bg-card">
@@ -228,8 +270,10 @@ export function TransactionHistory({
               <Row
                 key={row.id}
                 row={row}
+                allRows={rows}
                 currentPricePerTroyOz={currentPricePerTroyOz}
                 onDelete={onDelete}
+                onEditSuccess={onEditSuccess}
               />
             ))}
           </tbody>

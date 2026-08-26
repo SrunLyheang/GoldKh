@@ -15,7 +15,7 @@ export function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="flex w-[236px] shrink-0 flex-col border-r border-border bg-card">
+    <aside className="fixed inset-y-0 left-0 z-50 flex w-59 shrink-0 flex-col border-r border-border bg-card">
       <div className="px-6 py-6">
         <span className="font-mono text-[15px] font-semibold text-primary">
           GoldKh
