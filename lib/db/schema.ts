@@ -1,8 +1,11 @@
 import {
+  boolean,
   date,
+  integer,
   numeric,
   pgEnum,
   pgTable,
+  primaryKey,
   text,
   timestamp,
   uuid,
@@ -18,6 +21,10 @@ export const priceSnapshots = pgTable("price_snapshots", {
     scale: 4,
   }).notNull(),
   source: text("source").notNull(),
+  // True only for a row inserted by the user-triggered manual refresh
+  // route, never by getPrice()'s own staleness-driven insert — see
+  // MANUAL_REFRESH_COOLDOWN_MS in lib/constants/staleness.ts.
+  isManual: boolean("is_manual").notNull().default(false),
   capturedAt: timestamp("captured_at", { withTimezone: true })
     .defaultNow()
     .notNull(),
@@ -55,3 +62,20 @@ export const transactions = pgTable("transactions", {
     .defaultNow()
     .notNull(),
 });
+
+// Fixed-window request counter backing rate limiting on the
+// transaction-mutating routes — see progress-tracker.md's rate-limiting
+// decision. One row per (user, window); incremented via an atomic
+// Postgres upsert (lib/db/queries/rateLimit.ts) so the database
+// arbitrates concurrency, per code-standards.md, rather than a
+// check-then-write in JS. windowStart is the app-clock window boundary,
+// not a request timestamp — see RATE_LIMIT_WINDOW_MS.
+export const rateLimitCounters = pgTable(
+  "rate_limit_counters",
+  {
+    userId: text("user_id").notNull(),
+    windowStart: timestamp("window_start", { withTimezone: true }).notNull(),
+    count: integer("count").notNull().default(0),
+  },
+  (table) => [primaryKey({ columns: [table.userId, table.windowStart] })]
+);

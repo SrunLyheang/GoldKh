@@ -1,5 +1,7 @@
-import { cn } from "@/lib/utils";
 import { formatPercent, formatQuantity, formatUsd } from "@/lib/format/money";
+import { toneFromAmount } from "@/lib/format/tone";
+import { MonoValue } from "./mono-value";
+import { Panel } from "./panel";
 
 interface StatRowProps {
   totalChi: string;
@@ -22,31 +24,20 @@ function StatCard({
   tone?: "gain" | "loss";
 }) {
   return (
-    <div className="rounded-lg border border-border bg-card p-4">
+    <Panel>
       <p className="text-[11.5px] font-medium text-muted-foreground">
         {label}
       </p>
-      <p
-        className={cn(
-          "mt-1 font-mono text-[19px] font-semibold tabular-nums",
-          tone === "gain" && "text-state-gain",
-          tone === "loss" && "text-destructive",
-          !tone && "text-foreground"
-        )}
+      <MonoValue
+        tone={tone ?? "foreground"}
+        className="mt-1 block text-[19px] font-semibold"
       >
         {value}
-      </p>
-      <p
-        className={cn(
-          "mt-0.5 font-mono text-[12px] tabular-nums",
-          tone === "gain" && "text-state-gain",
-          tone === "loss" && "text-destructive",
-          !tone && "text-muted-foreground"
-        )}
-      >
+      </MonoValue>
+      <MonoValue tone={tone ?? "muted"} className="mt-0.5 block text-[12px]">
         {subLine}
-      </p>
-    </div>
+      </MonoValue>
+    </Panel>
   );
 }
 
@@ -58,10 +49,8 @@ export function StatRow({
   gainLossUsd,
   gainLossPercent,
 }: StatRowProps) {
-  const isGain = Number(gainLossUsd) >= 0;
-
   return (
-    <div className="grid grid-cols-4 gap-4">
+    <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
       <StatCard
         label="Total Holdings"
         value={`${formatQuantity(totalChi)} chi`}
@@ -81,7 +70,7 @@ export function StatRow({
         label="Unrealized Gain/Loss"
         value={formatUsd(gainLossUsd)}
         subLine={formatPercent(gainLossPercent)}
-        tone={isGain ? "gain" : "loss"}
+        tone={toneFromAmount(gainLossUsd)}
       />
     </div>
   );

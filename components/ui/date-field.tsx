@@ -24,12 +24,27 @@ function formatDisplay(dateKey: string): string {
 export function DateField({
   name,
   defaultValue,
+  value: controlledValue,
+  onChange,
 }: {
   name: string
   defaultValue?: string
+  value?: string
+  onChange?: (dateKey: string) => void
 }) {
-  const [value, setValue] = React.useState(defaultValue ?? toDateKey(new Date()))
+  const [internalValue, setInternalValue] = React.useState(
+    defaultValue ?? toDateKey(new Date())
+  )
+  const value = controlledValue ?? internalValue
   const [open, setOpen] = React.useState(false)
+
+  function handleSelect(dateKey: string) {
+    if (controlledValue === undefined) {
+      setInternalValue(dateKey)
+    }
+    onChange?.(dateKey)
+    setOpen(false)
+  }
 
   return (
     <>
@@ -49,13 +64,7 @@ export function DateField({
           }
         />
         <PopoverContent>
-          <Calendar
-            value={value}
-            onSelect={(dateKey) => {
-              setValue(dateKey)
-              setOpen(false)
-            }}
-          />
+          <Calendar value={value} onSelect={handleSelect} />
         </PopoverContent>
       </Popover>
     </>

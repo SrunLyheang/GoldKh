@@ -69,3 +69,13 @@ export async function deleteOwnedTransaction(userId: string, id: string) {
     .returning({ id: transactions.id });
   return deleted;
 }
+
+// Called only from the Clerk `user.deleted` webhook — removes every
+// transaction row left behind by a deleted account. See
+// progress-tracker.md's open question on orphaned rows.
+export async function deleteAllTransactionsForUser(userId: string) {
+  return db
+    .delete(transactions)
+    .where(eq(transactions.userId, userId))
+    .returning({ id: transactions.id });
+}

@@ -1,7 +1,10 @@
-import { desc, sql as drizzleSql } from "drizzle-orm";
+import { desc, eq, sql as drizzleSql } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { priceSnapshots } from "@/lib/db/schema";
-import { PRICE_STALENESS_MS } from "@/lib/constants/staleness";
+import {
+  MANUAL_REFRESH_COOLDOWN_MS,
+  PRICE_STALENESS_MS,
+} from "@/lib/constants/staleness";
 import { fetchGoldapiPrice, type NormalizedPrice } from "./providers/goldapi";
 
 export interface PriceResult {
@@ -24,7 +27,7 @@ async function getLatestSnapshot(): Promise<PriceResult | undefined> {
 // concurrency guard decision. If a concurrent request already inserted a
 // fresh row between our staleness check and this insert, the WHERE NOT
 // EXISTS clause makes this a no-op instead of writing a redundant row.
-// The 5-minute literal below must match PRICE_STALENESS_MS — SQL can't
+// The 30-minute literal below must match PRICE_STALENESS_MS — SQL can't
 // reference the JS constant directly.
 interface RawSnapshotRow {
   id: string;
@@ -41,7 +44,7 @@ async function insertIfStillStale(
     SELECT ${price.pricePerTroyOz}, ${price.source}
     WHERE NOT EXISTS (
       SELECT 1 FROM price_snapshots
-      WHERE captured_at > now() - interval '5 minutes'
+      WHERE captured_at > now() - interval '30 minutes'
     )
     RETURNING id, price_per_troy_oz AS "pricePerTroyOz", source, captured_at AS "capturedAt"
   `);
@@ -77,6 +80,51 @@ function isFresh(snapshot: PriceResult): boolean {
 // rule flags impure calls there).
 export function isSnapshotStale(snapshot: Pick<PriceResult, "capturedAt">): boolean {
   return Date.now() - snapshot.capturedAt.getTime() > PRICE_STALENESS_MS;
+}
+
+export async function getLatestManualSnapshot(): Promise<PriceResult | undefined> {
+  const [latest] = await db
+    .select()
+    .from(priceSnapshots)
+    .where(eq(priceSnapshots.isManual, true))
+    .orderBy(desc(priceSnapshots.capturedAt))
+    .limit(1);
+  return latest;
+}
+
+// True while a prior manual refresh is still within its cooldown window.
+// Exposed (rather than inlining Date.now() at each call site) so the
+// dashboard page and the /api/price/refresh route agree on one
+// definition — the route is the enforcing source of truth, this just
+// lets the page render an honest disabled state instead of a
+// click-then-fail loop.
+export function isManualCooldownActive(
+  snapshot: Pick<PriceResult, "capturedAt"> | undefined
+): boolean {
+  if (!snapshot) return false;
+  return Date.now() - snapshot.capturedAt.getTime() < MANUAL_REFRESH_COOLDOWN_MS;
+}
+
+// Unconditional insert used only by the manual-refresh route — the
+// cooldown check happens separately (getLatestManualSnapshot +
+// isManualCooldownActive) before this is ever called, so no WHERE NOT
+// EXISTS guard is needed here. Kept separate from insertIfStillStale's
+// atomic conditional insert below rather than sharing it: splitting that
+// single statement into a check-then-insert would reopen the race
+// condition the conditional insert exists to close.
+export async function insertSnapshot(
+  price: NormalizedPrice,
+  opts?: { manual?: boolean }
+): Promise<PriceResult> {
+  const [row] = await db
+    .insert(priceSnapshots)
+    .values({
+      pricePerTroyOz: price.pricePerTroyOz,
+      source: price.source,
+      isManual: opts?.manual ?? false,
+    })
+    .returning();
+  return row;
 }
 
 // Reads newest, checks age, returns if fresh — otherwise walks the

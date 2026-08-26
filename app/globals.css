@@ -98,3 +98,30 @@
     @apply font-sans;
     }
 }
+
+/* Centered message that drifts upward and fades out — used by
+   RefreshButton's cooldown/status toast. Not a tw-animate-css preset:
+   those animate in place or slide from an edge, none drift-then-vanish
+   from a fixed center point. */
+@keyframes toast-float-up {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.96);
+  }
+  12% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  70% {
+    opacity: 1;
+    transform: translate(-50%, calc(-50% - 10px)) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, calc(-50% - 44px)) scale(0.98);
+  }
+}
+
+.animate-toast-float-up {
+  animation: toast-float-up 1.8s ease-out forwards;
+}

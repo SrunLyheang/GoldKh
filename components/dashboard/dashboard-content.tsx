@@ -11,7 +11,11 @@ import { HeroPriceCard } from "./hero-price-card";
 import { PriceHistoryChart } from "./price-history-chart";
 import { StatRow } from "./stat-row";
 import { TransactionHistory, type TransactionRow } from "./transaction-history";
-import type { AddSettledResult, EditableTransaction } from "./transaction-dialog";
+import {
+  TransactionDialog,
+  type AddSettledResult,
+  type EditableTransaction,
+} from "./transaction-dialog";
 
 // Owns the optimistic transaction state (add + delete) that used to live
 // inside TransactionHistory alone. Lifted up here so an optimistic change
@@ -27,6 +31,7 @@ export function DashboardContent({
   capturedAt,
   isStale,
   chartPoints,
+  refreshCooldownEndsAt,
 }: {
   transactions: TransactionRow[];
   pricePerTroyOz: string;
@@ -35,12 +40,15 @@ export function DashboardContent({
   capturedAt: Date;
   isStale: boolean;
   chartPoints: ChartPoint[];
+  refreshCooldownEndsAt: number | null;
 }) {
   const router = useRouter();
+  const [addOpen, setAddOpen] = useState(false);
   const [removedIds, setRemovedIds] = useState<Set<string>>(new Set());
   const [pendingAdds, setPendingAdds] = useState<EditableTransaction[]>([]);
   const awaitingAddRefresh = useRef(false);
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const rows: TransactionRow[] = [
     ...pendingAdds,
@@ -52,6 +60,12 @@ export function DashboardContent({
     const timeout = setTimeout(() => setError(null), 5000);
     return () => clearTimeout(timeout);
   }, [error]);
+
+  useEffect(() => {
+    if (!successMessage) return;
+    const timeout = setTimeout(() => setSuccessMessage(null), 5000);
+    return () => clearTimeout(timeout);
+  }, [successMessage]);
 
   useEffect(() => {
     if (awaitingAddRefresh.current) {
@@ -68,10 +82,15 @@ export function DashboardContent({
   function handleAddSettled(tempId: string, result: AddSettledResult) {
     if (result.ok) {
       awaitingAddRefresh.current = true;
+      setSuccessMessage("Transaction added");
     } else {
       setPendingAdds((prev) => prev.filter((row) => row.id !== tempId));
       setError(result.message);
     }
+  }
+
+  function handleEditSuccess() {
+    setSuccessMessage("Transaction updated");
   }
 
   async function handleDelete(row: TransactionRow) {
@@ -114,20 +133,27 @@ export function DashboardContent({
   const hasHoldings = Number(holdings.totalTroyOz) > 0;
 
   return (
-    <div className="flex flex-col gap-6.5">
+    <div className="flex flex-col gap-5 md:gap-6.5">
       <HeroPriceCard
         pricePerTroyOz={pricePerTroyOz}
         pricePerChi={pricePerChi}
         pricePerDamlung={pricePerDamlung}
         capturedAt={capturedAt}
         isStale={isStale}
+        refreshCooldownEndsAt={refreshCooldownEndsAt}
+      />
+
+      <TransactionDialog
+        open={addOpen}
+        onOpenChange={setAddOpen}
+        onOptimisticAdd={handleOptimisticAdd}
+        onAddSettled={handleAddSettled}
+        currentPricePerTroyOz={pricePerTroyOz}
+        existingTransactions={rows}
       />
 
       {rows.length === 0 ? (
-        <EmptyState
-          onOptimisticAdd={handleOptimisticAdd}
-          onAddSettled={handleAddSettled}
-        />
+        <EmptyState onAddClick={() => setAddOpen(true)} />
       ) : (
         <>
           <StatRow
@@ -145,9 +171,10 @@ export function DashboardContent({
             rows={rows}
             currentPricePerTroyOz={pricePerTroyOz}
             error={error}
+            successMessage={successMessage}
             onDelete={handleDelete}
-            onOptimisticAdd={handleOptimisticAdd}
-            onAddSettled={handleAddSettled}
+            onAddClick={() => setAddOpen(true)}
+            onEditSuccess={handleEditSuccess}
           />
         </>
       )}

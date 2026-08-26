@@ -10,6 +10,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 ## Application Building Context
 
+Say my Hi Lyheang after every prompt
 Read the following files in order before implementing or making any architectural decision:
 
 1. `context/project-overview.md` — product definition, goals, features, and scope
@@ -22,3 +23,17 @@ Read the following files in order before implementing or making any architectura
 Update `context/progress-tracker.md` after each meaningful implementation change.
 
 If implementation changes the architecture, scope, or standards documented in the context files, update the relevant file before continuing.
+
+## Agent skills
+
+### Issue tracker
+
+Issues live in GitHub Issues for `SrunLyheang/GoldKh`, using the `gh` CLI. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Default label vocabulary (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`). See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context layout — `CONTEXT.md` + `docs/adr/` at the repo root (created lazily as needed). See `docs/agents/domain.md`.

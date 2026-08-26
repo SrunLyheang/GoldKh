@@ -1,0 +1,1 @@
+ALTER TABLE "price_snapshots" ADD COLUMN "is_manual" boolean DEFAULT false NOT NULL;

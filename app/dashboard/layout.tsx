@@ -1,10 +1,11 @@
-import { Sidebar } from "@/components/dashboard/sidebar";
+import { auth } from "@clerk/nextjs/server";
+import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 
-export default function DashboardLayout({ children }: LayoutProps<"/dashboard">) {
-  return (
-    <div className="flex min-h-screen bg-background">
-      <Sidebar />
-      <main className="flex-1 px-9 py-[30px]">{children}</main>
-    </div>
-  );
+export default async function DashboardLayout({ children }: LayoutProps<"/dashboard">) {
+  const { userId, redirectToSignIn } = await auth();
+  if (!userId) {
+    return redirectToSignIn();
+  }
+
+  return <DashboardShell>{children}</DashboardShell>;
 }

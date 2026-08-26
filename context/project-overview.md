@@ -12,6 +12,16 @@ average cost, current market value, and unrealized gain or
 loss. It replaces the earlier single-user version where
 holdings were hardcoded into the source.
 
+**Audience: open public signup, not a gated/trusted circle.**
+Confirmed via a grilling session on 2026-08-26 — the multi-user
+rebuild exists so other people can track their own gold, not just
+the developer. Anyone can create an account; it isn't being
+actively promoted yet, but the app should be treated as if a
+stranger could sign up at any time. This raises the bar on every
+"acceptable for personal use" tradeoff elsewhere in the context
+files — see `progress-tracker.md`'s Architecture Decisions for
+what that changed (rate limiting priority, UI test coverage).
+
 ## Goals
 
 1. A signed-in user can record buy and sell transactions
@@ -113,3 +123,10 @@ now hold 7 chi, still at a $300 average cost.
    result in at most one external price API call.
 5. Recording a sell reduces holdings and leaves the buy
    transactions untouched in the history.
+
+These five are necessary but not sufficient. Confirmed via a
+2026-08-26 grilling session: the real definition of "done" is
+that people — not just the developer — actually rely on this
+instead of a spreadsheet or memory, and trust the numbers enough
+to act on them. Treat the criteria above as the floor, not the
+finish line.

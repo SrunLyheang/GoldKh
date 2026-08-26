@@ -1,16 +1,11 @@
-import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+import { clerkMiddleware } from "@clerk/nextjs/server";
 
-// Deny by default: everything is private except what's listed here.
-// The sign-in/sign-up pages must stay public — a signed-out user needs
-// somewhere to land, otherwise auth.protect() redirects them to a page
-// that then redirects them right back (infinite loop).
-const isPublicRoute = createRouteMatcher(["/sign-in(.*)", "/sign-up(.*)"]);
-
-export default clerkMiddleware(async (auth, req) => {
-  if (!isPublicRoute(req)) {
-    await auth.protect();
-  }
-});
+// Auth checks live on each protected page/layout/route instead of here
+// (see app/dashboard/layout.tsx and app/api/**/route.ts) — path-matcher-based
+// middleware auth is deprecated because it can diverge from how Next.js
+// actually routes requests. This middleware only establishes the auth
+// context that those `auth()` calls read from.
+export default clerkMiddleware();
 
 export const config = {
   matcher: [
