@@ -89,7 +89,15 @@ export function PriceHistoryChart({
               axisLine={false}
               width={56}
               tickFormatter={(value: number) => `$${Math.round(value)}`}
-              domain={["auto", "auto"]}
+              domain={([dataMin, dataMax]: readonly [number, number]) => {
+                // Fixed "auto" hugs the data so tightly the line reads as
+                // flat even when it moved meaningfully — pad both ends by
+                // 15% of the range (or 2% of the value itself when the
+                // range is ~0, e.g. only one distinct price so far).
+                const range = dataMax - dataMin;
+                const padding = range > 0 ? range * 0.15 : dataMax * 0.02;
+                return [dataMin - padding, dataMax + padding];
+              }}
             />
             <Tooltip content={<TooltipContent />} cursor={{ stroke: "var(--border)" }} />
             {breakEvenPerDamlung !== undefined && (

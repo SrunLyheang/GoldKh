@@ -1,15 +1,15 @@
 "use client";
 
 import { UserButton } from "@clerk/nextjs";
-import { LayoutDashboard, History } from "lucide-react";
+import { LayoutDashboard } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 
-const NAV_ITEMS = [
-  { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { label: "History", href: "/dashboard#history", icon: History },
-];
+// "History" was removed — it pointed at "/dashboard#history", an anchor
+// on this same page rather than a real separate route. Add a real nav
+// item back here if/when history becomes its own page.
+const NAV_ITEMS = [{ label: "Dashboard", href: "/dashboard", icon: LayoutDashboard }];
 
 export function Sidebar() {
   const pathname = usePathname();

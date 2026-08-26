@@ -53,25 +53,34 @@ Update this file after every meaningful implementation change.
 
 ## Next Up
 
-Completed this session, in order: `price_snapshots` table +
-migration, `lib/price/providers/goldapi.ts`, `getPrice()` with
-the conditional-insert concurrency guard, `transactions` table +
-migration, `app/api/transactions/route.ts` (GET/POST,
+Completed in this and the prior session, in order: `price_snapshots`
+table + migration, `lib/price/providers/goldapi.ts`, `getPrice()`
+with the conditional-insert concurrency guard, `transactions` table
++ migration, `app/api/transactions/route.ts` (GET/POST,
 session-scoped), `lib/calc/` (unit conversion, weighted average
 cost, gain/loss), the full dashboard UI, a damlung-headline hero
-price, and a Recharts price-history chart with a break-even
-reference line. Remaining, not started:
+price, a Recharts price-history chart with a break-even reference
+line, edit-transaction (`PATCH /api/transactions/[id]`, shared
+`TransactionDialog`), a consolidated row-actions "⋯" menu
+(Edit/Delete), optimistic add (mirroring the existing optimistic
+delete), trimmed-trailing-zero quantity display, a padded
+price-chart Y-axis, and removal of the sidebar's "History" nav
+item. Remaining, not started:
 
-1. Edit transaction route + UI — delete shipped this session
-   (below), edit did not.
-2. Rate limiting on the transaction-mutating routes — see below.
-3. Clerk `user.deleted` webhook.
-4. Pagination or an alternate treatment for transaction lists
-   long enough to make the `max-h-[280px]` scroll container feel
+1. Rate limiting on the transaction-mutating routes — see below.
+2. Clerk `user.deleted` webhook.
+3. Pagination or an alternate treatment for transaction lists
+   long enough to make the `max-h-80` scroll container feel
    cramped — no user has enough rows yet to know if scroll-only
    is sufficient.
-5. Backfilling the price-history chart's gaps, if they turn out
+4. Backfilling the price-history chart's gaps, if they turn out
    to matter — see the Architecture Decisions entry on the chart.
+5. A real, separate History page/route. The sidebar's "History"
+   link was removed this session (it only pointed at
+   `/dashboard#history`, an anchor on the same page, not a real
+   route) — add a genuine nav item back if/when history becomes
+   its own page. Until then, the transaction table lives inline
+   on `/dashboard` and that's the only place to see it.
 
 ## Open Questions
 
@@ -336,6 +345,123 @@ reference line. Remaining, not started:
   gates whether this actually hits goldapi.io — most polls just
   re-read the cache. User asked for the dashboard to "automatically
   upgrade every time the API refreshes."
+
+- **Edit transaction: `PATCH /api/transactions/[id]`, full replace
+  against the same Zod schema as `POST`.** Not a partial-field
+  patch — every field is required in the request body, matching
+  `updateOwnedTransaction`'s `.set({ ...input, updatedAt: new
+  Date() })`. Both routes now import the shared
+  `lib/validation/transaction.ts` schema instead of each declaring
+  their own, so create and edit can never validate against
+  different rules.
+
+- **`AddTransactionDialog` merged into a single `TransactionDialog`**
+  (`components/dashboard/transaction-dialog.tsx`), branching on
+  whether an `EditableTransaction` prop is passed. Add mode owns
+  its own trigger button and open state; edit mode is fully
+  controlled by the caller (`open`/`onOpenChange`) since it's
+  opened from a row's "⋯" menu rather than a dialog-owned button.
+
+- **Row actions consolidated into one "⋯" dropdown menu** (Edit,
+  Delete) instead of two bare icons — user-requested cleanup while
+  adding edit. Built `components/ui/dropdown-menu.tsx` on
+  `@base-ui/react/menu`, mirroring how `dialog.tsx` wraps
+  `@base-ui/react/dialog` (no existing shadcn dropdown-menu
+  component was present). Delete's confirm mechanics (inline
+  Delete/Cancel swap) are unchanged — only its entry point moved
+  from a standalone trash icon into the menu.
+
+- **Add is now optimistic too, via a `pendingAdds` array prepended
+  to `rows`** — mirrors the existing optimistic-delete `removedIds`
+  pattern rather than introducing a different state shape. The
+  dialog closes immediately on submit (only when a caller passes
+  `onOptimisticAdd`/`onAddSettled` — `EmptyState`'s usage doesn't,
+  and keeps the old close-after-success behavior since there's no
+  table to add a pending row into on that screen). A pending row
+  can't be edited or deleted until the server confirms it (its
+  temp id would 404) — shown dimmed with "Saving…" instead of the
+  "⋯" menu. `awaitingAddRefresh` (a ref, not state) tracks whether
+  the next `transactions` prop update should clear `pendingAdds`,
+  so an unrelated delete happening mid-flight doesn't clear a
+  still-pending add.
+
+- **Quantity display trims trailing zeros instead of showing the
+  DB's fixed `numeric(_, 4)` padding.** `formatQuantity()`
+  (`lib/format/money.ts`) already existed for the stat row's
+  totals but capped at 2 decimals; raised to 4 (matching the
+  column's actual scale) and reused in the transaction table's
+  Quantity column and the edit dialog's quantity `defaultValue`.
+  "1.0000" now reads "1"; "1.2500" reads "1.25" — nothing is
+  rounded away that the user actually entered. The `<input
+  type="number">` itself was never the problem (Postgres pads to
+  scale on write regardless of what's typed) — this is a
+  display-only fix, not a validation change.
+
+- **Price-history chart Y-axis is no longer `domain={["auto",
+  "auto"]}`.** Recharts' auto-domain hugged the data so tightly
+  that real price movement read as a flat line. Replaced with a
+  domain function padding both ends by 15% of the current
+  min/max range (falling back to 2% of the value itself when the
+  range is ~0 — e.g. only one distinct snapshot so far, to avoid
+  a zero-width or negative padded range).
+
+- **Optimistic state (`pendingAdds`/`removedIds`) lifted from
+  `TransactionHistory` into a new `components/dashboard/
+  dashboard-content.tsx` client wrapper.** User reported that
+  adding a transaction updated the table row instantly but the
+  stat row / gain-loss / break-even line still waited on
+  `router.refresh()` — because those were computed server-side in
+  `page.tsx` from the un-optimistic `transactions` prop.
+  `DashboardContent` now owns the merged `rows` list and recomputes
+  `computeHoldings`/`computeGainLoss` client-side from it (both
+  already pure decimal.js functions with no server-only imports, so
+  reusing them client-side introduced no new logic — same functions
+  `page.tsx` used server-side for the initial render). `page.tsx`
+  now only fetches data and computes `chartPoints` (unaffected by
+  transaction changes); `TransactionHistory` became a controlled/
+  presentational component (`rows`, `error`, and handlers all
+  passed in as props instead of owned internally); `EmptyState`
+  gained the same `onOptimisticAdd`/`onAddSettled` props so the
+  very first transaction flips it over to the real dashboard
+  instantly instead of waiting on a refresh.
+
+- **Date entry is a hand-rolled calendar popover, not a new
+  dependency.** Built `components/ui/popover.tsx` (wraps
+  `@base-ui/react/popover`, mirroring `dialog.tsx`'s wrapper
+  pattern) and `components/ui/calendar.tsx` (a plain month grid,
+  no react-day-picker or similar — the project has stayed
+  dependency-light apart from recharts, an explicit prior user
+  choice). `components/ui/date-field.tsx` combines them behind a
+  hidden `<input type="hidden">` so the existing `formData.get(
+  "transactionDate")` read in `transaction-dialog.tsx` needed no
+  change. Defaults to today (not empty) since a hidden input's
+  `required` isn't enforced by the browser.
+
+- **Quantity/price number inputs use `step="any"`, not
+  `step="0.0001"`.** The literal step value made the browser's
+  native spinner buttons increment by 0.0001 per click (typing "1"
+  then clicking once produced "1.0001") — user-reported. `"any"`
+  removes the step constraint entirely: the spinner falls back to
+  incrementing by whole numbers, and manually typed decimals
+  (chi/damlung quantities, KHR prices) remain valid without
+  triggering native step-mismatch validation.
+
+- **Refresh button keeps the 5-minute price cache, adds a
+  "Refreshed" confirmation instead.** User asked what the button's
+  role was — it already forced a real server round-trip
+  (`router.refresh()`), but `getPrice()`'s 5-minute staleness gate
+  means most clicks just re-render identical numbers, reading as
+  broken. Chose visible feedback over bypassing the cache (offered
+  as the alternative) to avoid burning extra goldapi.io calls.
+
+- **Sidebar's "History" nav item removed, not repointed.** It
+  only ever linked to `/dashboard#history`, an anchor on the same
+  page — never a distinct route — so it was misleading rather than
+  functional. User confirmed "history" and "dashboard" are meant
+  to be the same page; the transaction table itself was NOT
+  removed, only the redundant nav entry pointing at an anchor on
+  the page it's already on. A real History nav item can be added
+  back if/when it becomes an actual separate page.
 
 ## Known Constraints
 

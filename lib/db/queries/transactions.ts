@@ -42,6 +42,23 @@ export async function getOwnedTransaction(userId: string, id: string) {
   return row;
 }
 
+// Same ownership-scoped WHERE as deleteOwnedTransaction — a row is updated
+// only if it belongs to userId. Full replace, not a partial patch: every
+// field in NewTransactionInput is written, matching the same schema POST
+// validates against.
+export async function updateOwnedTransaction(
+  userId: string,
+  id: string,
+  input: NewTransactionInput
+) {
+  const [updated] = await db
+    .update(transactions)
+    .set({ ...input, updatedAt: new Date() })
+    .where(and(eq(transactions.id, id), eq(transactions.userId, userId)))
+    .returning();
+  return updated;
+}
+
 // The WHERE clause carries the same ownership check as getOwnedTransaction
 // — a row is deleted only if it belongs to userId, never merely referenced
 // by a client-supplied ID.

@@ -9,9 +9,12 @@ export function formatUsd(value: string): string {
   }).format(Number(value));
 }
 
+// maximumFractionDigits: 4 matches the `numeric(_, 4)` scale transactions
+// are stored at, so this only trims trailing zeros (DB-padded "1.0000" ->
+// "1", "1.2500" -> "1.25") — it never rounds away a digit the user entered.
 export function formatQuantity(value: string): string {
   return new Intl.NumberFormat("en-US", {
-    maximumFractionDigits: 2,
+    maximumFractionDigits: 4,
   }).format(Number(value));
 }
 

@@ -1,26 +1,44 @@
 "use client";
 
 import Decimal from "decimal.js";
-import { ArrowDownLeft, ArrowUpRight, Trash2 } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import {
+  ArrowDownLeft,
+  ArrowUpRight,
+  MoreVertical,
+  Pencil,
+  Trash2,
+} from "lucide-react";
+import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { formatUsd } from "@/lib/format/money";
+import { formatQuantity, formatUsd } from "@/lib/format/money";
 import { computeRowValuation, type TransactionRowLike } from "@/lib/calc/transactionRow";
-import { AddTransactionDialog } from "./add-transaction-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  TransactionDialog,
+  type AddSettledResult,
+  type EditableTransaction,
+} from "./transaction-dialog";
 
 export interface TransactionRow extends TransactionRowLike {
   id: string;
   transactionDate: string;
+  notes?: string | null;
 }
 
-function DeleteButton({
-  label,
-  onConfirm,
+function RowActions({
+  row,
+  onDelete,
 }: {
-  label: string;
-  onConfirm: () => void;
+  row: TransactionRow;
+  onDelete: (row: TransactionRow) => void;
 }) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
   const [confirming, setConfirming] = useState(false);
 
   if (confirming) {
@@ -28,7 +46,7 @@ function DeleteButton({
       <div className="flex shrink-0 items-center gap-1">
         <button
           type="button"
-          onClick={onConfirm}
+          onClick={() => onDelete(row)}
           className="rounded-sm border border-destructive px-2 py-1 text-[11.5px] font-medium text-destructive hover:bg-destructive/10"
         >
           Delete
@@ -45,14 +63,39 @@ function DeleteButton({
   }
 
   return (
-    <button
-      type="button"
-      onClick={() => setConfirming(true)}
-      aria-label={`Delete ${label}`}
-      className="shrink-0 rounded-sm p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-    >
-      <Trash2 className="h-3.5 w-3.5" />
-    </button>
+    <>
+      <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
+        <DropdownMenuTrigger
+          render={
+            <button
+              type="button"
+              aria-label={`Actions for ${row.type} of ${row.quantity} ${row.unit}`}
+              className="shrink-0 rounded-sm p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+            >
+              <MoreVertical className="h-3.5 w-3.5" />
+            </button>
+          }
+        />
+        <DropdownMenuContent>
+          <DropdownMenuItem onClick={() => setEditOpen(true)}>
+            <Pencil />
+            Edit
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            variant="destructive"
+            onClick={() => setConfirming(true)}
+          >
+            <Trash2 />
+            Delete
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      <TransactionDialog
+        transaction={row}
+        open={editOpen}
+        onOpenChange={setEditOpen}
+      />
+    </>
   );
 }
 
@@ -66,11 +109,17 @@ function Row({
   onDelete: (row: TransactionRow) => void;
 }) {
   const isBuy = row.type === "buy";
+  const isPending = row.id.startsWith("temp-");
   const valuation = computeRowValuation(row, currentPricePerTroyOz);
   const isGain = valuation.pnlUsd !== null && Number(valuation.pnlUsd) >= 0;
 
   return (
-    <tr className="border-b border-border last:border-0">
+    <tr
+      className={cn(
+        "border-b border-border last:border-0",
+        isPending && "opacity-60"
+      )}
+    >
       <td className="py-2.5 pr-3 pl-4">
         <div className="flex items-center gap-2">
           <div
@@ -91,7 +140,7 @@ function Row({
         </div>
       </td>
       <td className="py-2.5 pr-3 text-[13.5px] font-medium text-foreground">
-        {isBuy ? "Buy" : "Sell"} {row.quantity} {row.unit}
+        {isBuy ? "Buy" : "Sell"} {formatQuantity(row.quantity)} {row.unit}
       </td>
       <td className="py-2.5 pr-3 text-right font-mono text-[13px] tabular-nums text-foreground">
         {row.currency === "USD"
@@ -116,80 +165,45 @@ function Row({
         {valuation.pnlUsd ? formatUsd(valuation.pnlUsd) : "—"}
       </td>
       <td className="py-2.5 pl-1 text-right">
-        <DeleteButton
-          label={`${row.type} of ${row.quantity} ${row.unit}`}
-          onConfirm={() => onDelete(row)}
-        />
+        {isPending ? (
+          <span className="text-[11.5px] text-muted-foreground">Saving…</span>
+        ) : (
+          <RowActions row={row} onDelete={onDelete} />
+        )}
       </td>
     </tr>
   );
 }
 
+// State-lifted, presentational: `rows`/`error` and the mutation handlers
+// all live in DashboardContent now (it needs the same merged optimistic
+// list to recompute holdings/gain-loss instantly), not here. This
+// component just renders them.
 export function TransactionHistory({
-  transactions,
+  rows,
   currentPricePerTroyOz,
+  error,
+  onDelete,
+  onOptimisticAdd,
+  onAddSettled,
 }: {
-  transactions: TransactionRow[];
+  rows: TransactionRow[];
   currentPricePerTroyOz: string;
+  error: string | null;
+  onDelete: (row: TransactionRow) => void;
+  onOptimisticAdd: (row: EditableTransaction) => void;
+  onAddSettled: (tempId: string, result: AddSettledResult) => void;
 }) {
-  const router = useRouter();
-  // Optimistically-removed ids, not a mirrored copy of `transactions` —
-  // rows are derived from props each render, so a failed delete "puts
-  // the UI back" just by dropping the id back out of this set, and a
-  // successful one is naturally reflected once router.refresh() sends
-  // fresh props with that row already gone.
-  const [removedIds, setRemovedIds] = useState<Set<string>>(new Set());
-  const [error, setError] = useState<string | null>(null);
-  const rows = transactions.filter((row) => !removedIds.has(row.id));
-
-  useEffect(() => {
-    if (!error) return;
-    const timeout = setTimeout(() => setError(null), 5000);
-    return () => clearTimeout(timeout);
-  }, [error]);
-
-  async function handleDelete(row: TransactionRow) {
-    setError(null);
-    setRemovedIds((prev) => new Set(prev).add(row.id));
-
-    let res: Response;
-    try {
-      res = await fetch(`/api/transactions/${row.id}`, { method: "DELETE" });
-    } catch {
-      setRemovedIds((prev) => {
-        const next = new Set(prev);
-        next.delete(row.id);
-        return next;
-      });
-      setError("Couldn't reach the server — the transaction was not deleted.");
-      return;
-    }
-
-    if (!res.ok) {
-      // Put it back — the backend didn't confirm the delete.
-      setRemovedIds((prev) => {
-        const next = new Set(prev);
-        next.delete(row.id);
-        return next;
-      });
-      const body = await res.json().catch(() => null);
-      setError(body?.error?.message ?? "Couldn't delete — please try again.");
-      return;
-    }
-
-    // Holdings/gain-loss/chart derive from the full transaction list on
-    // the server, so a real re-fetch is still needed to keep those in
-    // sync — the row itself is already gone from the UI by this point.
-    router.refresh();
-  }
-
   return (
-    <div id="history" className="scroll-mt-8">
+    <div>
       <div className="mb-3 flex items-center justify-between">
         <h2 className="text-[15px] font-semibold text-foreground">
           Transaction History
         </h2>
-        <AddTransactionDialog />
+        <TransactionDialog
+          onOptimisticAdd={onOptimisticAdd}
+          onAddSettled={onAddSettled}
+        />
       </div>
       {error && (
         <div className="mb-2 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-[12.5px] text-destructive">
@@ -215,7 +229,7 @@ export function TransactionHistory({
                 key={row.id}
                 row={row}
                 currentPricePerTroyOz={currentPricePerTroyOz}
-                onDelete={handleDelete}
+                onDelete={onDelete}
               />
             ))}
           </tbody>
