@@ -56,10 +56,10 @@ holdings were hardcoded into the source.
 
 ### Price Layer
 
-- Live gold price sourced from external providers
-  (goldapi.io, Binance PAXG/USDT).
-- Multiple providers tried in order, so exhausting one free
-  tier does not take the dashboard down.
+- Live gold price sourced from goldapi.io.
+- Provider list is walked in order on cache miss — currently
+  one provider, structured so a second can be added later
+  without changing getPrice()'s rotation logic.
 - Prices cached in the database; external providers are only
   contacted when the cached value is stale.
 - Every displayed price carries the timestamp it was captured

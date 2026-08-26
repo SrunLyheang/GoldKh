@@ -92,10 +92,13 @@ area with `30px 36px` padding.
 
 **Hero price card** — Full width. A 3px gold gradient bar across
 the top, then a split row: on the left, a label above the large
-mono price with its percentage change, then a secondary row
+mono headline price **per damlung** (not per ounce — damlung is
+the unit the user thinks in day to day), then a secondary row
 showing spot per ounce and price per chi. On the right, the live
 "as of" timestamp — a green dot beside a mono time — stacked
-above a Refresh button.
+above a Refresh button. A live 24h % change was originally
+planned here but is not implemented — see progress-tracker.md's
+Open Questions.
 
 A one-line disclaimer belongs near the price header: local
 Cambodian gold shops sell above spot, so a position may show as a
@@ -110,27 +113,57 @@ value and sub-line green or red.
 
 **Transaction history** — Header row with the title and a gold
 "Add transaction" button carrying an icon and label. Below it, a
-scrollable list — `max-height: 280px`, `overflow-y: auto`. Each
-row: an icon chip on the left (buy is a green down-left arrow,
-sell a red up-right arrow) followed by description, date, and
-amount paid; value and colored mono gain/loss right-aligned.
+real `<table>` in a `max-height: 320px` scroll container (both
+axes — narrow viewports scroll horizontally too), sticky header
+row. Columns: Date (with the buy/sell icon chip — green
+down-left arrow for buy, red up-right for sell), Quantity, Paid,
+price/damlung, Current Value, P&L (colored green/red, "—" for
+sell rows and non-USD rows — see `lib/calc/transactionRow.ts`),
+delete. Delete is a trash icon that swaps in-place to
+Delete/Cancel buttons on click — no modal.
+
+**Price history chart** — Full width, below the transaction
+history. A 220px Recharts line chart of `price_snapshots` over
+time, converted to price/damlung to match the hero card's unit.
+Gold (`--primary`) line, muted dashed `CartesianGrid`, no axis
+lines (`axisLine={false}`), muted-foreground tick labels. When
+the user holds a position, a dashed `--muted-foreground`
+`ReferenceLine` marks their average cost — same "dashed
+break-even line" idea as the disclaimer's dealer-premium note,
+carried over from an earlier version of this app. Renders an
+empty-state message instead of a chart when fewer than 2 points
+exist yet, since `price_snapshots` only gains rows as users load
+the dashboard (no backfill — see progress-tracker.md).
+
+**Add transaction dialog** — Single-column, generously spaced
+(`gap-6` between fields, not a cramped 2-column grid). Buy/Sell
+is a two-button segmented toggle, not a dropdown — a binary
+choice doesn't need one. Quantity+unit and price+currency are
+each one row (input + compact `Select`). Restrained borders, no
+heavy shadows, per the minimalist-ui skill's principles applied
+within the existing Vault tokens (not its literal light palette,
+which would clash with this dark theme).
 
 **Spacing rhythm** — 26px vertical gap between major blocks
-(hero → stats → transactions). 16–18px padding inside
+(hero → stats → transactions → chart). 16–18px padding inside
 cards. 10px between list rows.
 
 **Empty states** — Every list has one. A new user's first screen
 is an empty dashboard, and it must tell them what to do.
 
+## Stale Price
+
+Resolved. When `isSnapshotStale()` (`lib/price/getPrice.ts`) is
+true, the hero card's dot switches from `--state-gain` to
+`--muted-foreground` and the "Live" label becomes "Stale" —
+implemented in `components/dashboard/hero-price-card.tsx`. Not
+amber or red: a stale price isn't an error, and doesn't carry
+gain/loss meaning.
+
 ## States Not Yet Designed
 
 These need a visual treatment before the dashboard is complete:
 
-- **Stale price.** The green dot signals live. When the cached
-  price is hours old because every provider failed, the dot and
-  timestamp need a distinct treatment — muted or amber, not
-  green, and not red, since it is not an error. The dashboard
-  still renders normally.
 - **Negative gain/loss alignment.** The minus sign occupies a
   character cell. Right-aligned mono columns need a consistent
   approach so positive and negative values line up.
