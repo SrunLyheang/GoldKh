@@ -8,10 +8,11 @@ import {
   Pencil,
   Trash2,
 } from "lucide-react";
-import { useState } from "react";
+import { createContext, useContext, useState } from "react";
 import { cn } from "@/lib/utils";
 import { formatQuantity, formatUsd } from "@/lib/format/money";
 import { computeRowValuation, type TransactionRowLike } from "@/lib/calc/transactionRow";
+import type { GoldUnit } from "@/lib/calc/units";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -34,10 +35,16 @@ export interface TransactionRow extends TransactionRowLike {
 // Shared between the desktop table's Row and the mobile card list's
 // TransactionCard so the two views can't drift on how a figure is
 // derived or blanked out.
-function getRowDisplay(row: TransactionRow, currentPricePerTroyOz: string) {
+function getRowDisplay(
+  row: TransactionRow,
+  currentPricePerTroyOz: string,
+  displayUnit: GoldUnit
+) {
   const isBuy = row.type === "buy";
   const isPending = row.id.startsWith("temp-");
   const valuation = computeRowValuation(row, currentPricePerTroyOz);
+  const pricePerDisplayUnit =
+    displayUnit === "chi" ? valuation.pricePerChi : valuation.pricePerDamlung;
   const isGain = valuation.pnlUsd !== null && Number(valuation.pnlUsd) >= 0;
   // Both cells fall back to "—" for two different reasons that used to
   // look identical: KHR conversion is deferred entirely (project-
@@ -56,22 +63,36 @@ function getRowDisplay(row: TransactionRow, currentPricePerTroyOz: string) {
           Number(new Decimal(row.quantity).times(row.pricePerUnit))
         )} KHR`;
 
-  return { isBuy, isPending, valuation, isGain, blankValueReason, paidAmount };
+  return {
+    isBuy,
+    isPending,
+    valuation,
+    pricePerDisplayUnit,
+    isGain,
+    blankValueReason,
+    paidAmount,
+  };
 }
+
+// Only RowActions needs the full row list (to compute holdings excluding
+// the row being edited, in TransactionDialog). Row and TransactionCard sit
+// between it and TransactionHistory but have no use for it themselves —
+// context lets RowActions read it directly instead of both intermediates
+// carrying a prop they never touch.
+const AllRowsContext = createContext<TransactionRow[]>([]);
 
 function RowActions({
   row,
-  allRows,
   currentPricePerTroyOz,
   onDelete,
   onEditSuccess,
 }: {
   row: TransactionRow;
-  allRows: TransactionRow[];
   currentPricePerTroyOz: string;
   onDelete: (row: TransactionRow) => void;
   onEditSuccess: () => void;
 }) {
+  const allRows = useContext(AllRowsContext);
   const [menuOpen, setMenuOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [confirming, setConfirming] = useState(false);
@@ -139,19 +160,26 @@ function RowActions({
 
 function Row({
   row,
-  allRows,
   currentPricePerTroyOz,
+  displayUnit,
   onDelete,
   onEditSuccess,
 }: {
   row: TransactionRow;
-  allRows: TransactionRow[];
   currentPricePerTroyOz: string;
+  displayUnit: GoldUnit;
   onDelete: (row: TransactionRow) => void;
   onEditSuccess: () => void;
 }) {
-  const { isBuy, isPending, valuation, isGain, blankValueReason, paidAmount } =
-    getRowDisplay(row, currentPricePerTroyOz);
+  const {
+    isBuy,
+    isPending,
+    valuation,
+    pricePerDisplayUnit,
+    isGain,
+    blankValueReason,
+    paidAmount,
+  } = getRowDisplay(row, currentPricePerTroyOz, displayUnit);
 
   return (
     <tr
@@ -186,7 +214,7 @@ function Row({
         {paidAmount}
       </td>
       <td className="py-2.5 pr-3 text-right font-mono text-[13px] tabular-nums text-muted-foreground">
-        {formatUsd(valuation.pricePerDamlung)}
+        {formatUsd(pricePerDisplayUnit)}
       </td>
       <td className="py-2.5 pr-3 text-right font-mono text-[13px] tabular-nums text-foreground">
         {valuation.currentValueUsd ? (
@@ -214,7 +242,6 @@ function Row({
         ) : (
           <RowActions
             row={row}
-            allRows={allRows}
             currentPricePerTroyOz={currentPricePerTroyOz}
             onDelete={onDelete}
             onEditSuccess={onEditSuccess}
@@ -230,19 +257,26 @@ function Row({
 // sideways scrolling on phone widths.
 function TransactionCard({
   row,
-  allRows,
   currentPricePerTroyOz,
+  displayUnit,
   onDelete,
   onEditSuccess,
 }: {
   row: TransactionRow;
-  allRows: TransactionRow[];
   currentPricePerTroyOz: string;
+  displayUnit: GoldUnit;
   onDelete: (row: TransactionRow) => void;
   onEditSuccess: () => void;
 }) {
-  const { isBuy, isPending, valuation, isGain, blankValueReason, paidAmount } =
-    getRowDisplay(row, currentPricePerTroyOz);
+  const {
+    isBuy,
+    isPending,
+    valuation,
+    pricePerDisplayUnit,
+    isGain,
+    blankValueReason,
+    paidAmount,
+  } = getRowDisplay(row, currentPricePerTroyOz, displayUnit);
 
   return (
     <Panel className={cn("flex flex-col gap-3", isPending && "opacity-60")}>
@@ -276,7 +310,6 @@ function TransactionCard({
         ) : (
           <RowActions
             row={row}
-            allRows={allRows}
             currentPricePerTroyOz={currentPricePerTroyOz}
             onDelete={onDelete}
             onEditSuccess={onEditSuccess}
@@ -289,9 +322,11 @@ function TransactionCard({
           <MonoValue className="text-[13px]">{paidAmount}</MonoValue>
         </div>
         <div>
-          <p className="text-[11.5px] text-muted-foreground">/damlung</p>
+          <p className="text-[11.5px] text-muted-foreground">
+            /{displayUnit}
+          </p>
           <MonoValue tone="muted" className="text-[13px]">
-            {formatUsd(valuation.pricePerDamlung)}
+            {formatUsd(pricePerDisplayUnit)}
           </MonoValue>
         </div>
         <div>
@@ -332,6 +367,7 @@ export function TransactionHistory({
   currentPricePerTroyOz,
   error,
   successMessage,
+  displayUnit = "damlung",
   onDelete,
   onAddClick,
   onEditSuccess,
@@ -340,6 +376,7 @@ export function TransactionHistory({
   currentPricePerTroyOz: string;
   error: string | null;
   successMessage: string | null;
+  displayUnit?: GoldUnit;
   onDelete: (row: TransactionRow) => void;
   onAddClick: () => void;
   onEditSuccess: () => void;
@@ -359,45 +396,49 @@ export function TransactionHistory({
       {successMessage && (
         <InlineBanner variant="success">{successMessage}</InlineBanner>
       )}
-      <div className="hidden max-h-80 overflow-auto rounded-lg border border-border bg-card md:block">
-        <table className="w-full min-w-140 border-collapse">
-          <thead className="sticky top-0 bg-card">
-            <tr className="border-b border-border text-[11.5px] font-medium text-muted-foreground">
-              <th className="px-4 py-2.5 text-left font-medium">Date</th>
-              <th className="py-2.5 pr-3 text-left font-medium">Quantity</th>
-              <th className="py-2.5 pr-3 text-right font-medium">Paid</th>
-              <th className="py-2.5 pr-3 text-right font-medium">/damlung</th>
-              <th className="py-2.5 pr-3 text-right font-medium">Current Value</th>
-              <th className="py-2.5 pr-3 text-right font-medium">P&amp;L</th>
-              <th className="py-2.5 pr-4" />
-            </tr>
-          </thead>
-          <tbody className="px-4">
-            {rows.map((row) => (
-              <Row
-                key={row.id}
-                row={row}
-                allRows={rows}
-                currentPricePerTroyOz={currentPricePerTroyOz}
-                onDelete={onDelete}
-                onEditSuccess={onEditSuccess}
-              />
-            ))}
-          </tbody>
-        </table>
-      </div>
-      <div className="flex flex-col gap-3 md:hidden">
-        {rows.map((row) => (
-          <TransactionCard
-            key={row.id}
-            row={row}
-            allRows={rows}
-            currentPricePerTroyOz={currentPricePerTroyOz}
-            onDelete={onDelete}
-            onEditSuccess={onEditSuccess}
-          />
-        ))}
-      </div>
+      <AllRowsContext.Provider value={rows}>
+        <div className="hidden max-h-80 overflow-auto rounded-lg border border-border bg-card md:block">
+          <table className="w-full min-w-140 border-collapse">
+            <thead className="sticky top-0 bg-card">
+              <tr className="border-b border-border text-[11.5px] font-medium text-muted-foreground">
+                <th className="px-4 py-2.5 text-left font-medium">Date</th>
+                <th className="py-2.5 pr-3 text-left font-medium">Quantity</th>
+                <th className="py-2.5 pr-3 text-right font-medium">Paid</th>
+                <th className="py-2.5 pr-3 text-right font-medium">
+                  /{displayUnit}
+                </th>
+                <th className="py-2.5 pr-3 text-right font-medium">Current Value</th>
+                <th className="py-2.5 pr-3 text-right font-medium">P&amp;L</th>
+                <th className="py-2.5 pr-4" />
+              </tr>
+            </thead>
+            <tbody className="px-4">
+              {rows.map((row) => (
+                <Row
+                  key={row.id}
+                  row={row}
+                  currentPricePerTroyOz={currentPricePerTroyOz}
+                  displayUnit={displayUnit}
+                  onDelete={onDelete}
+                  onEditSuccess={onEditSuccess}
+                />
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <div className="flex flex-col gap-3 md:hidden">
+          {rows.map((row) => (
+            <TransactionCard
+              key={row.id}
+              row={row}
+              currentPricePerTroyOz={currentPricePerTroyOz}
+              displayUnit={displayUnit}
+              onDelete={onDelete}
+              onEditSuccess={onEditSuccess}
+            />
+          ))}
+        </div>
+      </AllRowsContext.Provider>
     </div>
   );
 }

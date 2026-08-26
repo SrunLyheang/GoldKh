@@ -11,6 +11,8 @@
 | Driver    | `@neondatabase/serverless`                     | Pooled connection string only — see invariant 9                |
 | ORM       | Drizzle                                         | Returns `numeric` as strings; no ORM-level float coercion     |
 | Price     | goldapi.io, Binance PAXG                       | External spot price providers, contacted only on cache miss   |
+| Deploy    | Vercel                                          | Hosting platform — reference Next.js host, pairs with Neon    |
+| Errors    | Sentry (`@sentry/nextjs`)                       | Error tracking, client and server                             |
 
 ## System Boundaries
 
@@ -90,3 +92,65 @@
    string, never the direct one. Serverless functions open a
    connection per invocation; direct connections exhaust quickly
    under that pattern.
+10. Required environment variables (`DATABASE_URL`,
+    `CLERK_SECRET_KEY`, `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`,
+    `GOLDAPI_IO_API_KEY`) are validated with Zod in `lib/env.ts`'s
+    `validateEnv()`, called once from `proxy.ts`, and fail the
+    process at boot if missing or malformed — the same
+    validate-at-the-boundary rule `code-standards.md` applies to
+    request bodies and price-provider responses, applied to process
+    startup. `CLERK_WEBHOOK_SIGNING_SECRET` is validated for shape
+    when present but not required to boot: it gates one route
+    (`app/api/webhooks/clerk/route.ts`), which already verifies it
+    lazily via `verifyWebhook()` on actual delivery and returns 400
+    on failure — hard-requiring it at boot would block the entire
+    app over that one route's secret.
+
+## Deployment and Operations
+
+- **Platform: Vercel.** No direct-connection risk beyond invariant
+  9 above — Vercel's serverless functions are exactly the "one
+  connection per invocation" pattern the pooled Neon string exists
+  for.
+- **CI: GitHub Actions**, running `lint` + `test` + `build` on every
+  PR into `main`, blocking merge on failure. Mechanically enforces
+  the `npm run build` gate `ai-workflow-rules.md` already requires
+  before moving to the next unit.
+- **Migrations run manually against production** (`drizzle-kit`),
+  not as a Vercel build-time hook — a build failure should not be
+  able to leave a migration half-applied.
+- **First-deploy checklist** (outside this repo, not automatable):
+  1. Connect the Vercel project to `SrunLyheang/GoldKh`, auto-deploy
+     on push to `main`.
+  2. Set production env vars in Vercel's dashboard — `DATABASE_URL`
+     (Neon's pooled connection string, invariant 9),
+     `CLERK_SECRET_KEY` / `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` from
+     Clerk's **production** instance (not the dev/test keys used
+     locally — Clerk issues separate key pairs per instance),
+     `GOLDAPI_IO_API_KEY`, and (once the steps below are done)
+     `CLERK_WEBHOOK_SIGNING_SECRET` and `NEXT_PUBLIC_SENTRY_DSN`.
+  3. Run `npx drizzle-kit migrate` by hand against the production
+     `DATABASE_URL` before or as part of any deploy that changes
+     `lib/db/schema.ts` — never automated into the Vercel build.
+  4. After the first deploy, register
+     `https://<production-domain>/api/webhooks/clerk` in the Clerk
+     Dashboard's Webhooks section, subscribed to `user.deleted` —
+     the domain isn't known until step 1 has happened once.
+  5. Create a Sentry project and add its DSN as
+     `NEXT_PUBLIC_SENTRY_DSN` in Vercel. Optionally also add
+     `SENTRY_AUTH_TOKEN` and org/project slugs to `next.config.ts`'s
+     `withSentryConfig` call to enable source-map upload (skipped
+     today — see the comment in `next.config.ts` itself).
+- **Error tracking: Sentry**, client and server, via
+  `@sentry/nextjs`. Surfaces price-layer and query failures directly
+  instead of relying on user reports.
+- **Security headers**: a baseline set (`X-Content-Type-Options`,
+  `Referrer-Policy`, `frame-ancestors`, HSTS) is set in
+  `next.config.ts`'s `headers()`. A full Content-Security-Policy is
+  deferred — see `progress-tracker.md`'s Open Questions — pending an
+  audit of what Clerk's embedded UI and Recharts actually load and
+  execute.
+- **Backup policy: Neon free-tier point-in-time recovery, accepted
+  as-is.** No custom backup/export job. A deliberate hobby-project
+  tradeoff, not an oversight — see `progress-tracker.md`'s
+  Architecture Decisions.

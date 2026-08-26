@@ -11,6 +11,7 @@ export interface TransactionRowLike {
 
 export interface RowValuation {
   pricePerDamlung: string;
+  pricePerChi: string;
   amountUsd: string | null;
   currentValueUsd: string | null;
   pnlUsd: string | null;
@@ -28,14 +29,14 @@ export function computeRowValuation(
   tx: TransactionRowLike,
   currentPricePerTroyOz: string
 ): RowValuation {
-  const pricePerDamlung = priceFromTroyOz(
-    priceToTroyOz(tx.pricePerUnit, tx.unit),
-    "damlung"
-  );
+  const priceTroyOz = priceToTroyOz(tx.pricePerUnit, tx.unit);
+  const pricePerDamlung = priceFromTroyOz(priceTroyOz, "damlung");
+  const pricePerChi = priceFromTroyOz(priceTroyOz, "chi");
 
   if (tx.currency !== "USD") {
     return {
       pricePerDamlung,
+      pricePerChi,
       amountUsd: null,
       currentValueUsd: null,
       pnlUsd: null,
@@ -48,6 +49,7 @@ export function computeRowValuation(
   if (tx.type === "sell") {
     return {
       pricePerDamlung,
+      pricePerChi,
       amountUsd,
       currentValueUsd: null,
       pnlUsd: null,
@@ -62,5 +64,12 @@ export function computeRowValuation(
     ? "0"
     : new Decimal(pnlUsd).div(amountUsd).times(100).toString();
 
-  return { pricePerDamlung, amountUsd, currentValueUsd, pnlUsd, pnlPercent };
+  return {
+    pricePerDamlung,
+    pricePerChi,
+    amountUsd,
+    currentValueUsd,
+    pnlUsd,
+    pnlPercent,
+  };
 }

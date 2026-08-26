@@ -1,3 +1,4 @@
+import type { GoldUnit } from "@/lib/calc/units";
 import { formatPercent, formatQuantity, formatUsd } from "@/lib/format/money";
 import { toneFromAmount } from "@/lib/format/tone";
 import { MonoValue } from "./mono-value";
@@ -7,9 +8,11 @@ interface StatRowProps {
   totalChi: string;
   totalDamlung: string;
   averageCostPerChi: string;
+  averageCostPerDamlung: string;
   marketValueUsd: string;
   gainLossUsd: string;
   gainLossPercent: string;
+  displayUnit?: GoldUnit;
 }
 
 function StatCard({
@@ -45,21 +48,28 @@ export function StatRow({
   totalChi,
   totalDamlung,
   averageCostPerChi,
+  averageCostPerDamlung,
   marketValueUsd,
   gainLossUsd,
   gainLossPercent,
+  displayUnit = "damlung",
 }: StatRowProps) {
+  const isChi = displayUnit === "chi";
   return (
     <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
       <StatCard
         label="Total Holdings"
-        value={`${formatQuantity(totalChi)} chi`}
-        subLine={`${formatQuantity(totalDamlung)} damlung`}
+        value={`${formatQuantity(isChi ? totalChi : totalDamlung)} ${
+          isChi ? "chi" : "damlung"
+        }`}
+        subLine={`${formatQuantity(isChi ? totalDamlung : totalChi)} ${
+          isChi ? "damlung" : "chi"
+        }`}
       />
       <StatCard
         label="Average Cost"
-        value={formatUsd(averageCostPerChi)}
-        subLine="per chi"
+        value={formatUsd(isChi ? averageCostPerChi : averageCostPerDamlung)}
+        subLine={`per ${isChi ? "chi" : "damlung"}`}
       />
       <StatCard
         label="Market Value"

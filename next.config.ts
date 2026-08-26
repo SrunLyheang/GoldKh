@@ -1,7 +1,35 @@
 import type { NextConfig } from "next";
+import { withSentryConfig } from "@sentry/nextjs";
+
+// Baseline security headers only — a full Content-Security-Policy is
+// deferred (see architecture.md's Deployment and Operations section)
+// pending an audit of what Clerk's embedded UI and Recharts actually
+// load/execute. `frame-ancestors 'self'` here is a single-directive CSP
+// scoped to clickjacking protection, not a substitute for the real thing.
+const securityHeaders = [
+  { key: "X-Content-Type-Options", value: "nosniff" },
+  { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+  { key: "Content-Security-Policy", value: "frame-ancestors 'self'" },
+  {
+    key: "Strict-Transport-Security",
+    value: "max-age=63072000; includeSubDomains",
+  },
+];
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  async headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: securityHeaders,
+      },
+    ];
+  },
 };
 
-export default nextConfig;
+// No org/project/authToken set — source-map upload is skipped until
+// SENTRY_AUTH_TOKEN etc. are configured after the Sentry project exists.
+// `silent: true` avoids Sentry's build-time console noise until then.
+export default withSentryConfig(nextConfig, {
+  silent: true,
+});

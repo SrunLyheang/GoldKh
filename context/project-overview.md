@@ -108,6 +108,9 @@ now hold 7 chi, still at a $300 average cost.
   -Payment systems
 - A native mobile app.
 - Field-level encryption of holdings data.
+- Terms of Service / Privacy Policy. Explicitly skipped per the
+  user (2026-08-26 hardening grilling session), despite open public
+  signup — see `progress-tracker.md`'s Architecture Decisions.
 
 ## Success Criteria
 
