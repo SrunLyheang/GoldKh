@@ -24,6 +24,7 @@ import {
 import { DateField } from "@/components/ui/date-field";
 import { toDateKey } from "@/components/ui/calendar";
 import { LoadingScreen } from "@/components/ui/loading";
+import { useLocale } from "@/lib/i18n/locale-context";
 import { cn } from "@/lib/utils";
 import { formatQuantity, formatUsd } from "@/lib/format/money";
 import { transactionInputSchema } from "@/lib/validation/transaction";
@@ -98,6 +99,10 @@ export function TransactionDialog({
   const isEdit = transaction !== undefined;
   const isOptimistic = !isEdit && onOptimisticAdd !== undefined;
   const router = useRouter();
+  const { t } = useLocale();
+  const unitLabel = (u: "chi" | "damlung") => (u === "chi" ? t.unit.chi : t.unit.damlung);
+  const typeLabel = (option: "buy" | "sell") =>
+    option === "buy" ? t.transactions.buy : t.transactions.sell;
 
   const [type, setType] = useState<"buy" | "sell">(transaction?.type ?? "buy");
   const [quantity, setQuantity] = useState(
@@ -181,6 +186,8 @@ export function TransactionDialog({
     }
 
     let res: Response;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let body: any;
     try {
       res = await fetch(
         isEdit ? `/api/transactions/${transaction.id}` : "/api/transactions",
@@ -190,9 +197,10 @@ export function TransactionDialog({
           body: JSON.stringify(payload),
         }
       );
+      body = await res.json();
     } catch {
       setSubmitting(false);
-      const message = "Couldn't reach the server — the transaction was not saved.";
+      const message = t.dialog.couldntSave;
       if (isOptimistic) {
         onAddSettled!(tempId!, { ok: false, message });
       }
@@ -200,11 +208,10 @@ export function TransactionDialog({
       return;
     }
 
-    const body = await res.json();
     setSubmitting(false);
 
     if (!res.ok || "error" in body) {
-      const message = body.error?.message ?? "Something went wrong";
+      const message = body.error?.message ?? t.dialog.somethingWrong;
       if (isOptimistic) {
         onAddSettled!(tempId!, { ok: false, message });
       }
@@ -227,40 +234,38 @@ export function TransactionDialog({
       <DialogContent className="sm:max-w-100">
         {submitting ? (
           <LoadingScreen
-            label={isEdit ? "Saving changes…" : "Saving transaction…"}
+            label={isEdit ? t.dialog.savingChanges : t.dialog.savingTransaction}
             className="min-h-56"
           />
         ) : (
           <>
             <DialogHeader>
-              <DialogTitle>{isEdit ? "Edit transaction" : "Add transaction"}</DialogTitle>
+              <DialogTitle>{isEdit ? t.dialog.editTitle : t.dialog.addTitle}</DialogTitle>
               <DialogDescription>
-                {isEdit
-                  ? "Update the details of this transaction."
-                  : "Record a buy or sell against your gold holdings."}
+                {isEdit ? t.dialog.editDescription : t.dialog.addDescription}
               </DialogDescription>
             </DialogHeader>
-            <form onSubmit={handleSubmit} className="grid gap-6 pt-1">
-              <div className="grid grid-cols-2 gap-2">
+            <form onSubmit={handleSubmit} className="grid gap-7 pt-2">
+              <div className="grid grid-cols-2 gap-2.5">
                 {(["buy", "sell"] as const).map((option) => (
                   <button
                     key={option}
                     type="button"
                     onClick={() => setType(option)}
                     className={cn(
-                      "rounded-sm border py-2 text-[13.5px] font-medium capitalize transition-colors",
+                      "tt-label border py-2.5 text-[12px] transition-colors",
                       type === option
                         ? "border-primary bg-primary text-primary-foreground"
                         : "border-border bg-transparent text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                     )}
                   >
-                    {option}
+                    {typeLabel(option)}
                   </button>
                 ))}
               </div>
 
-              <div className="grid gap-1.5">
-                <Label htmlFor="quantity">Quantity</Label>
+              <div className="grid gap-2">
+                <Label htmlFor="quantity">{t.dialog.quantity}</Label>
                 <div className="flex gap-2">
                   <Input
                     id="quantity"
@@ -282,11 +287,13 @@ export function TransactionDialog({
                     required
                   >
                     <SelectTrigger id="unit" className="w-28">
-                      <SelectValue />
+                      <SelectValue>
+                        {(value: "chi" | "damlung") => unitLabel(value)}
+                      </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="chi">Chi</SelectItem>
-                      <SelectItem value="damlung">Damlung</SelectItem>
+                      <SelectItem value="chi">{t.unit.chi}</SelectItem>
+                      <SelectItem value="damlung">{t.unit.damlung}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -294,19 +301,20 @@ export function TransactionDialog({
                   <p className="text-[11.5px] text-destructive">{fieldError("quantity")}</p>
                 )}
                 {exceedsHoldings && (
-                  <div className="flex items-start gap-2 rounded-lg border border-border bg-muted/30 px-3 py-2 text-[12px] text-muted-foreground">
+                  <div className="flex items-start gap-2 rounded-lg border border-border bg-muted/30 px-3 py-2.5 text-[12px] text-muted-foreground">
                     <TriangleAlert className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                     <span>
-                      This exceeds your current holdings of{" "}
-                      {formatQuantity(fromTroyOz(holdingsExcludingSelf.totalTroyOz, unit))}{" "}
-                      {unit}.
+                      {t.dialog.exceedsHoldings(
+                        formatQuantity(fromTroyOz(holdingsExcludingSelf.totalTroyOz, unit)),
+                        unitLabel(unit)
+                      )}
                     </span>
                   </div>
                 )}
               </div>
 
-              <div className="grid gap-1.5">
-                <Label htmlFor="pricePerUnit">Price per unit</Label>
+              <div className="grid gap-2">
+                <Label htmlFor="pricePerUnit">{t.dialog.pricePerUnit}</Label>
                 <div className="flex gap-2">
                   <Input
                     id="pricePerUnit"
@@ -341,9 +349,9 @@ export function TransactionDialog({
                 )}
               </div>
 
-              <div className="rounded-lg border border-border bg-muted/30 px-3 py-2.5 text-[12.5px]">
+              <div className="rounded-lg border border-border bg-muted/30 px-3.5 py-3 text-[12.5px]">
                 <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">Total cost</span>
+                  <span className="tt-label text-[10.5px] text-muted-foreground">{t.dialog.totalCost}</span>
                   <span className="font-mono tabular-nums text-foreground">
                     {totalCost === null
                       ? "—"
@@ -352,16 +360,16 @@ export function TransactionDialog({
                         : `${new Intl.NumberFormat("en-US").format(Number(totalCost))} KHR`}
                   </span>
                 </div>
-                <div className="mt-1 flex items-center justify-between">
-                  <span className="text-muted-foreground">Current spot</span>
+                <div className="mt-1.5 flex items-center justify-between">
+                  <span className="tt-label text-[10.5px] text-muted-foreground">{t.dialog.currentSpot}</span>
                   <span className="font-mono tabular-nums text-muted-foreground">
-                    {formatUsd(spotPerUnit)}/{unit}
+                    {formatUsd(spotPerUnit)}/{unitLabel(unit).toLowerCase()}
                   </span>
                 </div>
               </div>
 
-              <div className="grid gap-1.5">
-                <Label htmlFor="transactionDate">Date</Label>
+              <div className="grid gap-2">
+                <Label htmlFor="transactionDate">{t.dialog.date}</Label>
                 <DateField
                   name="transactionDate"
                   value={transactionDate}
@@ -369,9 +377,9 @@ export function TransactionDialog({
                 />
               </div>
 
-              <div className="grid gap-1.5">
+              <div className="grid gap-2">
                 <Label htmlFor="notes" className="text-muted-foreground">
-                  Notes (optional)
+                  {t.dialog.notes}
                 </Label>
                 <Input
                   id="notes"
@@ -389,7 +397,7 @@ export function TransactionDialog({
               {error && <p className="text-[12.5px] text-destructive">{error}</p>}
 
               <Button type="submit" disabled={submitting} className="w-full">
-                Save transaction
+                {t.dialog.saveTransaction}
               </Button>
             </form>
           </>

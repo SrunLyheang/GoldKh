@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 56" width="220" height="56">
+  <defs>
+    <linearGradient id="ingot" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f6dd9c" />
+      <stop offset="45%" stop-color="#e8b84b" />
+      <stop offset="100%" stop-color="#b8862e" />
+    </linearGradient>
+    <linearGradient id="ingotTop" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#fbeac0" />
+      <stop offset="100%" stop-color="#f0c667" />
+    </linearGradient>
+  </defs>
+
+  <rect width="56" height="56" rx="12" fill="#151009" />
+  <rect x="0.5" y="0.5" width="55" height="55" rx="11.5" fill="none" stroke="#2a2013" />
+
+  <path d="M16 19 L40 19 L46 38 L10 38 Z" fill="url(#ingot)" />
+  <path d="M16 19 L40 19 L37 23 L19 23 Z" fill="url(#ingotTop)" />
+  <path d="M16 19 L19 23 L14.5 38 L10 38 Z" fill="#c99a3a" opacity="0.55" />
+
+  <text
+    x="70"
+    y="36"
+    font-family="'Geist Mono', 'JetBrains Mono', ui-monospace, monospace"
+    font-size="26"
+    font-weight="600"
+    letter-spacing="-0.5"
+    fill="#f5f1e8"
+  >Gold<tspan fill="#e8b84b">Kh</tspan></text>
+</svg>

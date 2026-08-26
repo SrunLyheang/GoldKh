@@ -146,9 +146,12 @@ heavy shadows, per the minimalist-ui skill's principles applied
 within the existing Vault tokens (not its literal light palette,
 which would clash with this dark theme).
 
-**Spacing rhythm** — 26px vertical gap between major blocks
-(hero → stats → transactions → chart). 16–18px padding inside
-cards. 10px between list rows.
+**Spacing rhythm** — 32px (28px on mobile) vertical gap between
+major blocks (hero → stats → transactions → chart). 20–28px padding
+inside cards (`md`/`lg` `Panel` sizes respectively). 12px between
+list rows. Widened from the original 26px/16–18px/10px figures in a
+2026-08-27 pass for more breathing room — see progress-tracker.md's
+"Spacing pass" entry.
 
 **Empty states** — Every list has one. A new user's first screen
 is an empty dashboard, and it must tell them what to do.

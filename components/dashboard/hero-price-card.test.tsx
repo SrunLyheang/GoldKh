@@ -32,18 +32,18 @@ describe("HeroPriceCard", () => {
 
   it('labels a fresh price "Live"', () => {
     renderCard({ isStale: false });
-    expect(screen.getByText(/^Live as of/)).toBeInTheDocument();
+    expect(screen.getByText(/^\[Live\] as of/)).toBeInTheDocument();
   });
 
   it('labels a stale price "Stale", not an error/gain color', () => {
     renderCard({ isStale: true });
-    expect(screen.getByText(/^Stale as of/)).toBeInTheDocument();
+    expect(screen.getByText(/^\[Stale\] as of/)).toBeInTheDocument();
   });
 
   it("shows the spot-vs-retail-premium disclaimer", () => {
     renderCard();
     expect(
-      screen.getByText(/typically sell above spot/)
+      screen.getByText(/price differently from the global spot rate/)
     ).toBeInTheDocument();
   });
 

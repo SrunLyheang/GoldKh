@@ -6,6 +6,7 @@ import { useEffect, useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/loading";
 import { MANUAL_REFRESH_COOLDOWN_MS } from "@/lib/constants/staleness";
+import { useLocale } from "@/lib/i18n/locale-context";
 
 function minutesFromMs(ms: number): number {
   return Math.max(1, Math.ceil(ms / 60_000));
@@ -24,6 +25,7 @@ export function RefreshButton({
   cooldownEndsAt: number | null;
 }) {
   const router = useRouter();
+  const { t } = useLocale();
   const [isPending, startTransition] = useTransition();
   const [cooldownEndsAt, setCooldownEndsAt] = useState(initialCooldownEndsAt);
   const [inCooldown, setInCooldown] = useState(initialCooldownEndsAt !== null);
@@ -52,7 +54,7 @@ export function RefreshButton({
 
   async function handleClick() {
     if (inCooldown && cooldownEndsAt) {
-      showToast(`Please wait ${minutesFromMs(cooldownEndsAt - Date.now())} minutes`);
+      showToast(t.refresh.pleaseWait(minutesFromMs(cooldownEndsAt - Date.now())));
       return;
     }
 
@@ -60,7 +62,7 @@ export function RefreshButton({
     try {
       res = await fetch("/api/price/refresh", { method: "POST" });
     } catch {
-      showToast("Couldn't reach the server — try again shortly");
+      showToast(t.refresh.couldntReach);
       return;
     }
 
@@ -74,9 +76,7 @@ export function RefreshButton({
         setCooldownEndsAt(Date.now() + MANUAL_REFRESH_COOLDOWN_MS);
         setInCooldown(true);
       }
-      showToast(
-        body?.error?.message ?? "Couldn't refresh the price — try again shortly"
-      );
+      showToast(body?.error?.message ?? t.refresh.couldntRefresh);
       return;
     }
 
@@ -91,7 +91,7 @@ export function RefreshButton({
     startTransition(() => {
       router.refresh();
     });
-    showToast("Refreshed");
+    showToast(t.refresh.refreshed);
   }
 
   return (
@@ -101,11 +101,11 @@ export function RefreshButton({
         size="sm"
         aria-disabled={inCooldown}
         className={inCooldown ? "opacity-50" : undefined}
-        title={inCooldown ? "Refreshed recently" : undefined}
+        title={inCooldown ? t.refresh.refreshedRecently : undefined}
         onClick={handleClick}
       >
         {isPending ? <Spinner size="xs" /> : <RefreshCw className="h-4 w-4" />}
-        Refresh
+        <span className="tt-label text-[11.5px]">{t.refresh.label}</span>
       </Button>
       {toast && (
         <div
