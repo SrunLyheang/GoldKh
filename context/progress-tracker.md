@@ -17,9 +17,23 @@ Update this file after every meaningful implementation change.
 - Rate limiting on the transaction-mutating routes is implemented —
   the last item of the three from the 2026-08-26 grilling session
   (see Architecture Decisions). Verified (typecheck, full test
-  suite, lint, `next build` all clean) but not yet committed. Next:
-  UI/component test coverage (item 3), the one remaining priority
-  item.
+  suite, lint, `next build` all clean) but not yet committed.
+- A second 2026-08-26 grilling session (prompted by a production-
+  readiness review) added six hardening items ahead of new features
+  — see "Next Up" below and the matching Architecture Decisions
+  entries. All six (3a-3f) are now done and verified, one at a time,
+  per `ai-workflow-rules.md`. Two real gaps were found and fixed
+  along the way, not just the planned work: the KHR aggregation bug
+  itself (3a), and a boot-blocking `CLERK_WEBHOOK_SIGNING_SECRET`
+  requirement discovered while verifying 3c (fixed by making it
+  optional — see 3c's note and architecture.md invariant 10).
+- Item 3 (UI/component test coverage) is now also done — see its own
+  "Next Up" entry and Architecture Decisions writeup above/below.
+  98/98 tests pass. Everything from the two 2026-08-26 grilling
+  sessions is complete except the external, non-code Vercel
+  first-deploy checklist (architecture.md). Remaining code work is
+  items 5-7, all explicitly deferred until they cause a real
+  problem, not on a fixed timeline.
 
 ## Completed
 
@@ -80,15 +94,98 @@ Decisions.)
    Architecture Decisions.
 2. ~~Clerk `user.deleted` webhook.~~ Done — see Architecture
    Decisions.
-3. UI/component test coverage (see Architecture Decisions) —
-   after 1 and 2, before new features.
-4. Pagination or an alternate treatment for transaction lists
+3. ~~UI/component test coverage.~~ Done — see Architecture
+   Decisions for the full writeup (infra setup, coverage scope,
+   the RTL-cleanup gap found and fixed, verification).
+
+Production-readiness batch, added from the 2026-08-26 hardening
+grilling session, worked in this order (each small and independently
+verifiable, per `ai-workflow-rules.md`'s "When to Split Work"):
+
+3a. ~~Fix the KHR-poisons-`computeHoldings` bug.~~ Done — `currency`
+    added to `TransactionLike`, non-USD rows skipped in the
+    accumulation loop, two regression tests added
+    (`lib/calc/holdings.test.ts`). Verified: typecheck, full test
+    suite (64/64), lint, `next build` all clean.
+3b. ~~`lib/env.ts` — Zod-validated env vars, fail fast at boot.~~
+    Done. Deliberately a `validateEnv()` function called once from
+    `proxy.ts` (runs before any request, in every environment, never
+    imported by a test) rather than a parsed singleton every module
+    reads from — the latter would force `GOLDAPI_IO_API_KEY` etc. to
+    be eagerly present at import time and break `goldapi.ts`'s
+    existing per-call test coverage (it deletes the env var mid-test
+    to verify its own throw). `lib/db/client.ts`,
+    `lib/price/providers/goldapi.ts`, and `drizzle.config.ts` keep
+    their existing inline checks unchanged. 8 new tests
+    (`lib/env.test.ts`). Verified: typecheck, full test suite
+    (72/72), lint, `next build` all clean (against real `.env.local`
+    values, confirming `validateEnv()` passes under real conditions).
+3c. ~~Baseline security headers in `next.config.ts`.~~ Done —
+    `X-Content-Type-Options`, `Referrer-Policy`,
+    `Content-Security-Policy: frame-ancestors 'self'`, and
+    `Strict-Transport-Security`, applied to every route via
+    `headers()`. **Discovered and fixed a real gap while verifying
+    this**: `next start` failed to boot at all, because
+    `CLERK_WEBHOOK_SIGNING_SECRET` genuinely isn't set in
+    `.env.local` (the Clerk Dashboard webhook registration is still
+    the open, not-yet-done-outside-this-repo step noted elsewhere in
+    this file) and `lib/env.ts` was hard-requiring it — blocking the
+    entire app over one non-critical route's secret. Fixed by making
+    it `.optional()` in the schema: validated for shape if present,
+    no longer required to boot. `app/api/webhooks/clerk/route.ts`'s
+    own `verifyWebhook()` already throws (caught, returned as 400)
+    if a webhook actually arrives with it unset — no behavior change
+    there. This revises architecture.md invariant 10 and the
+    Architecture Decisions entry below; recorded here since it's a
+    real adjustment to what was previously agreed, not a silent
+    one. Verified end to end: typecheck, full test suite (73/73,
+    +1 new test), lint, `next build`, and an actual `next start`
+    confirming the app boots and serves all four headers.
+3d. ~~GitHub Actions CI — `lint` + `test` + `build`, blocking on PRs
+    into `main`.~~ Done — `.github/workflows/ci.yml`, `npm ci` then
+    `lint`/`test`/`build`, on every push/PR into `main`. Build needs
+    at least a placeholder `DATABASE_URL` (confirmed by temporarily
+    hiding `.env.local` locally — `next build` fails without one,
+    since route-handler page-data collection imports
+    `lib/db/client.ts`); CI sets well-formed placeholder values for
+    `DATABASE_URL`, `CLERK_SECRET_KEY`,
+    `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, and `GOLDAPI_IO_API_KEY` at
+    the workflow level — never real credentials.
+    `CLERK_WEBHOOK_SIGNING_SECRET` is omitted, matching its
+    optional status (see 3c). Verified by running the exact same env
+    vars locally (`.env.local` hidden) — build passes clean.
+3e. ~~Sentry (`@sentry/nextjs`), client + server.~~ Done —
+    `instrumentation.ts` (server + edge, via `register()`, plus
+    `onRequestError` wired to `Sentry.captureRequestError`) and
+    `instrumentation-client.ts` (browser), both calling `Sentry.init()`
+    with `dsn: process.env.NEXT_PUBLIC_SENTRY_DSN` — a documented
+    no-op when unset, so every environment stays safe until a real
+    Sentry project exists. `next.config.ts` wrapped with
+    `withSentryConfig` (`silent: true`, no org/project/authToken yet
+    — source-map upload is skipped until those are configured).
+    `NEXT_PUBLIC_SENTRY_DSN` added to `.env.example`. One SDK-version
+    gap found and worked around: `@sentry/nextjs` 10.71.0 has no
+    `captureRouterTransitionStart` export yet for Next 16.3's new
+    `onRouterTransitionStart` hook — that optional hook was left out
+    of `instrumentation-client.ts` rather than guessed at; revisit
+    when the SDK adds it. Verified: typecheck, full test suite
+    (73/73), lint, `next build` (both against real `.env.local` and
+    against the exact CI placeholder env with no DSN at all), and an
+    actual `next start` confirming clean boot with no Sentry errors.
+3f. ~~Confirm/document the Vercel deploy + migration process.~~
+    Done — see `architecture.md`'s "First-deploy checklist," a
+    5-step list for the user to work through outside this repo
+    (connect Vercel, set prod env vars, run migrations by hand,
+    register the Clerk webhook, create the Sentry project). No code
+    change; nothing to verify with a test suite.
+
+5. Pagination or an alternate treatment for transaction lists
    long enough to make the `max-h-80` scroll container feel
    cramped — no user has enough rows yet to know if scroll-only
    is sufficient.
-5. Backfilling the price-history chart's gaps, if they turn out
+6. Backfilling the price-history chart's gaps, if they turn out
    to matter — see the Architecture Decisions entry on the chart.
-6. A real, separate History page/route. The sidebar's "History"
+7. A real, separate History page/route. The sidebar's "History"
    link was removed this session (it only pointed at
    `/dashboard#history`, an anchor on the same page, not a real
    route) — add a genuine nav item back if/when history becomes
@@ -120,20 +217,26 @@ Decisions.)
   text by default and Drizzle parameterizes queries — but worth
   revisiting if notes content is ever rendered via
   `dangerouslySetInnerHTML`, exported, or fed into another system.
-- **`computeHoldings`/weighted-average cost mixes KHR `pricePerUnit`
-  into the same aggregate as USD, unguarded.** Discovered while
-  building mock QA data for the 2026-08-26 responsive pass (a KHR
-  buy at a realistic per-chi price skewed average cost and the
-  chart's break-even line by roughly 3 orders of magnitude). Per-row
-  display (`lib/calc/transactionRow.ts`'s `computeRowValuation`)
-  already correctly nulls out Current Value/P&L for non-USD rows,
-  but the portfolio-level `computeHoldings`/`computeGainLoss` in
-  `lib/calc/holdings.ts` don't appear to exclude non-USD rows the
-  same way. Not fixed — out of scope for the responsive/UI task in
-  progress and KHR conversion is already documented as deferred
-  entirely — but worth a real look before KHR transactions see
-  meaningful use, since today a KHR entry silently corrupts the
-  portfolio's cost basis rather than being excluded or converted.
+- ~~`computeHoldings`/weighted-average cost mixes KHR `pricePerUnit`
+  into the same aggregate as USD, unguarded.~~ Resolved via the
+  2026-08-26 hardening grilling session — see Architecture
+  Decisions ("KHR rows excluded from `computeHoldings`'s aggregate").
+
+- **Terms of Service / Privacy Policy.** Explicitly skipped per the
+  user, 2026-08-26 hardening session — see `project-overview.md`'s
+  Out of Scope and the matching Architecture Decisions entry.
+
+- **Full Content-Security-Policy.** Deferred — see the "Security
+  headers" Architecture Decisions entry below. Needs auditing what
+  Clerk's embedded UI and Recharts actually load/execute before a
+  CSP can be written without breaking either.
+
+- ~~Vercel deploy + migration process, not yet documented outside
+  this repo.~~ Resolved — see `architecture.md`'s "First-deploy
+  checklist." None of its 5 steps are done outside this repo yet
+  (no Vercel project connected, no production Clerk instance keys
+  set, no Sentry project created) — this is a checklist for the
+  user to work through, not something further code changes affect.
 
 ## Architecture Decisions
 
@@ -294,14 +397,15 @@ Decisions.)
   tests — cheaper to write and read than mocking
   `.select().from().where().orderBy().limit()` chains.
 
-- **Test framework: Vitest, `environment: "node"`, no
-  React-rendering tests this session.** Coverage focuses on
-  `lib/calc` (pure, no mocks), `lib/price` (mocked `fetch`/DB via
-  dependency injection), and the transactions API route (mocked
-  Clerk `auth()` + DB). Component/RTL tests were explicitly
-  scoped out to keep the session focused on the logic
-  code-standards.md calls correctness-critical; add them later if
-  UI regressions become a problem.
+- **Test framework: Vitest, `environment: "node"` by default.**
+  Coverage focuses on `lib/calc` (pure, no mocks), `lib/price`
+  (mocked `fetch`/DB via dependency injection), and the transactions
+  API route (mocked Clerk `auth()` + DB). Component/RTL tests were
+  explicitly scoped out of the original session that wrote this
+  entry, to stay focused on the logic code-standards.md calls
+  correctness-critical — since superseded: see the "UI/component
+  test coverage" entry above for the React Testing Library + jsdom
+  setup added 2026-08-27.
 
 - **Binance dropped as a price provider.** User decision — not a
   technical finding. `PROVIDERS` in `lib/price/getPrice.ts` holds
@@ -346,6 +450,120 @@ Decisions.)
   navigation. `DELETE /api/transactions/[id]` enforces ownership the
   same way `POST` enforces it on create — verified against the real
   DB: a wrong-owner delete no-ops, the real owner's succeeds.
+
+- **UI/component test coverage: React Testing Library + jsdom, added
+  2026-08-27, scoped to the interactive/logic-bearing components,
+  not every presentational leaf.** Infra: `vitest.config.ts` gained
+  `**/*.test.tsx` to its `include` and a `setupFiles` entry
+  (`vitest.setup.ts`); the default `environment: "node"` was left
+  alone — component test files opt into jsdom individually via a
+  `// @vitest-environment jsdom` docblock, so the existing 73
+  node-environment `lib`/`api` tests couldn't be affected by the
+  change. New deps: `@testing-library/react`,
+  `@testing-library/jest-dom`, `@testing-library/user-event`,
+  `jsdom` (all devDependencies).
+
+  Covered: `TransactionDialog` (validation via the real Zod schema,
+  optimistic add + rollback-on-failure, sell-exceeds-holdings
+  warning, add vs. edit request shape — POST vs. `PATCH
+  /api/transactions/{id}`), `TransactionHistory` (KHR vs. sell
+  blank-value reasons via their distinct `title` text, the
+  optimistic-row "Saving…" state, the two-click delete confirm
+  flow), `HeroPriceCard` (Live/Stale labeling), `RefreshButton`
+  (cooldown gating a click without fetching, 429 entering cooldown
+  vs. a generic error, network-failure toast), and `EmptyState`.
+  Deliberately not covered: `Panel`, `MonoValue`, `Sidebar`,
+  `DashboardShell`, `InlineBanner`, `StatRow`, `AutoRefresh`,
+  `PriceHistoryChart` (Recharts — low logic-to-test-effort ratio),
+  and `DashboardContent`'s own orchestration — pure presentation or
+  already effectively covered by testing the components it
+  composes. Add tests for these if a regression actually happens in
+  one, not preemptively — same "correctness-critical, not
+  exhaustive" boundary this project's `lib/` test coverage already
+  drew (see the "Test framework: Vitest" entry below).
+
+  **Found and fixed a real gap while building this out**: RTL's DOM
+  isn't auto-cleaned between tests under Vitest (unlike Jest's
+  testing-library preset) — the first component test file written
+  (`empty-state.test.tsx`) failed with a "multiple elements found"
+  error because the previous test's render was still in the DOM.
+  Fixed once, globally, in `vitest.setup.ts`
+  (`afterEach(() => cleanup())`) rather than per test file.
+
+  98/98 tests pass (73 existing + 25 new); typecheck, lint, and
+  `next build` all clean.
+
+- **2026-08-26 hardening grilling session — six production-readiness
+  decisions**, prompted by an unprompted production-readiness review
+  after the rate-limiting work. Full context: the app moved from a
+  single-user tool to open public signup earlier the same day, which
+  is what makes "acceptable for personal use" gaps worth closing now
+  rather than later.
+
+  - **Deploy platform: Vercel.** Reference host for Next.js, zero-
+    config PR previews, first-party Neon integration. No code
+    consequence beyond the deploy/migration checklist item below;
+    recorded here because it gates that checklist and any future
+    "how do I deploy this" question.
+
+  - **CI: GitHub Actions, `lint` + `test` + `build`, blocking on PRs
+    into `main`.** The repo already lives on GitHub
+    (`SrunLyheang/GoldKh`). Mechanically enforces the `npm run build`
+    gate
+    `ai-workflow-rules.md` already requires by hand before moving to
+    the next unit — this makes it unskippable rather than
+    self-policed.
+
+  - **Error tracking: Sentry (`@sentry/nextjs`), client + server,
+    added now rather than deferred to "when there's real traffic."**
+    For a financial-tracking app, silent failures in the price layer
+    or a query are worse than the small setup cost — you want to
+    know before a stranger's bug report is the only signal. Sentry's
+    free tier is sized fine for a hobby project.
+
+  - **KHR rows excluded from `computeHoldings`'s aggregate.**
+    Resolves the previously-open bug where a KHR `pricePerUnit` was
+    silently mixed into the USD-denominated weighted-average cost.
+    Fix: `TransactionLike` (`lib/calc/holdings.ts`) gains a
+    `currency: "USD" | "KHR"` field; `computeHoldings` skips non-USD
+    rows entirely, mirroring what `computeRowValuation`
+    (`lib/calc/transactionRow.ts`) already does per-row.
+    `computeGainLoss` needed no change — it only consumes
+    `computeHoldings`'s already-aggregated output. This is a
+    correctness fix, not a step toward KHR support — KHR display and
+    conversion stay out of scope per `project-overview.md`.
+
+  - **Terms of Service / Privacy Policy: explicitly skipped, not
+    deferred-and-forgotten.** User decision — recorded in
+    `project-overview.md`'s Out of Scope so it reads as a deliberate
+    choice next time someone (human or agent) audits what's missing,
+    not a silent gap.
+
+  - **Security headers: baseline set now, full CSP deferred.**
+    `X-Content-Type-Options`, `Referrer-Policy`, `frame-ancestors`,
+    and HSTS added via `next.config.ts`'s `headers()`. A full
+    Content-Security-Policy needs auditing Clerk's embedded UI and
+    Recharts for what they actually load/execute, which is a bigger,
+    separately-verifiable piece of work — left as an open question
+    below rather than rushed.
+
+  - **Env var validation: `lib/env.ts`, Zod-validated, fails fast at
+    boot.** Validates `DATABASE_URL`, `CLERK_SECRET_KEY`,
+    `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_WEBHOOK_SIGNING_SECRET`,
+    and `GOLDAPI_IO_API_KEY` are present and well-formed at process
+    start, instead of failing confusingly at first request. Same
+    validate-at-the-boundary principle `code-standards.md` already
+    applies to request bodies and price-provider responses, applied
+    to the process's own boot.
+
+  - **Backup policy: Neon free-tier PITR, accepted as-is — no custom
+    backup mechanism.** User's explicit choice: staying on Neon's
+    free plan (limited point-in-time-recovery window) because this
+    is a hobby project, rather than upgrading for longer retention or
+    building a separate export job. Documented so a future audit
+    reads this as a deliberate tradeoff, not an oversight — revisit
+    only if real data loss actually happens or the project stops
+    being a hobby-scale thing.
 
 - **Delete is optimistic, tracked as a `removedIds` Set, not a
   mirrored copy of the transactions array.** Confirming delete

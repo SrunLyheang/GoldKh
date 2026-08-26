@@ -1,12 +1,22 @@
 import { describe, expect, it } from "vitest";
 import { computeHoldings, type TransactionLike } from "./holdings";
 
-function buy(quantity: string, unit: "chi" | "damlung", price: string): TransactionLike {
-  return { type: "buy", quantity, unit, pricePerUnit: price };
+function buy(
+  quantity: string,
+  unit: "chi" | "damlung",
+  price: string,
+  currency: "USD" | "KHR" = "USD"
+): TransactionLike {
+  return { type: "buy", quantity, unit, pricePerUnit: price, currency };
 }
 
-function sell(quantity: string, unit: "chi" | "damlung", price: string): TransactionLike {
-  return { type: "sell", quantity, unit, pricePerUnit: price };
+function sell(
+  quantity: string,
+  unit: "chi" | "damlung",
+  price: string,
+  currency: "USD" | "KHR" = "USD"
+): TransactionLike {
+  return { type: "sell", quantity, unit, pricePerUnit: price, currency };
 }
 
 describe("computeHoldings", () => {
@@ -80,5 +90,22 @@ describe("computeHoldings", () => {
       Number(chiOnly.averageCostPerTroyOz),
       6
     );
+  });
+
+  it("excludes KHR rows from the aggregate — a KHR buy at a realistic per-chi price must not skew average cost", () => {
+    const usdOnly = computeHoldings([buy("10", "chi", "300")]);
+    const withKhrBuy = computeHoldings([
+      buy("10", "chi", "300"),
+      buy("5", "chi", "1200000", "KHR"),
+    ]);
+
+    expect(withKhrBuy.totalTroyOz).toBe(usdOnly.totalTroyOz);
+    expect(withKhrBuy.averageCostPerTroyOz).toBe(usdOnly.averageCostPerTroyOz);
+  });
+
+  it("holdings are zero when every transaction is KHR", () => {
+    const result = computeHoldings([buy("10", "chi", "1200000", "KHR")]);
+    expect(result.totalTroyOz).toBe("0");
+    expect(result.averageCostPerTroyOz).toBe("0");
   });
 });

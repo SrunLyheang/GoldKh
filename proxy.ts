@@ -1,4 +1,11 @@
 import { clerkMiddleware } from "@clerk/nextjs/server";
+import { validateEnv } from "@/lib/env";
+
+// Runs once per cold start, before any request is handled — fails fast
+// with one readable message instead of a downstream SDK or provider
+// failing confusingly deep inside a handler (see architecture.md
+// invariant 10).
+validateEnv();
 
 // Auth checks live on each protected page/layout/route instead of here
 // (see app/dashboard/layout.tsx and app/api/**/route.ts) — path-matcher-based

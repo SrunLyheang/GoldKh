@@ -1,0 +1,48 @@
+// @vitest-environment jsdom
+import { render, screen } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
+import { HeroPriceCard } from "./hero-price-card";
+
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ refresh: vi.fn() }),
+}));
+
+function renderCard(overrides: Partial<Parameters<typeof HeroPriceCard>[0]> = {}) {
+  return render(
+    <HeroPriceCard
+      pricePerTroyOz="2345.6789"
+      pricePerChi="282.1234"
+      pricePerDamlung="2821.2340"
+      capturedAt={new Date("2026-08-26T12:00:00Z")}
+      isStale={false}
+      refreshCooldownEndsAt={null}
+      {...overrides}
+    />
+  );
+}
+
+describe("HeroPriceCard", () => {
+  it("shows the damlung headline and secondary oz/chi figures", () => {
+    renderCard();
+    expect(screen.getByText("$2,821.23")).toBeInTheDocument();
+    expect(screen.getByText(/\$2,345\.68\/oz/)).toBeInTheDocument();
+    expect(screen.getByText(/\$282\.12\/chi/)).toBeInTheDocument();
+  });
+
+  it('labels a fresh price "Live"', () => {
+    renderCard({ isStale: false });
+    expect(screen.getByText(/^Live as of/)).toBeInTheDocument();
+  });
+
+  it('labels a stale price "Stale", not an error/gain color', () => {
+    renderCard({ isStale: true });
+    expect(screen.getByText(/^Stale as of/)).toBeInTheDocument();
+  });
+
+  it("shows the spot-vs-retail-premium disclaimer", () => {
+    renderCard();
+    expect(
+      screen.getByText(/typically sell above spot/)
+    ).toBeInTheDocument();
+  });
+});

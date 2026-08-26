@@ -1,0 +1,30 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+# Placeholder values only — well-formed enough for lib/env.ts's
+# validateEnv() and next build's route data collection to pass, never
+# real credentials. Real secrets live in Vercel's env, not here.
+env:
+  DATABASE_URL: postgres://ci:ci@localhost:5432/ci
+  CLERK_SECRET_KEY: sk_test_ci_placeholder
+  NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: pk_test_ci_placeholder
+  GOLDAPI_IO_API_KEY: ci-placeholder-key
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run test
+      - run: npm run build
