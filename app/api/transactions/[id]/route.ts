@@ -1,5 +1,6 @@
 import { auth } from "@clerk/nextjs/server";
 import { apiError, apiOk } from "@/lib/api/response";
+import { isRateLimited } from "@/lib/api/rateLimit";
 import {
   deleteOwnedTransaction,
   updateOwnedTransaction,
@@ -13,6 +14,14 @@ export async function PATCH(
   const { userId } = await auth();
   if (!userId) {
     return apiError("UNAUTHORIZED", "Sign in required", 401);
+  }
+
+  if (await isRateLimited(userId)) {
+    return apiError(
+      "RATE_LIMITED",
+      "Too many requests — please slow down and try again shortly",
+      429
+    );
   }
 
   const body: unknown = await request.json();
@@ -37,6 +46,14 @@ export async function DELETE(
   const { userId } = await auth();
   if (!userId) {
     return apiError("UNAUTHORIZED", "Sign in required", 401);
+  }
+
+  if (await isRateLimited(userId)) {
+    return apiError(
+      "RATE_LIMITED",
+      "Too many requests — please slow down and try again shortly",
+      429
+    );
   }
 
   const { id } = await params;

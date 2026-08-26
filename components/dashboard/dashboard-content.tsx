@@ -31,6 +31,7 @@ export function DashboardContent({
   capturedAt,
   isStale,
   chartPoints,
+  refreshCooldownEndsAt,
 }: {
   transactions: TransactionRow[];
   pricePerTroyOz: string;
@@ -39,6 +40,7 @@ export function DashboardContent({
   capturedAt: Date;
   isStale: boolean;
   chartPoints: ChartPoint[];
+  refreshCooldownEndsAt: number | null;
 }) {
   const router = useRouter();
   const [addOpen, setAddOpen] = useState(false);
@@ -131,13 +133,14 @@ export function DashboardContent({
   const hasHoldings = Number(holdings.totalTroyOz) > 0;
 
   return (
-    <div className="flex flex-col gap-6.5">
+    <div className="flex flex-col gap-5 md:gap-6.5">
       <HeroPriceCard
         pricePerTroyOz={pricePerTroyOz}
         pricePerChi={pricePerChi}
         pricePerDamlung={pricePerDamlung}
         capturedAt={capturedAt}
         isStale={isStale}
+        refreshCooldownEndsAt={refreshCooldownEndsAt}
       />
 
       <TransactionDialog

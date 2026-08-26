@@ -14,13 +14,12 @@ Update this file after every meaningful implementation change.
 
 ## Current Goal
 
-- Refresh-button UI removed (kept as a paid-tier feature, see
-  Architecture Decisions), Clerk `user.deleted` webhook implemented
-  — both verified (typecheck, full test suite, `next build` all
-  clean) but not yet committed. Commit this work, then move to rate
-  limiting (still item 1 on the priority list — the webhook was done
-  out of order at the user's request) and UI/component test
-  coverage.
+- Rate limiting on the transaction-mutating routes is implemented —
+  the last item of the three from the 2026-08-26 grilling session
+  (see Architecture Decisions). Verified (typecheck, full test
+  suite, lint, `next build` all clean) but not yet committed. Next:
+  UI/component test coverage (item 3), the one remaining priority
+  item.
 
 ## Completed
 
@@ -77,12 +76,10 @@ real problem, not on a fixed timeline. (The Refresh-button rework
 that briefly sat ahead of this list has shipped — see Architecture
 Decisions.)
 
-1. Rate limiting on the transaction-mutating routes — hard block
-   (429), keyed on Clerk `user_id`. See the Architecture Decisions
-   entry above; now the top priority given open public signup.
+1. ~~Rate limiting on the transaction-mutating routes.~~ Done — see
+   Architecture Decisions.
 2. ~~Clerk `user.deleted` webhook.~~ Done — see Architecture
-   Decisions. Done ahead of item 1 at the user's explicit request;
-   rate limiting is still the actual top-priority gap.
+   Decisions.
 3. UI/component test coverage (see Architecture Decisions) —
    after 1 and 2, before new features.
 4. Pagination or an alternate treatment for transaction lists
@@ -123,6 +120,20 @@ Decisions.)
   text by default and Drizzle parameterizes queries — but worth
   revisiting if notes content is ever rendered via
   `dangerouslySetInnerHTML`, exported, or fed into another system.
+- **`computeHoldings`/weighted-average cost mixes KHR `pricePerUnit`
+  into the same aggregate as USD, unguarded.** Discovered while
+  building mock QA data for the 2026-08-26 responsive pass (a KHR
+  buy at a realistic per-chi price skewed average cost and the
+  chart's break-even line by roughly 3 orders of magnitude). Per-row
+  display (`lib/calc/transactionRow.ts`'s `computeRowValuation`)
+  already correctly nulls out Current Value/P&L for non-USD rows,
+  but the portfolio-level `computeHoldings`/`computeGainLoss` in
+  `lib/calc/holdings.ts` don't appear to exclude non-USD rows the
+  same way. Not fixed — out of scope for the responsive/UI task in
+  progress and KHR conversion is already documented as deferred
+  entirely — but worth a real look before KHR transactions see
+  meaningful use, since today a KHR entry silently corrupts the
+  portfolio's cost basis rather than being excluded or converted.
 
 ## Architecture Decisions
 
@@ -735,6 +746,41 @@ Decisions.)
   ripping these out would mean re-doing this exact work (and another
   DB migration) when the paid tier is built.
 
+- **Rate limiting — implemented, DB-backed fixed-window counter.**
+  Resolves the top-priority item from the 2026-08-26 grilling
+  session. New `rate_limit_counters` table (`lib/db/schema.ts`,
+  migration `0002_spooky_luckman.sql`): one row per `(user_id,
+  window_start)`, incremented via an atomic Postgres upsert
+  (`incrementRequestCount`, `lib/db/queries/rateLimit.ts`) — `INSERT
+  ... ON CONFLICT DO UPDATE SET count = count + 1`, so the database
+  arbitrates concurrency per code-standards.md, not a
+  check-then-write in JS. `windowStart` is floored to
+  `RATE_LIMIT_WINDOW_MS` boundaries using the app clock (`Date.now()`),
+  matching `isManualCooldownActive`'s existing pattern rather than a
+  DB-time function. Limit: **20 requests per 5-minute window per
+  Clerk `user_id`** (`lib/constants/rateLimit.ts`) — sized generously
+  for legitimate manual use while still stopping a scripted burst;
+  no real usage data to calibrate against yet, revisit if it turns
+  out wrong in either direction. `isRateLimited(userId)`
+  (`lib/api/rateLimit.ts`) wraps the increment and threshold check;
+  called first thing (after the `auth()` check, before any DB read
+  or Zod validation) in all three transaction-mutating handlers —
+  `POST /api/transactions`, `PATCH` and `DELETE
+  /api/transactions/[id]` — returning `429 RATE_LIMITED` on the
+  existing `{ error: { code, message } }` envelope. A blocked
+  request still increments the counter, which is what keeps the
+  block in effect for the rest of the window instead of flapping.
+  `GET /api/transactions` and the separate manual-refresh route
+  (`/api/price/refresh`, its own independent 10-minute cooldown) are
+  intentionally not covered — the decision was scoped to
+  "transaction-mutating routes." No cleanup job for old counter rows
+  yet; left as a known constraint, same reasoning `price_snapshots`
+  got — row growth is bounded by active users × windows touched, not
+  a near-term concern at this scale. Covered by
+  `lib/db/queries/rateLimit.test.ts` (window flooring, upsert
+  result), `lib/api/rateLimit.test.ts` (threshold logic), and a 429
+  case added to each of the three routes' existing test files.
+
 - **Clerk `user.deleted` webhook — implemented.**
   `app/api/webhooks/clerk/route.ts`, verified via `verifyWebhook`
   from `@clerk/nextjs/webhooks` (wraps svix under the hood — no new
@@ -752,6 +798,27 @@ Decisions.)
   dashboard-side registration has not been done yet, only the code
   side. Covered by `route.test.ts` (400 on bad signature, delete on
   `user.deleted`, no-op 200 on other event types).
+
+- **Dashboard made responsive for mobile; four presentational
+  components extracted for reuse.** User request, scoped via a
+  grilling session on 2026-08-26 (see `ui-context.md`'s new
+  Responsive Breakpoints section for the full breakpoint/component
+  spec — this entry is the "why," that's the "what"). Sidebar
+  becomes a hamburger-triggered slide-in drawer below `md` via a new
+  `DashboardShell` wrapper; the transaction table becomes a stacked
+  card list below `md` (`TransactionCard`, sharing row-computation
+  logic with the desktop `Row` via a new `getRowDisplay` helper); the
+  stat row goes 2-column below `lg` (4-column at `md` was tried and
+  visually rejected — labels/values wrapped in the cramped columns);
+  the hero price card stacks and shrinks its headline font below
+  `sm`. Extracted `Panel` (card wrapper), `MonoValue` (mono
+  tabular-nums text with a tone prop), `toneFromAmount` (gain/loss
+  color decision), and `InlineBanner` (error/success message strip)
+  so desktop and the new mobile card view can't drift on how the
+  same figure is styled. Verified via Chrome DevTools at 375/768/1280px
+  using a temporary mock-data preview route (deleted after use, never
+  committed) since the real `/dashboard` needs a live Clerk session
+  this environment doesn't have credentials for.
 
 ## Known Constraints
 

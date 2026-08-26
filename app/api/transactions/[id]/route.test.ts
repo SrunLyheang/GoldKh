@@ -1,11 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { authMock, deleteOwnedTransactionMock, updateOwnedTransactionMock } =
-  vi.hoisted(() => ({
-    authMock: vi.fn(),
-    deleteOwnedTransactionMock: vi.fn(),
-    updateOwnedTransactionMock: vi.fn(),
-  }));
+const {
+  authMock,
+  deleteOwnedTransactionMock,
+  updateOwnedTransactionMock,
+  isRateLimitedMock,
+} = vi.hoisted(() => ({
+  authMock: vi.fn(),
+  deleteOwnedTransactionMock: vi.fn(),
+  updateOwnedTransactionMock: vi.fn(),
+  isRateLimitedMock: vi.fn(),
+}));
 
 vi.mock("@clerk/nextjs/server", () => ({
   auth: authMock,
@@ -14,6 +19,10 @@ vi.mock("@clerk/nextjs/server", () => ({
 vi.mock("@/lib/db/queries/transactions", () => ({
   deleteOwnedTransaction: deleteOwnedTransactionMock,
   updateOwnedTransaction: updateOwnedTransactionMock,
+}));
+
+vi.mock("@/lib/api/rateLimit", () => ({
+  isRateLimited: isRateLimitedMock,
 }));
 
 import { DELETE, PATCH } from "./route";
@@ -42,6 +51,19 @@ function patchRequest(body: unknown) {
 describe("PATCH /api/transactions/[id]", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    isRateLimitedMock.mockResolvedValue(false);
+  });
+
+  it("returns 429 when the session has exceeded the rate limit", async () => {
+    authMock.mockResolvedValue({ userId: "user_123" });
+    isRateLimitedMock.mockResolvedValue(true);
+
+    const res = await PATCH(patchRequest(validPayload), ctx("tx_1"));
+    const body = await res.json();
+
+    expect(res.status).toBe(429);
+    expect(body.error.code).toBe("RATE_LIMITED");
+    expect(updateOwnedTransactionMock).not.toHaveBeenCalled();
   });
 
   it("returns 401 when there is no session, before touching the DB", async () => {
@@ -97,6 +119,19 @@ describe("PATCH /api/transactions/[id]", () => {
 describe("DELETE /api/transactions/[id]", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    isRateLimitedMock.mockResolvedValue(false);
+  });
+
+  it("returns 429 when the session has exceeded the rate limit", async () => {
+    authMock.mockResolvedValue({ userId: "user_123" });
+    isRateLimitedMock.mockResolvedValue(true);
+
+    const res = await DELETE(new Request("http://localhost"), ctx("tx_1"));
+    const body = await res.json();
+
+    expect(res.status).toBe(429);
+    expect(body.error.code).toBe("RATE_LIMITED");
+    expect(deleteOwnedTransactionMock).not.toHaveBeenCalled();
   });
 
   it("returns 401 when there is no session, before touching the DB", async () => {

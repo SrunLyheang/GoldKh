@@ -177,3 +177,69 @@ These need a visual treatment before the dashboard is complete:
 
 Lucide React. Stroke-based icons only. Sizes: `h-4 w-4` inline,
 `h-5 w-5` in buttons.
+
+## Responsive Breakpoints
+
+Added 2026-08-26. The Layout Patterns section above described a
+desktop-fixed-width shell; below `md` (768px) it now adapts instead
+of just letting the table scroll horizontally.
+
+**Shell** — `DashboardShell` (`components/dashboard/dashboard-shell.tsx`)
+replaces the old inline `Sidebar` + `main` markup in
+`app/dashboard/layout.tsx`. Below `md`, `Sidebar` becomes a
+slide-in overlay drawer (`-translate-x-full` / `translate-x-0`,
+`transition-transform`) behind a hamburger button in a slim top bar;
+a dark backdrop (`bg-black/60`) closes it on click, same as a nav
+link click. At `md` and above, `md:translate-x-0` forces it visible
+and `md:w-59` restores the fixed 236px width — `open`/`onClose` are
+no-ops there. `main` carries `md:ml-59` to reserve the space the
+`fixed` sidebar occupies once it's back in flow-adjacent position.
+
+**Stat row** — Two columns below `lg` (1024px), four from `lg` up.
+Four columns at `md` (768px) was tried and rejected: labels and
+mono values wrapped onto multiple lines in the cramped ~150px
+columns. Two columns has enough width all the way from phone to
+tablet.
+
+**Hero price card** — Stacks vertically below `sm` (640px)
+(`flex-col`, price block above the live/stale timestamp), and the
+headline price drops from 46px to 34px so it doesn't force the card
+wider than the viewport. From `sm` up it's the original horizontal
+split.
+
+**Transaction history** — Below `md`, the `<table>` is replaced
+entirely by a stacked card list (one `Panel` per transaction: an
+icon/type/date/actions row on top, a 2-column grid of Paid/damlung/
+Current Value/P&L below). This is a real layout switch, not a CSS
+reflow of the same markup — a data table's columns don't have a
+sensible single-column stacking order, so `TransactionCard` is a
+separate component sharing row-computation logic (`getRowDisplay`)
+with the desktop `Row`. At `md` and above, the original table
+returns unchanged, horizontal scroll included — that documented
+behavior was for narrow *desktop* windows, not phones, and stays as
+originally designed there.
+
+**Reusable primitives** — introduced to stop the card wrapper, mono
+number styling, and gain/loss coloring from drifting across desktop
+and mobile variants of the same data:
+
+- `Panel` (`components/dashboard/panel.tsx`) — the
+  `rounded-* border border-border bg-card` wrapper, `size="lg"`
+  (hero/chart, `rounded-xl p-6`, `p-4` below `sm`) or `size="md"`
+  (stat cards, transaction cards; default).
+- `MonoValue` (`components/dashboard/mono-value.tsx`) — the
+  `font-mono tabular-nums` span, with a `tone` prop
+  (`foreground`/`muted`/`gain`/`loss`) instead of each call site
+  hand-rolling the same three-way ternary. Includes `break-all` as
+  a safety net so an unusually large figure wraps inside its card
+  instead of overflowing it.
+- `toneFromAmount` (`lib/format/tone.ts`) — `Number(amount) >= 0 ?
+  "gain" : "loss"`, replacing the duplicated ternary in `StatRow`
+  and `TransactionHistory`.
+- `InlineBanner` (`components/dashboard/inline-banner.tsx`) — the
+  error/success message strip in `TransactionHistory`.
+
+**Auth pages** — `sign-in`/`sign-up` add `px-4 py-8` around the
+Clerk widget so it doesn't touch the viewport edge on narrow
+screens. The widget itself is Clerk's default responsive layout,
+unchanged.

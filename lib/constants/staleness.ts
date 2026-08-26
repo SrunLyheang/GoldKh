@@ -11,8 +11,8 @@ export const PRICE_STALENESS_MS = 30 * 60 * 1000;
 // Minimum gap between user-triggered manual refreshes (POST
 // /api/price/refresh), enforced globally, not per-user — there's one
 // shared price feed, so a global cooldown is what actually protects the
-// shared goldapi.io quota. 10 minutes caps worst-case manual-triggered
-// call volume to a low multiple of the ~48/day the 30-minute automatic
-// staleness check already allows, while still feeling responsive to a
-// user who wants a price right now.
-export const MANUAL_REFRESH_COOLDOWN_MS = 10 * 60 * 1000;
+// shared goldapi.io quota. 5 minutes trades a larger slice of the
+// 100/month free-tier quota for a button that feels responsive; if usage
+// grows enough to threaten the quota, raise this back toward 10 minutes
+// rather than removing the cooldown.
+export const MANUAL_REFRESH_COOLDOWN_MS = 5 * 60 * 1000;

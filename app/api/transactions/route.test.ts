@@ -1,12 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { authMock, createTransactionMock, listTransactionsMock } = vi.hoisted(
-  () => ({
-    authMock: vi.fn(),
-    createTransactionMock: vi.fn(),
-    listTransactionsMock: vi.fn(),
-  })
-);
+const {
+  authMock,
+  createTransactionMock,
+  listTransactionsMock,
+  isRateLimitedMock,
+} = vi.hoisted(() => ({
+  authMock: vi.fn(),
+  createTransactionMock: vi.fn(),
+  listTransactionsMock: vi.fn(),
+  isRateLimitedMock: vi.fn(),
+}));
 
 vi.mock("@clerk/nextjs/server", () => ({
   auth: authMock,
@@ -15,6 +19,10 @@ vi.mock("@clerk/nextjs/server", () => ({
 vi.mock("@/lib/db/queries/transactions", () => ({
   createTransactionForUser: createTransactionMock,
   listTransactionsForUser: listTransactionsMock,
+}));
+
+vi.mock("@/lib/api/rateLimit", () => ({
+  isRateLimited: isRateLimitedMock,
 }));
 
 import { GET, POST } from "./route";
@@ -67,6 +75,19 @@ describe("GET /api/transactions", () => {
 describe("POST /api/transactions", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    isRateLimitedMock.mockResolvedValue(false);
+  });
+
+  it("returns 429 when the session has exceeded the rate limit", async () => {
+    authMock.mockResolvedValue({ userId: "user_123" });
+    isRateLimitedMock.mockResolvedValue(true);
+
+    const res = await POST(jsonRequest(validPayload));
+    const body = await res.json();
+
+    expect(res.status).toBe(429);
+    expect(body.error.code).toBe("RATE_LIMITED");
+    expect(createTransactionMock).not.toHaveBeenCalled();
   });
 
   it("returns 401 when there is no session, before touching the body", async () => {
