@@ -1,5 +1,6 @@
 import { Coins, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useLocale } from "@/lib/i18n/locale-context";
 
 // Trigger-only — the actual dialog is a single shared instance owned by
 // DashboardContent (see transaction-dialog.tsx's header comment for why:
@@ -7,22 +8,22 @@ import { Button } from "@/components/ui/button";
 // first optimistic add flips DashboardContent from this screen to the
 // real table).
 export function EmptyState({ onAddClick }: { onAddClick: () => void }) {
+  const { t } = useLocale();
   return (
-    <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border py-16 text-center">
+    <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border py-20 text-center">
       <div className="flex h-10 w-10 items-center justify-center rounded-md bg-muted">
         <Coins className="h-5 w-5 text-primary" />
       </div>
-      <p className="mt-4 text-[15px] font-semibold text-foreground">
-        No holdings yet
+      <p className="tt-heading mt-5 text-[15px] text-foreground">
+        {t.empty.title}
       </p>
-      <p className="mt-1 max-w-xs text-[13.5px] text-muted-foreground">
-        Record your first buy to start tracking your gold against the live
-        spot price.
+      <p className="mt-1.5 max-w-xs text-[13.5px] text-muted-foreground">
+        {t.empty.description}
       </p>
-      <div className="mt-5">
+      <div className="mt-6">
         <Button size="sm" onClick={onAddClick}>
           <Plus className="h-4 w-4" />
-          Add transaction
+          <span className="tt-label text-[11.5px]">{t.transactions.addTransaction}</span>
         </Button>
       </div>
     </div>

@@ -59,6 +59,134 @@ Update this file after every meaningful implementation change.
 - Encryption question resolved.
 - Unit conversion factors, response envelope shape, and validation
   library decided (see Architecture Decisions).
+- Dashboard shell design pass (2026-08-27): evolved the Vault
+  system's execution without changing its palette or tokens.
+  `Panel` now differentiates elevation — `lg` (hero, chart) keeps
+  its border plus a new warm tinted shadow (`.shadow-vault-lg` in
+  `globals.css`); `md` (stat cards, transaction rows) drops the
+  border for a quieter `.shadow-vault-sm`, so cards read as a
+  hierarchy instead of one repeated container. Added a fixed
+  low-opacity grain overlay and a top-right ambient gold glow to
+  `DashboardShell`, a matching subtle glow behind the hero price,
+  a gold "Au" wordmark mark in the sidebar/mobile header, a
+  left-accent-bar active nav state (replacing full-fill), and a
+  tone-tinted background on the gain/loss stat card. Added one
+  authored motion moment — `.vault-enter` staggered fade/
+  translateY entrance across the dashboard's four sections
+  (`prefers-reduced-motion` respected). Verified: `tsc --noEmit`,
+  `eslint`, full Vitest suite (111/111), and the impeccable
+  mechanical design detector all clean on the changed files.
+  Not yet visually verified against a signed-in session — no
+  Clerk test credentials available in this environment.
+
+- **Brand mark unified + auth pages branded, 2026-08-27** (via
+  `/ecc:frontend-design-direction` audit). Found three assets doing
+  overlapping jobs: the sidebar's new `icon.svg` image, the mobile
+  header's separate hand-rolled `Au` text-in-a-box mark, and a
+  freshly-added `public/logo.svg` full wordmark lockup that was
+  referenced nowhere. Fixed by replacing `dashboard-shell.tsx`'s
+  mobile-header `Au` mark with the same `icon.svg` `<Image>` the
+  sidebar already uses (one brand mark, not two), and adding
+  `logo.svg` above the Clerk widget on both `app/sign-in/[[...sign-in]]/
+  page.tsx` and `app/sign-up/[[...sign-up]]/page.tsx` — previously
+  bare, unbranded Clerk widgets on an empty background, the first
+  screen any new user sees. Verified: `tsc --noEmit` and `eslint`
+  clean on the three changed files; sign-in screenshotted via
+  chrome-devtools MCP against the local dev server. The dashboard's
+  mobile header itself couldn't be visually re-confirmed the same
+  way — still no Clerk test credentials in this environment (see the
+  existing note on the dashboard shell design pass below).
+
+- **i18n: English/Khmer toggle added, 2026-08-27.** User asked for a
+  full language switch, not just number/date localization. New
+  `lib/i18n/dictionary.ts` (flat nested dictionary, `en`'s inferred
+  shape enforced onto `km` via `const km: typeof en = {...}` so a
+  missing Khmer key is a type error, not a silent English fallback)
+  and `lib/i18n/locale-context.tsx` (`LocaleProvider`/`useLocale()`,
+  localStorage-persisted, defaults to `"en"` on every render so
+  server and first client paint agree — the stored preference is
+  read in an effect, not a lazy `useState` initializer, to avoid a
+  hydration mismatch). `LocaleProvider` wraps the tree once, in
+  `DashboardShell`. New `LanguageToggle` component (mirrors
+  `UnitToggle`'s segmented-control shape) placed in the sidebar
+  footer and the mobile top bar. Every user-facing string in
+  `Sidebar`, `HeroPriceCard`, `UnitToggle`, `StatRow`,
+  `TransactionHistory`, `TransactionDialog`, `EmptyState`,
+  `RefreshButton`, and `PriceHistoryChart`'s empty state now reads
+  through `useLocale()`'s `t`. Khmer has no letter case, which
+  surfaced one real inconsistency in the process: the buy/sell
+  toggle button used to render lowercase `"buy"/"sell"` text
+  visually capitalized by a CSS `capitalize` class — that trick
+  can't carry over to Khmer, so the button now renders the real
+  translated (already-cased) label directly; one test assertion
+  (`transaction-dialog.test.tsx`) updated to match. Added
+  `Noto_Sans_Khmer` (`next/font/google`) alongside the existing
+  Geist fonts — `html[lang="km"]` overrides the `--font-geist-sans`
+  CSS variable (not `--font-sans` directly, so it wins on
+  specificity regardless of source order) and leaves `--font-mono`
+  untouched, so every price/quantity still renders in Geist Mono
+  per ui-context.md's tabular-figures rule. Existing component
+  tests (`refresh-button.test.tsx`, `transaction-dialog.test.tsx`,
+  `transaction-history.test.tsx`, `hero-price-card.test.tsx`) broke
+  on `useLocale()` throwing outside a provider — fixed with one
+  global `vi.mock("@/lib/i18n/locale-context")` in
+  `vitest.setup.ts` (fixed English `t`, no-op `setLocale`) rather
+  than wrapping every test file, since none of these tests are
+  about locale switching itself. One `react-hooks/set-state-in-effect`
+  lint error on the hydration-safe localStorage-read effect —
+  disabled inline with a comment explaining why (the standard fix
+  for "read from localStorage after mount" unavoidably calls
+  setState synchronously in an effect). Hero disclaimer copy also
+  reworded per user feedback mid-session, away from the "loss"/
+  "dealer premium" framing to a plainer "prices differently from
+  the global spot rate" statement — both `en` and `km` updated, and
+  the matching test assertion. 111/111 tests pass; typecheck, lint,
+  `next build`, and the impeccable mechanical detector all clean.
+
+- **Spacing pass, 2026-08-27 (same session as the i18n work).** User
+  asked for more breathing room. Widened, modestly and consistently
+  with the existing token scale rather than a redesign:
+  `DashboardContent`'s inter-section gap (26px to 32px+ at `md`),
+  `Panel`'s padding (`lg` 24px to 28px at `sm`, `md` 16px to 20px),
+  `StatRow`'s card gap, transaction table row height (`py-2.5` to
+  `py-3`) and card internals, the transaction dialog's field gap
+  (`gap-6` to `gap-7`) and field-label gap (`gap-1.5` to `gap-2`),
+  the sidebar's nav-item and footer padding, and the dashboard
+  `main` padding. `ui-context.md`'s "16-18px padding inside cards"
+  and "26px vertical gap" figures in its Spacing Rhythm section are
+  now stale by this amount — not yet updated there, since the
+  change was modest enough to treat as tuning within the documented
+  rhythm rather than a rewrite of the rule; revisit that doc if
+  spacing changes again.
+
+- **Industrial Brutalism fusion, 2026-08-27** (`/industrial-brutalist-ui`
+  skill, user chose "fuse: brutalist structure, Vault palette" over a
+  full palette replacement — see `ui-context.md`'s new note under
+  Theme). Vault's dark/gold tokens, mono-tabular-figures rule, and
+  component structure are unchanged; what changed is execution:
+  `--radius` dropped to `0px` in `globals.css` (every `rounded-*`
+  utility derives from it, so this one token squares every corner
+  app-wide), `.shadow-vault-lg`/`.shadow-vault-sm` swapped from
+  blurred tinted shadows to hard-edged offset shadows (`4px 4px 0 0`
+  / `2px 2px 0 0 var(--border)`, no blur — brutalism rejects soft
+  drop shadows), and two new utility classes added: `.tt-label`
+  (mono, uppercase, `0.08em` tracking — every stat/table/toggle/
+  button label and the sidebar nav now routes through this instead
+  of plain muted sans text) and `.tt-heading` (uppercase, tight
+  `-0.01em` tracking, bold — section titles). The hero card's
+  blurred gold glow orb and soft gradient top bar were removed in
+  favor of a flat solid `bg-primary` bar; its live/stale dot is now
+  a filled square instead of a circle, and the live/stale label
+  reads `[ Live ]`/`[ Stale ]` (ASCII bracket framing, per the
+  skill's section 6). `TransactionHistory` and `PriceHistoryChart`
+  section headings gained the same `[ ... ]` framing. Chart axis
+  tick labels now render in the mono font (`var(--font-mono)`)
+  instead of the browser default. Two test assertions in
+  `hero-price-card.test.tsx` updated to match the new bracket text.
+  Verified: `tsc --noEmit`, `eslint`, and the full Vitest suite
+  (111/111) all clean. Not yet visually verified against a signed-in
+  session — same Clerk test-credential gap noted in the dashboard
+  shell design pass above.
 
 ## In Progress
 

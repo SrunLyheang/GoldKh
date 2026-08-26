@@ -13,6 +13,9 @@ import { cn } from "@/lib/utils";
 import { formatQuantity, formatUsd } from "@/lib/format/money";
 import { computeRowValuation, type TransactionRowLike } from "@/lib/calc/transactionRow";
 import type { GoldUnit } from "@/lib/calc/units";
+import { useLocale } from "@/lib/i18n/locale-context";
+import type { Dictionary } from "@/lib/i18n/dictionary";
+import { unitLabels } from "@/lib/i18n/unit-labels";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -38,7 +41,8 @@ export interface TransactionRow extends TransactionRowLike {
 function getRowDisplay(
   row: TransactionRow,
   currentPricePerTroyOz: string,
-  displayUnit: GoldUnit
+  displayUnit: GoldUnit,
+  t: Dictionary
 ) {
   const isBuy = row.type === "buy";
   const isPending = row.id.startsWith("temp-");
@@ -52,9 +56,9 @@ function getRowDisplay(
   // value. The title distinguishes them without a new Tooltip component.
   const blankValueReason =
     row.currency !== "USD"
-      ? "KHR entries aren't converted to USD yet"
+      ? t.transactions.khrNote
       : row.type === "sell"
-        ? "Sell rows show proceeds, not an ongoing position"
+        ? t.transactions.sellNote
         : undefined;
   const paidAmount =
     row.currency === "USD"
@@ -62,6 +66,9 @@ function getRowDisplay(
       : `${new Intl.NumberFormat("en-US").format(
           Number(new Decimal(row.quantity).times(row.pricePerUnit))
         )} KHR`;
+  // Lowercase to match the existing "10 chi"/"3 damlung" convention
+  // this table already used before i18n (row.unit was rendered raw).
+  const unitLabel = unitLabels(t, row.unit).primaryLower;
 
   return {
     isBuy,
@@ -71,6 +78,7 @@ function getRowDisplay(
     isGain,
     blankValueReason,
     paidAmount,
+    unitLabel,
   };
 }
 
@@ -93,26 +101,27 @@ function RowActions({
   onEditSuccess: () => void;
 }) {
   const allRows = useContext(AllRowsContext);
+  const { t } = useLocale();
   const [menuOpen, setMenuOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [confirming, setConfirming] = useState(false);
 
   if (confirming) {
     return (
-      <div className="flex shrink-0 items-center gap-1">
+      <div className="flex shrink-0 items-center gap-1.5">
         <button
           type="button"
           onClick={() => onDelete(row)}
-          className="rounded-sm border border-destructive px-2 py-1 text-[11.5px] font-medium text-destructive hover:bg-destructive/10"
+          className="tt-label border border-destructive px-2 py-1 text-[10.5px] text-destructive hover:bg-destructive/10"
         >
-          Delete
+          {t.transactions.delete}
         </button>
         <button
           type="button"
           onClick={() => setConfirming(false)}
-          className="rounded-sm border border-border px-2 py-1 text-[11.5px] font-medium text-muted-foreground hover:bg-accent"
+          className="tt-label border border-border px-2 py-1 text-[10.5px] text-muted-foreground hover:bg-accent"
         >
-          Cancel
+          {t.transactions.cancel}
         </button>
       </div>
     );
@@ -125,7 +134,11 @@ function RowActions({
           render={
             <button
               type="button"
-              aria-label={`Actions for ${row.type} of ${row.quantity} ${row.unit}`}
+              aria-label={t.transactions.actionsFor(
+                row.type === "buy" ? t.transactions.buy : t.transactions.sell,
+                row.quantity,
+                unitLabels(t, row.unit).primary
+              )}
               className="shrink-0 rounded-sm p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
             >
               <MoreVertical className="h-3.5 w-3.5" />
@@ -135,14 +148,14 @@ function RowActions({
         <DropdownMenuContent>
           <DropdownMenuItem onClick={() => setEditOpen(true)}>
             <Pencil />
-            Edit
+            {t.transactions.edit}
           </DropdownMenuItem>
           <DropdownMenuItem
             variant="destructive"
             onClick={() => setConfirming(true)}
           >
             <Trash2 />
-            Delete
+            {t.transactions.delete}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -171,6 +184,7 @@ function Row({
   onDelete: (row: TransactionRow) => void;
   onEditSuccess: () => void;
 }) {
+  const { t } = useLocale();
   const {
     isBuy,
     isPending,
@@ -179,7 +193,8 @@ function Row({
     isGain,
     blankValueReason,
     paidAmount,
-  } = getRowDisplay(row, currentPricePerTroyOz, displayUnit);
+    unitLabel,
+  } = getRowDisplay(row, currentPricePerTroyOz, displayUnit, t);
 
   return (
     <tr
@@ -188,7 +203,7 @@ function Row({
         isPending && "opacity-60"
       )}
     >
-      <td className="py-2.5 pr-3 pl-4">
+      <td className="py-3 pr-3 pl-4">
         <div className="flex items-center gap-2">
           <div
             className={cn(
@@ -207,16 +222,17 @@ function Row({
           </span>
         </div>
       </td>
-      <td className="py-2.5 pr-3 text-[13.5px] font-medium text-foreground">
-        {isBuy ? "Buy" : "Sell"} {formatQuantity(row.quantity)} {row.unit}
+      <td className="py-3 pr-3 text-[13.5px] font-medium text-foreground">
+        {isBuy ? t.transactions.buy : t.transactions.sell}{" "}
+        {formatQuantity(row.quantity)} {unitLabel}
       </td>
-      <td className="py-2.5 pr-3 text-right font-mono text-[13px] tabular-nums text-foreground">
+      <td className="py-3 pr-3 text-right font-mono text-[13px] tabular-nums text-foreground">
         {paidAmount}
       </td>
-      <td className="py-2.5 pr-3 text-right font-mono text-[13px] tabular-nums text-muted-foreground">
+      <td className="py-3 pr-3 text-right font-mono text-[13px] tabular-nums text-muted-foreground">
         {formatUsd(pricePerDisplayUnit)}
       </td>
-      <td className="py-2.5 pr-3 text-right font-mono text-[13px] tabular-nums text-foreground">
+      <td className="py-3 pr-3 text-right font-mono text-[13px] tabular-nums text-foreground">
         {valuation.currentValueUsd ? (
           formatUsd(valuation.currentValueUsd)
         ) : (
@@ -225,7 +241,7 @@ function Row({
       </td>
       <td
         className={cn(
-          "py-2.5 pr-3 text-right font-mono text-[13px] tabular-nums",
+          "py-3 pr-3 text-right font-mono text-[13px] tabular-nums",
           valuation.pnlUsd === null && "text-muted-foreground",
           valuation.pnlUsd !== null && (isGain ? "text-state-gain" : "text-destructive")
         )}
@@ -236,9 +252,11 @@ function Row({
           <span title={blankValueReason} className="cursor-help">—</span>
         )}
       </td>
-      <td className="py-2.5 pl-1 text-right">
+      <td className="py-3 pl-1 text-right">
         {isPending ? (
-          <span className="text-[11.5px] text-muted-foreground">Saving…</span>
+          <span className="text-[11.5px] text-muted-foreground">
+            {t.transactions.saving}
+          </span>
         ) : (
           <RowActions
             row={row}
@@ -268,6 +286,7 @@ function TransactionCard({
   onDelete: (row: TransactionRow) => void;
   onEditSuccess: () => void;
 }) {
+  const { t } = useLocale();
   const {
     isBuy,
     isPending,
@@ -276,10 +295,11 @@ function TransactionCard({
     isGain,
     blankValueReason,
     paidAmount,
-  } = getRowDisplay(row, currentPricePerTroyOz, displayUnit);
+    unitLabel,
+  } = getRowDisplay(row, currentPricePerTroyOz, displayUnit, t);
 
   return (
-    <Panel className={cn("flex flex-col gap-3", isPending && "opacity-60")}>
+    <Panel className={cn("flex flex-col gap-3.5", isPending && "opacity-60")}>
       <div className="flex items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-2">
           <div
@@ -296,7 +316,8 @@ function TransactionCard({
           </div>
           <div className="min-w-0">
             <p className="truncate text-[13.5px] font-medium text-foreground">
-              {isBuy ? "Buy" : "Sell"} {formatQuantity(row.quantity)} {row.unit}
+              {isBuy ? t.transactions.buy : t.transactions.sell}{" "}
+              {formatQuantity(row.quantity)} {unitLabel}
             </p>
             <MonoValue tone="muted" className="text-[11.5px]">
               {row.transactionDate}
@@ -305,7 +326,7 @@ function TransactionCard({
         </div>
         {isPending ? (
           <span className="shrink-0 text-[11.5px] text-muted-foreground">
-            Saving…
+            {t.transactions.saving}
           </span>
         ) : (
           <RowActions
@@ -316,23 +337,23 @@ function TransactionCard({
           />
         )}
       </div>
-      <div className="grid grid-cols-2 gap-x-4 gap-y-2.5 border-t border-border pt-3">
+      <div className="grid grid-cols-2 gap-x-4 gap-y-3 border-t border-border pt-3.5">
         <div>
-          <p className="text-[11.5px] text-muted-foreground">Paid</p>
-          <MonoValue className="text-[13px]">{paidAmount}</MonoValue>
+          <p className="tt-label text-[10.5px] text-muted-foreground">{t.transactions.paid}</p>
+          <MonoValue className="mt-0.5 block text-[13px]">{paidAmount}</MonoValue>
         </div>
         <div>
-          <p className="text-[11.5px] text-muted-foreground">
-            /{displayUnit}
+          <p className="tt-label text-[10.5px] text-muted-foreground">
+            /{unitLabels(t, displayUnit).primaryLower}
           </p>
-          <MonoValue tone="muted" className="text-[13px]">
+          <MonoValue tone="muted" className="mt-0.5 block text-[13px]">
             {formatUsd(pricePerDisplayUnit)}
           </MonoValue>
         </div>
         <div>
-          <p className="text-[11.5px] text-muted-foreground">Current Value</p>
+          <p className="tt-label text-[10.5px] text-muted-foreground">{t.transactions.currentValue}</p>
           {valuation.currentValueUsd ? (
-            <MonoValue className="text-[13px]">
+            <MonoValue className="mt-0.5 block text-[13px]">
               {formatUsd(valuation.currentValueUsd)}
             </MonoValue>
           ) : (
@@ -342,9 +363,9 @@ function TransactionCard({
           )}
         </div>
         <div>
-          <p className="text-[11.5px] text-muted-foreground">P&amp;L</p>
+          <p className="tt-label text-[10.5px] text-muted-foreground">{t.transactions.pnl}</p>
           {valuation.pnlUsd ? (
-            <MonoValue tone={isGain ? "gain" : "loss"} className="text-[13px]">
+            <MonoValue tone={isGain ? "gain" : "loss"} className="mt-0.5 block text-[13px]">
               {formatUsd(valuation.pnlUsd)}
             </MonoValue>
           ) : (
@@ -381,15 +402,16 @@ export function TransactionHistory({
   onAddClick: () => void;
   onEditSuccess: () => void;
 }) {
+  const { t } = useLocale();
   return (
     <div>
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-[15px] font-semibold text-foreground">
-          Transaction History
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+        <h2 className="tt-heading text-[15px] text-foreground">
+          [ {t.transactions.title} ]
         </h2>
         <Button size="sm" onClick={onAddClick}>
           <Plus className="h-4 w-4" />
-          Add transaction
+          <span className="tt-label text-[11.5px]">{t.transactions.addTransaction}</span>
         </Button>
       </div>
       {error && <InlineBanner variant="error">{error}</InlineBanner>}
@@ -400,16 +422,16 @@ export function TransactionHistory({
         <div className="hidden max-h-80 overflow-auto rounded-lg border border-border bg-card md:block">
           <table className="w-full min-w-140 border-collapse">
             <thead className="sticky top-0 bg-card">
-              <tr className="border-b border-border text-[11.5px] font-medium text-muted-foreground">
-                <th className="px-4 py-2.5 text-left font-medium">Date</th>
-                <th className="py-2.5 pr-3 text-left font-medium">Quantity</th>
-                <th className="py-2.5 pr-3 text-right font-medium">Paid</th>
-                <th className="py-2.5 pr-3 text-right font-medium">
-                  /{displayUnit}
+              <tr className="tt-label border-b border-border text-[10.5px] text-muted-foreground">
+                <th className="px-4 py-3 text-left font-medium">{t.transactions.date}</th>
+                <th className="py-3 pr-3 text-left font-medium">{t.transactions.quantity}</th>
+                <th className="py-3 pr-3 text-right font-medium">{t.transactions.paid}</th>
+                <th className="py-3 pr-3 text-right font-medium">
+                  /{unitLabels(t, displayUnit).primaryLower}
                 </th>
-                <th className="py-2.5 pr-3 text-right font-medium">Current Value</th>
-                <th className="py-2.5 pr-3 text-right font-medium">P&amp;L</th>
-                <th className="py-2.5 pr-4" />
+                <th className="py-3 pr-3 text-right font-medium">{t.transactions.currentValue}</th>
+                <th className="py-3 pr-3 text-right font-medium">{t.transactions.pnl}</th>
+                <th className="py-3 pr-4" />
               </tr>
             </thead>
             <tbody className="px-4">

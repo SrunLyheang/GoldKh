@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
 import { computeGainLoss } from "@/lib/calc/gainLoss";
 import { computeHoldings } from "@/lib/calc/holdings";
@@ -109,17 +109,19 @@ export function DashboardContent({
   const hasHoldings = Number(holdings.totalTroyOz) > 0;
 
   return (
-    <div className="flex flex-col gap-5 md:gap-6.5">
-      <HeroPriceCard
-        pricePerTroyOz={pricePerTroyOz}
-        pricePerChi={pricePerChi}
-        pricePerDamlung={pricePerDamlung}
-        capturedAt={capturedAt}
-        isStale={isStale}
-        refreshCooldownEndsAt={refreshCooldownEndsAt}
-        displayUnit={displayUnit}
-        onDisplayUnitChange={setDisplayUnit}
-      />
+    <div className="flex flex-col gap-7 md:gap-9">
+      <div className="vault-enter">
+        <HeroPriceCard
+          pricePerTroyOz={pricePerTroyOz}
+          pricePerChi={pricePerChi}
+          pricePerDamlung={pricePerDamlung}
+          capturedAt={capturedAt}
+          isStale={isStale}
+          refreshCooldownEndsAt={refreshCooldownEndsAt}
+          displayUnit={displayUnit}
+          onDisplayUnitChange={setDisplayUnit}
+        />
+      </div>
 
       <TransactionDialog
         open={addOpen}
@@ -134,43 +136,49 @@ export function DashboardContent({
         <EmptyState onAddClick={() => setAddOpen(true)} />
       ) : (
         <>
-          <StatRow
-            totalChi={fromTroyOz(holdings.totalTroyOz, "chi")}
-            totalDamlung={fromTroyOz(holdings.totalTroyOz, "damlung")}
-            averageCostPerChi={priceFromTroyOz(
-              holdings.averageCostPerTroyOz,
-              "chi"
-            )}
-            averageCostPerDamlung={priceFromTroyOz(
-              holdings.averageCostPerTroyOz,
-              "damlung"
-            )}
-            marketValueUsd={gainLoss.marketValueUsd}
-            gainLossUsd={gainLoss.gainLossUsd}
-            gainLossPercent={gainLoss.gainLossPercent}
-            displayUnit={displayUnit}
-          />
-          <TransactionHistory
-            rows={rows}
-            currentPricePerTroyOz={pricePerTroyOz}
-            error={error}
-            successMessage={successMessage}
-            displayUnit={displayUnit}
-            onDelete={handleDelete}
-            onAddClick={() => setAddOpen(true)}
-            onEditSuccess={handleEditSuccess}
-          />
+          <div className="vault-enter" style={{ "--enter-delay": "80ms" } as CSSProperties}>
+            <StatRow
+              totalChi={fromTroyOz(holdings.totalTroyOz, "chi")}
+              totalDamlung={fromTroyOz(holdings.totalTroyOz, "damlung")}
+              averageCostPerChi={priceFromTroyOz(
+                holdings.averageCostPerTroyOz,
+                "chi"
+              )}
+              averageCostPerDamlung={priceFromTroyOz(
+                holdings.averageCostPerTroyOz,
+                "damlung"
+              )}
+              marketValueUsd={gainLoss.marketValueUsd}
+              gainLossUsd={gainLoss.gainLossUsd}
+              gainLossPercent={gainLoss.gainLossPercent}
+              displayUnit={displayUnit}
+            />
+          </div>
+          <div className="vault-enter" style={{ "--enter-delay": "140ms" } as CSSProperties}>
+            <TransactionHistory
+              rows={rows}
+              currentPricePerTroyOz={pricePerTroyOz}
+              error={error}
+              successMessage={successMessage}
+              displayUnit={displayUnit}
+              onDelete={handleDelete}
+              onAddClick={() => setAddOpen(true)}
+              onEditSuccess={handleEditSuccess}
+            />
+          </div>
         </>
       )}
 
-      <PriceHistoryChart
-        points={chartPoints}
-        breakEvenPerDamlung={
-          hasHoldings
-            ? Number(priceFromTroyOz(holdings.averageCostPerTroyOz, "damlung"))
-            : undefined
-        }
-      />
+      <div className="vault-enter" style={{ "--enter-delay": "200ms" } as CSSProperties}>
+        <PriceHistoryChart
+          points={chartPoints}
+          breakEvenPerDamlung={
+            hasHoldings
+              ? Number(priceFromTroyOz(holdings.averageCostPerTroyOz, "damlung"))
+              : undefined
+          }
+        />
+      </div>
     </div>
   );
 }

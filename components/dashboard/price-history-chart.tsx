@@ -12,6 +12,7 @@ import {
 } from "recharts";
 import { formatUsd } from "@/lib/format/money";
 import type { ChartPoint } from "@/lib/calc/priceHistory";
+import { useLocale } from "@/lib/i18n/locale-context";
 
 interface PriceHistoryChartProps {
   points: ChartPoint[];
@@ -124,11 +125,12 @@ export function PriceHistoryChart({
   points,
   breakEvenPerDamlung,
 }: PriceHistoryChartProps) {
+  const { t } = useLocale();
   if (points.length < 2) {
     return (
       <div className="flex h-70 items-center justify-center rounded-xl border border-border bg-card">
         <p className="text-[12.5px] text-muted-foreground">
-          Not enough price history yet — check back after a few refreshes.
+          {t.chart.notEnoughHistory}
         </p>
       </div>
     );
@@ -139,8 +141,8 @@ export function PriceHistoryChart({
 
   return (
     <div className="rounded-xl border border-border bg-card p-4">
-      <h2 className="mb-3 text-[15px] font-semibold text-foreground">
-        Price History
+      <h2 className="tt-heading mb-3 text-[15px] text-foreground">
+        [ Price History ]
       </h2>
       <div className="h-70 w-full">
         <ResponsiveContainer width="100%" height="100%">
@@ -156,13 +158,13 @@ export function PriceHistoryChart({
             <XAxis
               dataKey="date"
               tickFormatter={xAxisDateLabel}
-              tick={{ fontSize: 11.5, fill: "var(--muted-foreground)" }}
+              tick={{ fontSize: 11, fill: "var(--muted-foreground)", fontFamily: "var(--font-mono)" }}
               tickLine={false}
               axisLine={false}
               minTickGap={40}
             />
             <YAxis
-              tick={{ fontSize: 11.5, fill: "var(--muted-foreground)" }}
+              tick={{ fontSize: 11, fill: "var(--muted-foreground)", fontFamily: "var(--font-mono)" }}
               tickLine={false}
               axisLine={false}
               width={56}

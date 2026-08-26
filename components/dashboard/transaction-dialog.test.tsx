@@ -163,7 +163,7 @@ describe("TransactionDialog", () => {
     const user = userEvent.setup();
     renderDialog({ existingTransactions });
 
-    await user.click(screen.getByRole("button", { name: "sell" }));
+    await user.click(screen.getByRole("button", { name: "Sell" }));
     await user.type(screen.getByLabelText("Quantity"), "10");
 
     expect(

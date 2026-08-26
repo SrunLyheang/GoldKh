@@ -76,7 +76,10 @@
     --chart-3: #4ade80;
     --chart-4: #f87171;
     --chart-5: #f5f1e8;
-    --radius: 12px;
+    /* Industrial Brutalism fusion (see context/ui-context.md): sharp 90°
+       corners everywhere. Every rounded-* utility derives from this one
+       token, so zeroing it is the single edit that squares the app. */
+    --radius: 0px;
     --sidebar: #151009;
     --sidebar-foreground: #f5f1e8;
     --sidebar-primary: #e8b84b;
@@ -97,6 +100,73 @@
   html {
     @apply font-sans;
     }
+}
+
+/* Hard-edged offset shadows, no blur — brutalism rejects soft drop
+   shadows, so elevation reads as a flat plate stacked on the page
+   instead of a glow. `-lg` (hero, chart) casts further than `-sm`
+   (stat/transaction cards) to keep the same hierarchy the blurred
+   versions had. See context/ui-context.md. */
+.shadow-vault-lg {
+  box-shadow: 4px 4px 0 0 var(--border);
+}
+.shadow-vault-sm {
+  box-shadow: 2px 2px 0 0 var(--border);
+}
+
+/* A faint fixed grain so the near-black background reads as a surface
+   rather than a flat fill. Pointer-events-none, decorative only. */
+.vault-grain::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.05;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Brutalist micro-typography — every label, nav item, table header, and
+   piece of metadata routes through this instead of plain muted text, per
+   the industrial-brutalist-ui skill's section 3.2. Mono + uppercase +
+   wide tracking reads as terminal/telemetry data rather than UI copy. */
+.tt-label {
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+/* Structural headers — tight negative tracking so uppercase glyphs read
+   as one solid block, per section 3.1. Used for section titles, not
+   body copy. */
+.tt-heading {
+  text-transform: uppercase;
+  letter-spacing: -0.01em;
+  font-weight: 700;
+}
+
+/* One authored entrance: dashboard sections cascade in rather than
+   mounting all at once. Applied via `.vault-enter` + a `--enter-delay`
+   custom property per section (see dashboard-content.tsx). */
+@keyframes vault-enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.vault-enter {
+  animation: vault-enter 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: var(--enter-delay, 0ms);
+}
+@media (prefers-reduced-motion: reduce) {
+  .vault-enter {
+    animation: none;
+  }
 }
 
 /* Centered message that drifts upward and fades out — used by
@@ -124,4 +194,18 @@
 
 .animate-toast-float-up {
   animation: toast-float-up 1.8s ease-out forwards;
+}
+
+/* Khmer locale swaps the sans stack to a face with real Khmer glyphs.
+   Overrides `--font-geist-sans` (not `--font-sans` directly) so it wins
+   on specificity over the `.font-sans` utility regardless of source
+   order, and leaves `--font-mono` untouched — every price/quantity still
+   renders in Geist Mono per ui-context.md's tabular-figures rule. Khmer
+   script's stacked diacritics also need more line-height than Latin
+   text to avoid visually clipping. */
+html[lang="km"] {
+  --font-geist-sans: var(--font-khmer), ui-sans-serif, system-ui, sans-serif;
+}
+html[lang="km"] body {
+  line-height: 1.65;
 }

@@ -41,3 +41,8 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 .clerk/
+
+# editor / tooling
+.claude/settings.local.json
+.impeccable/
+*.local
