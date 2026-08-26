@@ -1,3 +1,5 @@
+// Matches Cambodian gold-market convention (per the Vietnamese "chỉ"),
+// but not yet checked against a live Cambodian shop or exchange quote.
 export const GRAMS_PER_CHI = 3.75;
 
 export const GRAMS_PER_TROY_OZ = 31.1034768;

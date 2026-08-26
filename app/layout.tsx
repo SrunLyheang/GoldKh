@@ -1,3 +1,5 @@
+import { ClerkProvider } from "@clerk/nextjs";
+import { shadcn } from "@clerk/ui/themes";
 import type { Metadata } from "next";
 import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
@@ -12,7 +14,14 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={cn(GeistSans.variable, GeistMono.variable)}>
-      <body className="font-sans">{children}</body>
+      <body className="font-sans">
+        <ClerkProvider
+          appearance={{ theme: shadcn }}
+          localization={{ signIn: { start: { title: "Sign in" } } }}
+        >
+          {children}
+        </ClerkProvider>
+      </body>
     </html>
   );
 }
