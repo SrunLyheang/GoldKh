@@ -14,10 +14,13 @@ Update this file after every meaningful implementation change.
 
 ## Current Goal
 
-- Refresh-button rework is implemented and verified in the working
-  tree but not yet committed (see Session Notes). Commit it, then
-  move to the rate-limiting/webhook/test-coverage priority list from
-  the 2026-08-26 grilling session.
+- Refresh-button UI removed (kept as a paid-tier feature, see
+  Architecture Decisions), Clerk `user.deleted` webhook implemented
+  — both verified (typecheck, full test suite, `next build` all
+  clean) but not yet committed. Commit this work, then move to rate
+  limiting (still item 1 on the priority list — the webhook was done
+  out of order at the user's request) and UI/component test
+  coverage.
 
 ## Completed
 
@@ -77,7 +80,9 @@ Decisions.)
 1. Rate limiting on the transaction-mutating routes — hard block
    (429), keyed on Clerk `user_id`. See the Architecture Decisions
    entry above; now the top priority given open public signup.
-2. Clerk `user.deleted` webhook.
+2. ~~Clerk `user.deleted` webhook.~~ Done — see Architecture
+   Decisions. Done ahead of item 1 at the user's explicit request;
+   rate limiting is still the actual top-priority gap.
 3. UI/component test coverage (see Architecture Decisions) —
    after 1 and 2, before new features.
 4. Pagination or an alternate treatment for transaction lists
@@ -100,11 +105,11 @@ Decisions.)
   sporadic checking, not a dashboard left open all day continuously —
   revisit if the user's actual usage pattern turns out to burn through
   the quota faster than expected.
-- Clerk `user.deleted` webhook — a deleted user currently leaves
-  orphaned transaction rows. Priority raised: see Architecture
-  Decisions ("Audience: open public signup") — strangers can now
-  create and later delete accounts, so this is the next item after
-  rate limiting, not an indefinitely-deferred one.
+- ~~Clerk `user.deleted` webhook~~ — resolved, see Architecture
+  Decisions. Requires `CLERK_WEBHOOK_SIGNING_SECRET` (added to
+  `.env.example`) and registering the endpoint URL in the Clerk
+  Dashboard's Webhooks section, subscribed to `user.deleted`, before
+  it does anything in production — not yet done outside this repo.
 - Live 24h price % change was described in `ui-context.md`'s hero
   card layout but not implemented — `price_snapshots` doesn't
   currently support looking up "the snapshot from ~24h ago"
@@ -691,6 +696,62 @@ Decisions.)
   deliberately not planning an upgrade path or a signup cutoff now.
   Revisit only if usage actually approaches either limit; see
   Known Constraints for the Neon storage math.
+
+- **`RefreshButton` no longer disables itself during the manual
+  refresh cooldown.** User reported that clicking Refresh a second
+  time showed nothing. Root cause: `canManualRefresh` gated the
+  `disabled` prop, so a second click never fired at all — the
+  route's existing 429 `COOLDOWN` message (`"Price was just
+  refreshed — try again in a few minutes"`) had no way to reach the
+  user. Fix: `disabled` now tracks only `isPending` (the in-flight
+  request); `canManualRefresh` still sets the initial `title`
+  tooltip, but no longer blocks the click. The server remains the
+  actual enforcement point — this only changes whether a client can
+  ask and be told no.
+
+- **Automatic refresh-on-entry: no change needed, already correct.**
+  Investigated in response to "make sure the API refreshes when they
+  enter if they haven't refreshed in a while" — `getPrice()`
+  (`lib/price/getPrice.ts`) already runs on every `/dashboard` load
+  via `app/dashboard/page.tsx`, and re-fetches from goldapi.io
+  whenever the cached snapshot is older than `PRICE_STALENESS_MS`
+  (30 minutes) before the page renders. This is separate from, and
+  unaffected by, the manual-refresh button and its 10-minute
+  cooldown.
+
+- **Refresh button UI removed; the manual-refresh backend is kept,
+  not deleted.** User decision: the dashboard already auto-refreshes
+  the price on every page load when the cache is stale (see the
+  entry above), so a free-tier manual-refresh button was redundant —
+  reserved instead as a future paid-subscription feature ("no
+  limits," i.e. presumably without the 10-minute cooldown).
+  Removed: `components/dashboard/refresh-button.tsx` and its prop
+  threading (`canManualRefresh`) through `HeroPriceCard` →
+  `DashboardContent` → `app/dashboard/page.tsx`. Deliberately kept
+  as-is, unused but ready to re-wire: `POST /api/price/refresh`
+  (`app/api/price/refresh/route.ts`), `getLatestManualSnapshot`/
+  `isManualCooldownActive` (`lib/price/getPrice.ts`), the
+  `isManual` column on `price_snapshots`, and all their tests —
+  ripping these out would mean re-doing this exact work (and another
+  DB migration) when the paid tier is built.
+
+- **Clerk `user.deleted` webhook — implemented.**
+  `app/api/webhooks/clerk/route.ts`, verified via `verifyWebhook`
+  from `@clerk/nextjs/webhooks` (wraps svix under the hood — no new
+  dependency needed). Unlike every other route, this one is
+  authenticated by signature, not `auth()`, since Clerk calls it
+  server-to-server with no session cookie. On `user.type ===
+  "user.deleted"`, calls the new `deleteAllTransactionsForUser`
+  query (`lib/db/queries/transactions.ts`) to remove every
+  transaction row for that Clerk user id, resolving the orphaned-row
+  open question. Every other event type returns 200 and is ignored,
+  per Clerk's guidance not to 4xx on unhandled types (a 4xx triggers
+  a retry). Requires `CLERK_WEBHOOK_SIGNING_SECRET` (added to
+  `.env.example`) and the endpoint URL registered in the Clerk
+  Dashboard's Webhooks section, subscribed to `user.deleted` — that
+  dashboard-side registration has not been done yet, only the code
+  side. Covered by `route.test.ts` (400 on bad signature, delete on
+  `user.deleted`, no-op 200 on other event types).
 
 ## Known Constraints
 

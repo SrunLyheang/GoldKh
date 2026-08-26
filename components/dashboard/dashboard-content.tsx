@@ -30,7 +30,6 @@ export function DashboardContent({
   pricePerDamlung,
   capturedAt,
   isStale,
-  canManualRefresh,
   chartPoints,
 }: {
   transactions: TransactionRow[];
@@ -39,7 +38,6 @@ export function DashboardContent({
   pricePerDamlung: string;
   capturedAt: Date;
   isStale: boolean;
-  canManualRefresh: boolean;
   chartPoints: ChartPoint[];
 }) {
   const router = useRouter();
@@ -140,7 +138,6 @@ export function DashboardContent({
         pricePerDamlung={pricePerDamlung}
         capturedAt={capturedAt}
         isStale={isStale}
-        canManualRefresh={canManualRefresh}
       />
 
       <TransactionDialog

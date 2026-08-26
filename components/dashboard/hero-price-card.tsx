@@ -1,5 +1,4 @@
 import { formatUsd } from "@/lib/format/money";
-import { RefreshButton } from "./refresh-button";
 
 interface HeroPriceCardProps {
   pricePerTroyOz: string;
@@ -7,7 +6,6 @@ interface HeroPriceCardProps {
   pricePerDamlung: string;
   capturedAt: Date;
   isStale: boolean;
-  canManualRefresh: boolean;
 }
 
 export function HeroPriceCard({
@@ -16,7 +14,6 @@ export function HeroPriceCard({
   pricePerDamlung,
   capturedAt,
   isStale,
-  canManualRefresh,
 }: HeroPriceCardProps) {
   const timeLabel = new Intl.DateTimeFormat("en-US", {
     hour: "numeric",
@@ -51,7 +48,6 @@ export function HeroPriceCard({
               {isStale ? "Stale" : "Live"} as of {timeLabel}
             </span>
           </div>
-          <RefreshButton canManualRefresh={canManualRefresh} />
         </div>
       </div>
       <p className="mt-4 text-[11.5px] text-muted-foreground">
