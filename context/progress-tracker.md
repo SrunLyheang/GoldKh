@@ -4,19 +4,20 @@ Update this file after every meaningful implementation change.
 
 ## Current Phase
 
-- Core dashboard implemented end to end (steps 1-8 of the
-  previous "Next Up" list) and verified against the real Neon
-  DB and goldapi.io. Edit/delete transaction routes and the
-  price-history chart are the remaining named-but-unbuilt
-  features.
+- Core dashboard implemented end to end and verified against the
+  real Neon DB and goldapi.io: transactions CRUD (add/edit/delete,
+  all optimistic), holdings/gain-loss calc, price-history chart,
+  and Vault visual design. Open public signup confirmed as the
+  actual audience (2026-08-26 grilling session), which reprioritized
+  the remaining work toward hardening (rate limiting, the
+  `user.deleted` webhook, UI test coverage) over new features.
 
 ## Current Goal
 
-- User-facing next step: sign in and use the dashboard to
-  confirm the UI matches expectations. Implementation-side next
-  step: edit/delete transaction routes (project-overview.md
-  lists these as in-scope but they were out of this session's
-  approved plan).
+- Refresh-button rework is implemented and verified in the working
+  tree but not yet committed (see Session Notes). Commit it, then
+  move to the rate-limiting/webhook/test-coverage priority list from
+  the 2026-08-26 grilling session.
 
 ## Completed
 
@@ -69,7 +70,9 @@ item. Remaining, not started:
 
 Priority order confirmed via a 2026-08-26 grilling session — items
 1-3 are the actual next work; 4-5 stay deferred until they cause a
-real problem, not on a fixed timeline:
+real problem, not on a fixed timeline. (The Refresh-button rework
+that briefly sat ahead of this list has shipped — see Architecture
+Decisions.)
 
 1. Rate limiting on the transaction-mutating routes — hard block
    (429), keyed on Clerk `user_id`. See the Architecture Decisions
@@ -509,6 +512,30 @@ real problem, not on a fixed timeline:
   means most clicks just re-render identical numbers, reading as
   broken. Chose visible feedback over bypassing the cache (offered
   as the alternative) to avoid burning extra goldapi.io calls.
+  **Superseded** later (see the entry below) once the user reported
+  the button as still not doing anything real — visible feedback on
+  a no-op round trip wasn't actually enough.
+
+- **Refresh button reworked to bypass the cache for real, gated by
+  a 10-minute cooldown — implemented.** `price_snapshots` gained an
+  `isManual boolean not null default false` column (migration
+  `0001_faulty_sway.sql`, applied to the live Neon DB). New
+  `POST /api/price/refresh` route: checks `getLatestManualSnapshot()`
+  via `isManualCooldownActive()` (429 `COOLDOWN` if within 10
+  minutes), otherwise calls `fetchGoldapiPrice()` directly and
+  inserts via the new `insertSnapshot(price, { manual: true })`,
+  bypassing `getPrice()`'s 30-minute staleness gate entirely. 502
+  `PROVIDER_ERROR` on provider failure. `app/dashboard/page.tsx`
+  computes `canManualRefresh` server-side and threads it through
+  `DashboardContent` → `HeroPriceCard` → `RefreshButton`, so the
+  button starts disabled ("Refreshed recently") instead of letting a
+  click fail. One deviation from the original plan: `insertSnapshot`
+  is a plain unconditional insert used only by this route, *not*
+  wired underneath `insertIfStillStale`'s atomic conditional insert
+  as the plan suggested — splitting that single guarded SQL
+  statement into a separate check-then-insert would reopen the race
+  condition the conditional insert exists to close. Covered by
+  `app/api/price/refresh/route.test.ts` (401/429/200/502 cases).
 
 - **Sidebar converted to `fixed` positioning, highest z-index.**
   Per `context/design-specs/01-ui-ux`: the nav bar should be fixed
@@ -519,7 +546,9 @@ real problem, not on a fixed timeline:
   no longer sits under the now-fixed sidebar. The `UserButton`
   block was already the last child after `flex-1` on the nav list,
   so it already pins to the bottom of the fixed column — no
-  additional change needed for that half of the spec. Uncommitted.
+  additional change needed for that half of the spec. Landed in
+  `4c7f01a` (confirmed via `git status`/`git log` — no longer
+  uncommitted, correcting the earlier note).
 
 - **Price staleness raised from 5 minutes to 30 minutes
   (`lib/constants/staleness.ts`).** Per `context/design-specs/02-Table`
@@ -729,3 +758,19 @@ real problem, not on a fixed timeline:
   it readable. It exists in the code.
 - A provider returning HTTP 200 with an error body is the
   expected failure mode to guard against in the rotation logic.
+- **2026-08-26, later in the day:** user reported the Refresh
+  button "doesn't really do anything." Root cause diagnosed (the
+  30-minute price cache plus the existing 60s auto-refresh mean a
+  manual click almost always re-renders identical numbers) and a
+  fix plan was written and reviewed: force a real goldapi.io fetch
+  on click, bypassing the cache, gated by a 10-minute global
+  cooldown backed by a new `isManual` column on `price_snapshots`
+  (not in-memory state, since that wouldn't survive serverless cold
+  starts or be shared across instances). Plan file:
+  `~/.claude/plans/my-refresh-button-deosnt-glimmering-turtle.md`.
+  **Implemented in a later session** — see the "Refresh button
+  reworked to bypass the cache for real" entry above; confirmed
+  present in the working tree (`git status` shows the migration,
+  `app/api/price/refresh/`, and the touched files, all uncommitted)
+  and matching the plan. Remaining step: commit this work — nothing
+  from the refresh-button rework has been committed to git yet.

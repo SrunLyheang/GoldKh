@@ -1,4 +1,5 @@
 import {
+  boolean,
   date,
   numeric,
   pgEnum,
@@ -18,6 +19,10 @@ export const priceSnapshots = pgTable("price_snapshots", {
     scale: 4,
   }).notNull(),
   source: text("source").notNull(),
+  // True only for a row inserted by the user-triggered manual refresh
+  // route, never by getPrice()'s own staleness-driven insert — see
+  // MANUAL_REFRESH_COOLDOWN_MS in lib/constants/staleness.ts.
+  isManual: boolean("is_manual").notNull().default(false),
   capturedAt: timestamp("captured_at", { withTimezone: true })
     .defaultNow()
     .notNull(),

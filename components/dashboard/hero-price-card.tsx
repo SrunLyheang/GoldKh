@@ -7,6 +7,7 @@ interface HeroPriceCardProps {
   pricePerDamlung: string;
   capturedAt: Date;
   isStale: boolean;
+  canManualRefresh: boolean;
 }
 
 export function HeroPriceCard({
@@ -15,6 +16,7 @@ export function HeroPriceCard({
   pricePerDamlung,
   capturedAt,
   isStale,
+  canManualRefresh,
 }: HeroPriceCardProps) {
   const timeLabel = new Intl.DateTimeFormat("en-US", {
     hour: "numeric",
@@ -23,7 +25,7 @@ export function HeroPriceCard({
 
   return (
     <div className="relative overflow-hidden rounded-xl border border-border bg-card p-6">
-      <div className="absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-primary/40 via-primary to-primary/40" />
+      <div className="absolute inset-x-0 top-0 h-0.75 bg-linear-to-r from-primary/40 via-primary to-primary/40" />
       <div className="flex items-start justify-between gap-6">
         <div>
           <p className="text-[11.5px] font-medium text-muted-foreground">
@@ -49,13 +51,13 @@ export function HeroPriceCard({
               {isStale ? "Stale" : "Live"} as of {timeLabel}
             </span>
           </div>
-          <RefreshButton />
+          <RefreshButton canManualRefresh={canManualRefresh} />
         </div>
       </div>
       <p className="mt-4 text-[11.5px] text-muted-foreground">
-        Cambodian gold shops typically sell above spot — a position may
-        show as a &quot;loss&quot; here that is really dealer premium, not
-        an actual loss.
+        Cambodian gold shops typically sell above spot — a position may show as
+        a &quot;loss&quot; here that is really dealer premium, not an actual
+        loss.
       </p>
     </div>
   );
