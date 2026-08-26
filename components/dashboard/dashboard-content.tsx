@@ -1,28 +1,25 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { computeGainLoss } from "@/lib/calc/gainLoss";
 import { computeHoldings } from "@/lib/calc/holdings";
-import { fromTroyOz, priceFromTroyOz } from "@/lib/calc/units";
+import { fromTroyOz, priceFromTroyOz, type GoldUnit } from "@/lib/calc/units";
 import type { ChartPoint } from "@/lib/calc/priceHistory";
 import { EmptyState } from "./empty-state";
 import { HeroPriceCard } from "./hero-price-card";
 import { PriceHistoryChart } from "./price-history-chart";
 import { StatRow } from "./stat-row";
 import { TransactionHistory, type TransactionRow } from "./transaction-history";
-import {
-  TransactionDialog,
-  type AddSettledResult,
-  type EditableTransaction,
-} from "./transaction-dialog";
+import { TransactionDialog, type AddSettledResult } from "./transaction-dialog";
+import { useOptimisticTransactions } from "./use-optimistic-transactions";
 
-// Owns the optimistic transaction state (add + delete) that used to live
-// inside TransactionHistory alone. Lifted up here so an optimistic change
-// recomputes holdings/gain-loss/break-even client-side and the whole
-// dashboard updates instantly, not just the transaction table row — the
-// user-reported gap: adding a transaction updated the table but the stat
-// row and hero card's numbers still waited on router.refresh().
+// Owns the merged transaction list (via useOptimisticTransactions) and the
+// error/success banner state around it, so an optimistic change recomputes
+// holdings/gain-loss/break-even client-side and the whole dashboard updates
+// instantly, not just the transaction table row — the user-reported gap:
+// adding a transaction updated the table but the stat row and hero card's
+// numbers still waited on router.refresh().
 export function DashboardContent({
   transactions,
   pricePerTroyOz,
@@ -44,16 +41,11 @@ export function DashboardContent({
 }) {
   const router = useRouter();
   const [addOpen, setAddOpen] = useState(false);
-  const [removedIds, setRemovedIds] = useState<Set<string>>(new Set());
-  const [pendingAdds, setPendingAdds] = useState<EditableTransaction[]>([]);
-  const awaitingAddRefresh = useRef(false);
+  const [displayUnit, setDisplayUnit] = useState<GoldUnit>("damlung");
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-
-  const rows: TransactionRow[] = [
-    ...pendingAdds,
-    ...transactions.filter((row) => !removedIds.has(row.id)),
-  ];
+  const { rows, addOptimistic, settleAdd, markRemoved, unmarkRemoved } =
+    useOptimisticTransactions(transactions);
 
   useEffect(() => {
     if (!error) return;
@@ -67,24 +59,16 @@ export function DashboardContent({
     return () => clearTimeout(timeout);
   }, [successMessage]);
 
-  useEffect(() => {
-    if (awaitingAddRefresh.current) {
-      setPendingAdds([]);
-      awaitingAddRefresh.current = false;
-    }
-  }, [transactions]);
-
-  function handleOptimisticAdd(row: EditableTransaction) {
+  function handleOptimisticAdd(row: Parameters<typeof addOptimistic>[0]) {
     setError(null);
-    setPendingAdds((prev) => [row, ...prev]);
+    addOptimistic(row);
   }
 
   function handleAddSettled(tempId: string, result: AddSettledResult) {
+    settleAdd(tempId, result);
     if (result.ok) {
-      awaitingAddRefresh.current = true;
       setSuccessMessage("Transaction added");
     } else {
-      setPendingAdds((prev) => prev.filter((row) => row.id !== tempId));
       setError(result.message);
     }
   }
@@ -95,27 +79,19 @@ export function DashboardContent({
 
   async function handleDelete(row: TransactionRow) {
     setError(null);
-    setRemovedIds((prev) => new Set(prev).add(row.id));
+    markRemoved(row.id);
 
     let res: Response;
     try {
       res = await fetch(`/api/transactions/${row.id}`, { method: "DELETE" });
     } catch {
-      setRemovedIds((prev) => {
-        const next = new Set(prev);
-        next.delete(row.id);
-        return next;
-      });
+      unmarkRemoved(row.id);
       setError("Couldn't reach the server — the transaction was not deleted.");
       return;
     }
 
     if (!res.ok) {
-      setRemovedIds((prev) => {
-        const next = new Set(prev);
-        next.delete(row.id);
-        return next;
-      });
+      unmarkRemoved(row.id);
       const body = await res.json().catch(() => null);
       setError(body?.error?.message ?? "Couldn't delete — please try again.");
       return;
@@ -141,6 +117,8 @@ export function DashboardContent({
         capturedAt={capturedAt}
         isStale={isStale}
         refreshCooldownEndsAt={refreshCooldownEndsAt}
+        displayUnit={displayUnit}
+        onDisplayUnitChange={setDisplayUnit}
       />
 
       <TransactionDialog
@@ -163,15 +141,21 @@ export function DashboardContent({
               holdings.averageCostPerTroyOz,
               "chi"
             )}
+            averageCostPerDamlung={priceFromTroyOz(
+              holdings.averageCostPerTroyOz,
+              "damlung"
+            )}
             marketValueUsd={gainLoss.marketValueUsd}
             gainLossUsd={gainLoss.gainLossUsd}
             gainLossPercent={gainLoss.gainLossPercent}
+            displayUnit={displayUnit}
           />
           <TransactionHistory
             rows={rows}
             currentPricePerTroyOz={pricePerTroyOz}
             error={error}
             successMessage={successMessage}
+            displayUnit={displayUnit}
             onDelete={handleDelete}
             onAddClick={() => setAddOpen(true)}
             onEditSuccess={handleEditSuccess}

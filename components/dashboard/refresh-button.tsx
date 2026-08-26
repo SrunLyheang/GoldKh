@@ -67,6 +67,10 @@ export function RefreshButton({
     if (!res.ok) {
       const body = await res.json().catch(() => null);
       if (res.status === 429) {
+        // The error envelope carries no data field (architecture.md's
+        // one-shape-per-route rule), so there's no real deadline to read
+        // here — this is the one case where a client-side guess is
+        // unavoidable, not a choice.
         setCooldownEndsAt(Date.now() + MANUAL_REFRESH_COOLDOWN_MS);
         setInCooldown(true);
       }
@@ -76,7 +80,13 @@ export function RefreshButton({
       return;
     }
 
-    setCooldownEndsAt(Date.now() + MANUAL_REFRESH_COOLDOWN_MS);
+    const body = await res.json();
+    // Real cooldown deadline, derived from the snapshot the server just
+    // captured — not a guess taken at a different instant than the
+    // server's own enforcement clock.
+    setCooldownEndsAt(
+      new Date(body.data.capturedAt).getTime() + MANUAL_REFRESH_COOLDOWN_MS
+    );
     setInCooldown(true);
     startTransition(() => {
       router.refresh();

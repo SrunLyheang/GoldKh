@@ -199,11 +199,18 @@ verifiable, per `ai-workflow-rules.md`'s "When to Split Work"):
   sporadic checking, not a dashboard left open all day continuously —
   revisit if the user's actual usage pattern turns out to burn through
   the quota faster than expected.
-- ~~Clerk `user.deleted` webhook~~ — resolved, see Architecture
-  Decisions. Requires `CLERK_WEBHOOK_SIGNING_SECRET` (added to
-  `.env.example`) and registering the endpoint URL in the Clerk
-  Dashboard's Webhooks section, subscribed to `user.deleted`, before
-  it does anything in production — not yet done outside this repo.
+- **Clerk `user.deleted` webhook registration — deliberately deferred
+  by the user, 2026-08-27.** The code is done and requires no further
+  work (see Architecture Decisions); what's outstanding is only the
+  external step — setting `CLERK_WEBHOOK_SIGNING_SECRET` and
+  registering the endpoint in the Clerk Dashboard, subscribed to
+  `user.deleted`. User's call: not worth doing until there's a real
+  user base, since until then a deleted account leaving orphaned
+  transaction rows behind is a low-stakes gap, not an active problem.
+  `lib/env.ts` already treats this var as optional, not
+  boot-blocking, precisely so this could be deferred safely.
+  Revisit once there are meaningfully more users than just the
+  developer.
 - Live 24h price % change was described in `ui-context.md`'s hero
   card layout but not implemented — `price_snapshots` doesn't
   currently support looking up "the snapshot from ~24h ago"
@@ -233,12 +240,90 @@ verifiable, per `ai-workflow-rules.md`'s "When to Split Work"):
 
 - ~~Vercel deploy + migration process, not yet documented outside
   this repo.~~ Resolved — see `architecture.md`'s "First-deploy
-  checklist." None of its 5 steps are done outside this repo yet
-  (no Vercel project connected, no production Clerk instance keys
-  set, no Sentry project created) — this is a checklist for the
-  user to work through, not something further code changes affect.
+  checklist." Status as of 2026-08-27: step 5 (Sentry project + DSN)
+  is done — `NEXT_PUBLIC_SENTRY_DSN` is set in `.env.local`. Step 4
+  (Clerk webhook registration) is deliberately deferred by the user
+  until there's a real user base (see the Clerk webhook entry
+  above). Steps 1-3 (Vercel project, production env vars, first
+  migration) remain not done — no code change affects them, this is
+  a checklist for the user to work through.
 
 ## Architecture Decisions
+
+- **Remaining three architecture-review candidates implemented**
+  (2026-08-27, same review as the entry below):
+  - **`existingTransactions`/`allRows` prop drilling collapsed via
+    context.** `transaction-history.tsx`'s `Row` and `TransactionCard`
+    carried an `allRows` prop purely to pass through to `RowActions`,
+    which needed it only to compute holdings-excluding-self inside
+    `TransactionDialog`'s edit mode. Replaced with a module-local
+    `AllRowsContext`, provided once around `TransactionHistory`'s
+    render and read directly by `RowActions` via `useContext` — `Row`
+    and `TransactionCard`'s prop interfaces each dropped a prop they
+    never used themselves.
+  - **Auth + rate-limit given a seam: `withAuthAndRateLimit`**
+    (`lib/api/withAuthAndRateLimit.ts`). The identical five-line
+    auth-then-rate-limit block was duplicated across `POST
+    /api/transactions` and `PATCH`/`DELETE /api/transactions/[id]` —
+    now one higher-order function wraps a handler, checks auth then
+    rate limit in a fixed order, and passes `userId` (merged with the
+    route's own context, e.g. `params` on the `[id]` routes) into the
+    handler. `GET /api/transactions` and `POST /api/price/refresh`
+    stay unwrapped — rate limiting was always scoped to the
+    transaction-*mutating* routes only, unchanged. Existing route
+    tests needed no changes (their `vi.mock` of `@clerk/nextjs/server`
+    and `@/lib/api/rateLimit` still intercepts the same imports,
+    now reached through the wrapper); added 4 new tests
+    (`withAuthAndRateLimit.test.ts`) covering the 401/429 short-circuit
+    order and context merging directly.
+  - **`RefreshButton`'s cooldown deadline now read from the server's
+    response, not guessed from `Date.now()`.** On a successful manual
+    refresh, `POST /api/price/refresh` already returns the inserted
+    snapshot's real `capturedAt`; the button now derives
+    `cooldownEndsAt` from that instead of `Date.now() +
+    MANUAL_REFRESH_COOLDOWN_MS` taken at a different instant
+    (post-fetch-latency). The 429-cooldown-already-active branch keeps
+    its client-side guess — the error envelope has no `data` field per
+    `architecture.md`'s one-shape-per-route rule, so there's no real
+    deadline available there; documented inline as an unavoidable
+    exception, not an oversight. Updated `refresh-button.test.tsx`'s
+    success-case mock to return a real `data.capturedAt` body (was
+    `Response(null)`, which the new code path can no longer parse as
+    JSON) and added a test asserting the cooldown reflects the
+    server's timestamp rather than the click instant.
+
+  111/111 tests pass (106 + 5 new); typecheck, lint, `next build` all
+  clean.
+
+- **Optimistic transaction reconciliation extracted into
+  `useOptimisticTransactions`** (`components/dashboard/
+  use-optimistic-transactions.ts`), acted on from an architecture review
+  (`/improve-codebase-architecture`, 2026-08-27). Previously
+  `pendingAdds`/`removedIds`/`awaitingAddRefresh` lived inline in
+  `DashboardContent` — the temp-id/settle protocol was assembled at the
+  call site from four separate props and a ref, and was the one untested
+  module in an otherwise well-tested cluster (its sibling components all
+  gained `.test.tsx` files this session). The hook now owns that
+  reconciliation exclusively: `rows` (merged), `addOptimistic`,
+  `settleAdd`, `markRemoved`, `unmarkRemoved`. `DashboardContent` keeps
+  the UI-facing concerns the hook doesn't own — the `error`/
+  `successMessage` banner state and the actual `DELETE` fetch call — and
+  calls the hook's functions inside its existing handlers. No prop or
+  behavior visible to `TransactionHistory`/`TransactionDialog`/
+  `EmptyState` changed. Covered by 5 new tests
+  (`use-optimistic-transactions.test.ts`, via `renderHook`/`act` under
+  jsdom): merge order, pending-add held until server rows catch up,
+  failed-settle rollback, an unrelated delete not clearing a still-
+  pending add, and remove/unmark. 106/106 tests pass; typecheck, lint,
+  `next build` all clean (re-verified after a concurrent session wired
+  up `UnitToggle` — see the "Dashboard display-unit toggle" entry below
+  — landed in the same working tree). Other candidates from the same
+  review (collapsing `existingTransactions` prop drilling, an
+  auth+rate-limit route-guard seam, the refresh button's client-side
+  cooldown guess) were surfaced but not acted on — left for a future
+  pass. The fifth candidate (`UnitToggle` promising cross-component
+  sync with no adapters wired up) is now moot — resolved by the
+  concurrent session's work.
 
 - **Project name: GoldKh.**
 
@@ -1037,6 +1122,35 @@ verifiable, per `ai-workflow-rules.md`'s "When to Split Work"):
   using a temporary mock-data preview route (deleted after use, never
   committed) since the real `/dashboard` needs a live Clerk session
   this environment doesn't have credentials for.
+
+- **Dashboard display-unit toggle: chi ⟷ damlung, single shared control.**
+  User request: "make this so users are able to change from chi to
+  domlerng." New `components/dashboard/unit-toggle.tsx`
+  (`UnitToggle`) — a small segmented control, styled with existing
+  `--primary`/`--accent`/`--border` tokens, no new color. State
+  (`displayUnit`, default `"damlung"`, matching the existing hero
+  headline decision) is owned by `DashboardContent`
+  (`components/dashboard/dashboard-content.tsx`) via `useState<GoldUnit>`
+  and passed down to `HeroPriceCard`, `StatRow`, and
+  `TransactionHistory` — one toggle drives all three instead of three
+  independent controls that could drift out of sync. The toggle itself
+  renders once, inside `HeroPriceCard`'s header, next to the "Price
+  per Chi/Damlung" label (only when `onDisplayUnitChange` is passed —
+  both new props are optional with a `"damlung"` default, so every
+  prior caller/test of `HeroPriceCard`, `StatRow`, and
+  `TransactionHistory` needed no change). Toggling switches: the hero
+  card's headline/secondary price and label, the stat row's Total
+  Holdings primary/sub figures and Average Cost value/label, and the
+  transaction table's `/damlung` column header and per-row price
+  (desktop table and mobile card view both). `lib/calc/transactionRow.ts`'s
+  `computeRowValuation` gained an additive `pricePerChi` field
+  alongside the existing `pricePerDamlung` (no field removed/renamed)
+  so the transaction table can show either without a second calc
+  pass. The price-history chart stays damlung-only — out of scope for
+  this request, not touched. 3 new tests added to
+  `hero-price-card.test.tsx` (chi headline rendering, toggle hidden
+  when no handler is passed, click calls the handler) — 101/101 tests
+  pass; typecheck, lint, and `next build` all clean.
 
 ## Known Constraints
 

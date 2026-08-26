@@ -1,6 +1,6 @@
 import { auth } from "@clerk/nextjs/server";
 import { apiError, apiOk } from "@/lib/api/response";
-import { isRateLimited } from "@/lib/api/rateLimit";
+import { withAuthAndRateLimit } from "@/lib/api/withAuthAndRateLimit";
 import {
   createTransactionForUser,
   listTransactionsForUser,
@@ -17,20 +17,7 @@ export async function GET() {
   return apiOk(rows);
 }
 
-export async function POST(request: Request) {
-  const { userId } = await auth();
-  if (!userId) {
-    return apiError("UNAUTHORIZED", "Sign in required", 401);
-  }
-
-  if (await isRateLimited(userId)) {
-    return apiError(
-      "RATE_LIMITED",
-      "Too many requests — please slow down and try again shortly",
-      429
-    );
-  }
-
+export const POST = withAuthAndRateLimit(async (request, { userId }) => {
   const body: unknown = await request.json();
   const parsed = transactionInputSchema.safeParse(body);
   if (!parsed.success) {
@@ -39,4 +26,4 @@ export async function POST(request: Request) {
 
   const created = await createTransactionForUser(userId, parsed.data);
   return apiOk(created, 201);
-}
+});

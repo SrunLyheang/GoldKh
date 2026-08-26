@@ -21,7 +21,14 @@ describe("RefreshButton", () => {
   it("calls the refresh route and shows a success toast on a 200", async () => {
     vi.stubGlobal(
       "fetch",
-      vi.fn().mockResolvedValue(new Response(null, { status: 200 }))
+      vi.fn().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            data: { id: "snap_1", capturedAt: new Date().toISOString() },
+          }),
+          { status: 200 }
+        )
+      )
     );
     const user = userEvent.setup();
     render(<RefreshButton cooldownEndsAt={null} />);
@@ -33,6 +40,33 @@ describe("RefreshButton", () => {
     });
     await waitFor(() => {
       expect(screen.getByText("Refreshed")).toBeInTheDocument();
+    });
+  });
+
+  it("derives the cooldown deadline from the server's capturedAt, not the click instant", async () => {
+    const capturedAt = new Date(Date.now() - 60_000).toISOString();
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response(JSON.stringify({ data: { id: "snap_1", capturedAt } }), {
+          status: 200,
+        })
+      )
+    );
+    const user = userEvent.setup();
+    render(<RefreshButton cooldownEndsAt={null} />);
+
+    const button = screen.getByRole("button", { name: /refresh/i });
+    await user.click(button);
+
+    await waitFor(() => {
+      expect(button).toHaveAttribute("aria-disabled", "true");
+    });
+    // capturedAt was 1 minute in the past, cooldown is 5 minutes, so
+    // ~4 minutes should remain — not a fresh 5-minute window starting now.
+    await user.click(button);
+    await waitFor(() => {
+      expect(screen.getByText("Please wait 4 minutes")).toBeInTheDocument();
     });
   });
 

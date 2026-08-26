@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { HeroPriceCard } from "./hero-price-card";
 
@@ -44,5 +45,27 @@ describe("HeroPriceCard", () => {
     expect(
       screen.getByText(/typically sell above spot/)
     ).toBeInTheDocument();
+  });
+
+  it("shows the chi headline and Damlung as the secondary figure when displayUnit is chi", () => {
+    renderCard({ displayUnit: "chi", onDisplayUnitChange: vi.fn() });
+    expect(screen.getByText("$282.12")).toBeInTheDocument();
+    expect(screen.getByText(/\$2,821\.23\/damlung/)).toBeInTheDocument();
+    expect(screen.getByText("Price per Chi")).toBeInTheDocument();
+  });
+
+  it("does not render the unit toggle when no onDisplayUnitChange handler is passed", () => {
+    renderCard();
+    expect(screen.queryByRole("group", { name: /display unit/i })).not.toBeInTheDocument();
+  });
+
+  it("calls onDisplayUnitChange when the Chi segment is clicked", async () => {
+    const onDisplayUnitChange = vi.fn();
+    const user = userEvent.setup();
+    renderCard({ displayUnit: "damlung", onDisplayUnitChange });
+
+    await user.click(screen.getByRole("button", { name: "Chi" }));
+
+    expect(onDisplayUnitChange).toHaveBeenCalledWith("chi");
   });
 });
