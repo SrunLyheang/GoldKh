@@ -28,7 +28,8 @@ import { useLocale } from "@/lib/i18n/locale-context";
 import { cn } from "@/lib/utils";
 import { formatQuantity, formatUsd } from "@/lib/format/money";
 import { transactionInputSchema } from "@/lib/validation/transaction";
-import { computeHoldings, type TransactionWithId } from "@/lib/calc/holdings";
+import { computeHoldings } from "@/lib/calc/holdings";
+import type { LedgerEntryWithId } from "@/lib/calc/ledgerEntry";
 import { fromTroyOz, priceFromTroyOz, toTroyOz } from "@/lib/calc/units";
 
 export interface EditableTransaction {
@@ -94,7 +95,7 @@ export function TransactionDialog({
   onAddSettled?: (tempId: string, result: AddSettledResult) => void;
   onEditSuccess?: () => void;
   currentPricePerTroyOz: string;
-  existingTransactions: TransactionWithId[];
+  existingTransactions: LedgerEntryWithId[];
 }) {
   const isEdit = transaction !== undefined;
   const isOptimistic = !isEdit && onOptimisticAdd !== undefined;

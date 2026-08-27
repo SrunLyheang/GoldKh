@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { computeRowValuation, type TransactionRowLike } from "./transactionRow";
+import { computeRowValuation } from "./transactionRow";
+import type { LedgerEntry } from "./ledgerEntry";
 
-function buy(overrides: Partial<TransactionRowLike> = {}): TransactionRowLike {
+function buy(overrides: Partial<LedgerEntry> = {}): LedgerEntry {
   return {
     type: "buy",
     quantity: "1",

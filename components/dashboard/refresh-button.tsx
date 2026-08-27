@@ -5,20 +5,21 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/loading";
-import { MANUAL_REFRESH_COOLDOWN_MS } from "@/lib/constants/staleness";
 import { useLocale } from "@/lib/i18n/locale-context";
+import { requestPriceRefresh } from "@/lib/price/requestPriceRefresh";
 
 function minutesFromMs(ms: number): number {
   return Math.max(1, Math.ceil(ms / 60_000));
 }
 
-// Calls POST /api/price/refresh, which bypasses getPrice()'s 30-minute
-// cache and fetches goldapi.io directly. The route enforces a 5-minute
-// cooldown (shared, not per-user) — cooldownEndsAt mirrors that so the
-// button greys out and re-enables itself locally instead of only failing
-// after a click. The button stays clickable while greyed out on
-// purpose: a click during cooldown is what surfaces the "please wait"
-// toast rather than doing nothing.
+// Drives a manual price refresh. requestPriceRefresh() owns the wire
+// contract with POST /api/price/refresh and classifies the result into
+// one of four outcomes (see CONTEXT.md "manual refresh outcome"); this
+// component only maps each outcome to toast copy and local state. The
+// route enforces a shared 5-minute cooldown and hands the deadline back,
+// so the button greys out and re-enables itself locally instead of only
+// failing after a click. It stays clickable while greyed out on purpose:
+// a click during cooldown is what surfaces the "please wait" toast.
 export function RefreshButton({
   cooldownEndsAt: initialCooldownEndsAt,
 }: {
@@ -29,7 +30,15 @@ export function RefreshButton({
   const [isPending, startTransition] = useTransition();
   const [cooldownEndsAt, setCooldownEndsAt] = useState(initialCooldownEndsAt);
   const [inCooldown, setInCooldown] = useState(initialCooldownEndsAt !== null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [toast, setToast] = useState<{ text: string; key: number } | null>(null);
+
+  // The button spins for both phases of a refresh: the provider fetch
+  // (isRefreshing, set synchronously on click so feedback is instant) and
+  // the RSC re-render that follows (isPending). Without the first half the
+  // button looks idle for the ~1-2s the goldapi.io call takes, so users
+  // click again — each extra click firing another POST.
+  const busy = isRefreshing || isPending;
 
   // Flips inCooldown off once cooldownEndsAt passes — never turns it on,
   // that only happens from the click handler (a real event, not a
@@ -53,45 +62,50 @@ export function RefreshButton({
   }
 
   async function handleClick() {
+    // Already fetching — the button is spinning and disabled; swallow the
+    // click rather than firing a second POST.
+    if (isRefreshing) return;
+
     if (inCooldown && cooldownEndsAt) {
       showToast(t.refresh.pleaseWait(minutesFromMs(cooldownEndsAt - Date.now())));
       return;
     }
 
-    let res: Response;
+    // Synchronous, before the await, so the spinner and disabled state
+    // land on this same click rather than only after the fetch resolves.
+    setIsRefreshing(true);
     try {
-      res = await fetch("/api/price/refresh", { method: "POST" });
-    } catch {
-      showToast(t.refresh.couldntReach);
-      return;
-    }
-
-    if (!res.ok) {
-      const body = await res.json().catch(() => null);
-      if (res.status === 429) {
-        // The error envelope carries no data field (architecture.md's
-        // one-shape-per-route rule), so there's no real deadline to read
-        // here — this is the one case where a client-side guess is
-        // unavoidable, not a choice.
-        setCooldownEndsAt(Date.now() + MANUAL_REFRESH_COOLDOWN_MS);
-        setInCooldown(true);
+      const outcome = await requestPriceRefresh();
+      switch (outcome.kind) {
+        case "unreachable":
+          showToast(t.refresh.couldntReach);
+          return;
+        case "failed":
+          showToast(outcome.message ?? t.refresh.couldntRefresh);
+          return;
+        case "cooldown":
+          // outcome.cooldownEndsAt is already an absolute deadline (the
+          // module anchored the Retry-After duration to when it arrived).
+          if (outcome.cooldownEndsAt !== null) {
+            setCooldownEndsAt(outcome.cooldownEndsAt);
+            setInCooldown(true);
+          }
+          showToast(outcome.message ?? t.refresh.couldntRefresh);
+          return;
+        case "refreshed":
+          setCooldownEndsAt(outcome.cooldownEndsAt);
+          setInCooldown(outcome.cooldownEndsAt !== null);
+          // Hand off to isPending: router.refresh() keeps the button
+          // spinning through the RSC re-render with no visible gap.
+          startTransition(() => {
+            router.refresh();
+          });
+          showToast(t.refresh.refreshed);
+          return;
       }
-      showToast(body?.error?.message ?? t.refresh.couldntRefresh);
-      return;
+    } finally {
+      setIsRefreshing(false);
     }
-
-    const body = await res.json();
-    // Real cooldown deadline, derived from the snapshot the server just
-    // captured — not a guess taken at a different instant than the
-    // server's own enforcement clock.
-    setCooldownEndsAt(
-      new Date(body.data.capturedAt).getTime() + MANUAL_REFRESH_COOLDOWN_MS
-    );
-    setInCooldown(true);
-    startTransition(() => {
-      router.refresh();
-    });
-    showToast(t.refresh.refreshed);
   }
 
   return (
@@ -99,12 +113,12 @@ export function RefreshButton({
       <Button
         variant="secondary"
         size="sm"
-        aria-disabled={inCooldown}
-        className={inCooldown ? "opacity-50" : undefined}
+        aria-disabled={busy || inCooldown}
+        className={busy || inCooldown ? "opacity-50" : undefined}
         title={inCooldown ? t.refresh.refreshedRecently : undefined}
         onClick={handleClick}
       >
-        {isPending ? <Spinner size="xs" /> : <RefreshCw className="h-4 w-4" />}
+        {busy ? <Spinner size="xs" /> : <RefreshCw className="h-4 w-4" />}
         <span className="tt-label text-[11.5px]">{t.refresh.label}</span>
       </Button>
       {toast && (

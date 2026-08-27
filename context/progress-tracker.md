@@ -326,7 +326,13 @@ verifiable, per `ai-workflow-rules.md`'s "When to Split Work"):
   interval.** 30 minutes (see Architecture Decisions) is sized for
   sporadic checking, not a dashboard left open all day continuously —
   revisit if the user's actual usage pattern turns out to burn through
-  the quota faster than expected.
+  the quota faster than expected. Partially addressed 2026-08-27: the
+  60s auto-refresh poll was removed (see "Dashboard refresh moved from
+  a blind 60s interval to tab-re-entry only" in Architecture
+  Decisions), so a left-open tab no longer re-renders on a timer at
+  all. The 30-minute `PRICE_STALENESS_MS` gate is still the actual
+  quota guard; this just removes the thing that was hammering the
+  render path behind it.
 - **Clerk `user.deleted` webhook registration — deliberately deferred
   by the user, 2026-08-27.** The code is done and requires no further
   work (see Architecture Decisions); what's outstanding is only the
@@ -377,6 +383,240 @@ verifiable, per `ai-workflow-rules.md`'s "When to Split Work"):
   a checklist for the user to work through.
 
 ## Architecture Decisions
+
+- **The twin `TransactionLike` / `TransactionRowLike` types merged into
+  one `LedgerEntry`** (2026-08-27, `/improve-codebase-architecture`
+  review, candidate D; grilled before implementing). `holdings.ts` and
+  `transactionRow.ts` each declared a byte-identical 5-field type and
+  each re-derived the same `currency !== "USD"` / `type === "sell"`
+  branching inline. Now `lib/calc/ledgerEntry.ts` owns `LedgerEntry`
+  (+ `LedgerEntryWithId`, replacing `TransactionWithId`) and
+  `classifyEntry()`, which names the shared axis as `non-usd | sale |
+  open-buy`. Both `computeHoldings` and `computeRowValuation` take
+  `LedgerEntry` and switch on `classifyEntry`.
+  - **Scope, honestly:** the type merge is the real win — one source of
+    truth for the calc layer's transaction shape. `classifyEntry` is a
+    modest add: it names the KHR-deferred / sell-has-no-position cases in
+    one place (both files carried long comments about them) but is only
+    ~3 lines. The two compute functions stay fully separate — the
+    aggregate folds a sell into a running average, the per-row values one
+    row in isolation; no shared compute path.
+  - Consumers repointed: `transaction-history.tsx` (`TransactionRow
+    extends LedgerEntry`), `transaction-dialog.tsx` +
+    `transaction-dialog.test.tsx` (`LedgerEntryWithId`). Added
+    `lib/calc/ledgerEntry.test.ts` (3 cases); import renames in
+    `holdings.test.ts` / `transactionRow.test.ts`. 134/134 tests pass;
+    lint and `next build` clean.
+
+- **The refresh button's HTTP conversation extracted to
+  `lib/price/requestPriceRefresh.ts`** (2026-08-27,
+  `/improve-codebase-architecture` review, candidate C; grilled before
+  implementing). `RefreshButton`'s click handler parsed the wire itself
+  — endpoint path, "429 means cooldown", `Retry-After` header math,
+  `body.data.cooldownEndsAt` digging, network-fail vs error-envelope
+  branching — all interleaved with `setState`. Now `requestPriceRefresh()`
+  owns the whole contract with `POST /api/price/refresh` and returns a
+  `RefreshOutcome` discriminated union: `refreshed | cooldown |
+  unreachable | failed`, each carrying `cooldownEndsAt` / `message` only
+  where real. The component `switch`es on `outcome.kind` and maps each to
+  toast copy + local state.
+  - **Scope, honestly:** this is a locality win, not a state reduction.
+    The component still owns `cooldownEndsAt` / `inCooldown` / `busy` /
+    `toast` and the two timer effects — C only gets the click handler out
+    of the HTTP business and onto a React-free, independently testable
+    seam. The review's "five-state machine → one call" framing oversold
+    it.
+  - `router.refresh()` + `startTransition` stay in the component (React).
+    The pre-fetch "already in cooldown → toast, don't hit the route"
+    guard stays too (it reads `inCooldown` state). `requestPriceRefresh()`
+    always performs the fetch and holds no React.
+  - The 429 branch anchors `Retry-After` (seconds remaining) to
+    `Date.now()` *inside the module* and returns an absolute
+    `cooldownEndsAt`, so the component never does duration math.
+  - Tests: new `lib/price/requestPriceRefresh.test.ts` (node env, stubbed
+    `fetch`) covers all four outcomes incl. 200-with-null-deadline,
+    429-without-usable-`Retry-After`, unparseable error body.
+    `refresh-button.test.tsx` unchanged — it still stubs `fetch` and runs
+    through the real module; all 7 cases pass. `CONTEXT.md` gains a
+    **manual refresh outcome** entry. 131/131 tests pass; lint and
+    `next build` clean.
+
+- **All `price_snapshots` access moved behind `lib/db/queries/priceSnapshots.ts`**
+  (2026-08-27, `/improve-codebase-architecture` review, candidate B;
+  grilled before implementing). `getPrice.ts` had mixed pure
+  orchestration (provider rotation, freshness gate, cache fallback) with
+  three DB operations — a Drizzle `select`, a Drizzle `insert`, and a raw
+  `INSERT ... SELECT ... WHERE NOT EXISTS`. A fourth `price_snapshots`
+  query lived separately in `lib/db/queries/priceHistory.ts`. Now one
+  query module owns every `price_snapshots` read and write; `getPrice.ts`
+  imports `db`/`drizzle-orm`/`schema` not at all.
+  - `getPrice.ts` keeps only `getPrice`, `GetPriceDeps`, and a
+    re-exported `PriceSnapshot` type. Same `GetPriceDeps` DI pattern
+    (firm decision) — `defaultDeps` just points at the query module; the
+    dep key `insertIfStillStale` → `insertSnapshotIfStale`.
+  - **The `interval '30 minutes'` SQL literal is gone.**
+    `insertSnapshotIfStale(price, staleMs)` takes the threshold as a
+    parameter (`getPrice.ts` passes `PRICE_STALENESS_MS`), collapses it
+    to a bound cutoff `Date` — `WHERE captured_at > ${cutoff}`. Still one
+    atomic statement, so the conditional-insert concurrency guard (firm
+    decision) is unchanged; the cutoff is now handler-clock- rather than
+    DB-`now()`-relative, a sub-ms difference at 30-minute granularity.
+  - `PriceResult` renamed `PriceSnapshot` (matches `CONTEXT.md`'s
+    ubiquitous term) and now lives in the query module; `freshness.ts`
+    and `getPrice.ts` import it from there.
+  - Insert input typed as a local `NewPriceSnapshot = { pricePerTroyOz,
+    source }` in the query module, not the price layer's
+    `NormalizedPrice` — keeps the dependency arrow price → db, never
+    back. Structurally compatible, so call sites are unchanged.
+  - `lib/db/queries/priceHistory.ts` deleted; its `listRecentPriceSnapshots`
+    folded in. `POST /api/price/refresh` and `app/dashboard/page.tsx`
+    import straight from the query module (no re-export shim through
+    `getPrice.ts` — that pass-through is what the deletion test flags).
+  - Tests: no new query-module test (firm decision — thin DB wrappers
+    aren't unit-tested; the conditional-insert branch is covered via
+    `GetPriceDeps` in `getPrice.test.ts`). `getPrice.test.ts` and
+    `route.test.ts` change import paths / the dep key only. 124/124
+    tests pass; lint and `next build` clean.
+
+- **Price freshness collapsed into one deep module: `lib/price/freshness.ts`**
+  (2026-08-27, `/improve-codebase-architecture` review, candidate A;
+  grilled before implementing). "Is the price stale? May the user
+  refresh? When does the cooldown lift?" was answered by three shallow
+  predicates (`isFresh`, `isSnapshotStale`, `isManualCooldownActive`,
+  all in `getPrice.ts`) plus raw `Date.now() - capturedAt` arithmetic
+  re-done at every consumer. Now one pure `priceFreshness(snapshot,
+  now?)` returns `{ isStale, cooldownActive, cooldownEndsAt }`, computed
+  once per request.
+  - `getPrice()` uses `!priceFreshness(latest).isStale`; its private
+    `isFresh` is deleted. Staleness boundary unified on `age >=
+    PRICE_STALENESS_MS` (was a `<`/`>` split, a ≤1 ms shift, refetch-at-
+    boundary is the safe direction).
+  - `app/dashboard/page.tsx` drops the `MANUAL_REFRESH_COOLDOWN_MS`
+    import — one `priceFreshness(price)` call yields both `isStale` and
+    `cooldownEndsAt`.
+  - `POST /api/price/refresh` now sends the cooldown deadline back: a
+    standard `Retry-After` header on the 429 (kept off the error
+    envelope, which `code-standards.md` holds to `{ code, message }`),
+    and `cooldownEndsAt` in the 200 `data` payload. This retires the
+    last client-side guess flagged in the earlier RefreshButton entry
+    below — `refresh-button.tsx` reads the header / the payload field
+    and imports no freshness constant at all.
+  - **Out of scope, deliberately:** `auto-refresh.tsx` keeps its own
+    `lastRefreshAtRef` clock (gates on time since *its* last
+    `router.refresh()`, not since capture) and its constant import —
+    folding it onto the capture clock is a behaviour change, not a
+    deepening.
+  - The `interval '30 minutes'` SQL literal in `getPrice.ts`'s
+    conditional insert is untouched here — candidate B (above) later
+    moved the snapshot SQL behind `lib/db/queries/priceSnapshots.ts`
+    and retired the literal.
+  - New `CONTEXT.md` at repo root (domain glossary, per `AGENTS.md`'s
+    single-context layout) defines **price snapshot** and **price
+    freshness**.
+  - Tests: new `lib/price/freshness.test.ts` (age table + `undefined`
+    row; absorbs the 3 `isManualCooldownActive` tests). `getPrice.test.ts`
+    unchanged bar the removed block — its fresh/stale cases run through
+    the real pure function. `route.test.ts` stops mocking the predicate,
+    drives the cooldown branch via `capturedAt`, asserts `Retry-After`.
+    `refresh-button.test.tsx` success mocks return `data.cooldownEndsAt`;
+    429 mock carries `Retry-After`. 124/124 tests pass; lint and
+    `next build` clean.
+
+- **Dashboard auth gate collapsed to one redirect point** (2026-08-27,
+  grilling session). `app/dashboard/page.tsx` used to re-run `auth()` and
+  `redirect("/sign-in")` even though `app/dashboard/layout.tsx` already
+  gates the route with `redirectToSignIn()`. Prompted by a report of
+  `GET /dashboard` firing back-to-back (~1.4s apart) in `next dev`.
+  Diagnosis (DevTools + server log): the burst was a *transient* Clerk
+  **development-instance** handshake settling right after sign-in (`pk_test_`
+  keys; `proxy.ts` middleware spiking 700-1000ms every ~6th request = the
+  FAPI handshake round-trip), not a steady-state loop — idle focused tab
+  settles to one refresh/minute. Environment was clean (0.10s clock skew,
+  single `localhost:3000` origin, one dev server). Fix kept minimal: the
+  page still calls `auth()` for `userId` (request-memoized, cheap) but now
+  does `if (!userId) return null` instead of a second redirect, removing a
+  redundant bounce point that gave any future transient handshake another
+  way to re-navigate the route. No production code change — `pk_live_` on a
+  real domain doesn't use the handshake flow. 120/120 tests, `tsc --noEmit`
+  clean. Plan: `~/.claude/plans/dashboard-request-loop-clerk-handshake.md`.
+  Deferred check: on first `pk_live_` deploy, confirm no `/dashboard` loop
+  on the deployed site. Open loose end: the same capture showed
+  `__nextjs_original-stack-frames` + repeated Sentry `envelope` posts (an
+  exception thrown on the dashboard in dev) — unrelated, untriaged.
+
+- **Manual Refresh button gives feedback synchronously on click**
+  (2026-08-27). `RefreshButton` (`components/dashboard/refresh-button.tsx`)
+  previously `await`ed `POST /api/price/refresh` (a direct goldapi.io
+  fetch, ~1-2s) before any visual change — the spinner only appeared
+  afterward, once `startTransition(router.refresh())` set `isPending`.
+  Users read the idle button as a dead click and clicked again, each
+  extra click firing another POST. Fix: new `isRefreshing` state set
+  synchronously at the top of `handleClick` (before the `await`), so the
+  `Spinner` + `aria-disabled` land on the same click; a `busy =
+  isRefreshing || isPending` flag keeps the button spinning continuously
+  through the fetch and the RSC re-render that follows. `handleClick`
+  early-returns when `isRefreshing` is already true, so repeat clicks
+  during the in-flight fetch are swallowed instead of making more
+  requests. `try/finally` resets `isRefreshing`. No prop/signature
+  change. Covered by a new `refresh-button.test.tsx` case (spins on
+  click before the fetch resolves; two extra clicks fire no further
+  fetches). 120/120 tests, typecheck, lint, `next build` all clean.
+
+- **Dashboard refresh moved from a blind 60s interval to tab-re-entry
+  only** (2026-08-27, grilling session). `components/dashboard/auto-refresh.tsx`
+  no longer runs any `setInterval`. It now listens for `document`
+  `visibilitychange` and, when the tab becomes visible again, calls
+  `router.refresh()` — but only if it's been at least
+  `MANUAL_REFRESH_COOLDOWN_MS` (5 min) since the loaded price's
+  `capturedAt` (passed in as a prop from `app/dashboard/page.tsx`,
+  so the cooldown is measured from when the data was actually
+  fetched, not from component mount). Mutations and the manual
+  refresh button still call `router.refresh()` as before.
+  Rationale: an idle viewer sitting on the dashboard gains almost
+  nothing from polling — their transactions only change when they
+  themselves mutate them (already refreshed), and `getPrice()`'s
+  30-minute staleness gate already bounds goldapi.io calls
+  regardless of poll rate. The old 60s poll re-ran a ~1.4s,
+  4-query RSC render every minute forever, including on hidden,
+  minimized, and abandoned tabs; a hidden tab now costs zero. No
+  `window` `focus` listener and no in-page click/scroll listeners —
+  "re-engaged with the tab" is the whole intent. Covered by
+  `components/dashboard/auto-refresh.test.tsx` (5 cases: fires on
+  re-entry past the cooldown, suppressed within it, fires again
+  after it elapses, never on going-hidden, listener removed on
+  unmount) — `AutoRefresh` was previously in the "deliberately not
+  covered" list, moved out because the cooldown branch is real
+  logic. Note: the original prompt that started this was repeated
+  `GET /dashboard` in `next dev`; that log had no timestamps, and a
+  sub-agent trace found the more-likely driver of a *sub-60s*
+  cadence is Clerk dev-key (`pk_test_…`) `__clerk_handshake` churn
+  compounded by the duplicate `auth()` gate in
+  `app/dashboard/page.tsx` (its own `redirect("/sign-in")` on top
+  of `app/dashboard/layout.tsx`'s `redirectToSignIn()`) — left as a
+  separate follow-up, not part of this change.
+
+- **Manual refresh cooldown now gates on the newest snapshot of any
+  kind, not just prior manual refreshes** (2026-08-27, same session).
+  Follow-on to the entry above. `isManualCooldownActive` (`lib/price/
+  getPrice.ts`) is unchanged, but both call sites now feed it the
+  latest snapshot rather than the latest *manual* snapshot:
+  `app/dashboard/page.tsx` uses `price.capturedAt` (already fetched by
+  `getPrice()`, so `getLatestManualSnapshot()` was dropped from the
+  page's `Promise.all` — one fewer query per render), and
+  `app/api/price/refresh/route.ts` calls the now-exported
+  `getLatestSnapshot()`. Effect: after *any* fresh price is captured —
+  a manual refresh, or `getPrice()`'s own 30-minute provider fetch on
+  a page load — the manual refresh button is disabled and
+  `POST /api/price/refresh` returns 429 for `MANUAL_REFRESH_COOLDOWN_MS`
+  (5 min), so a browser reload right after a fetch can't be turned
+  into a second provider call by immediately clicking Refresh. User
+  ask: "browser refresh or anything will not send an api request
+  unless timer runs out." `getLatestManualSnapshot` is removed (0
+  callers); the `price_snapshots.isManual` column stays — still
+  written by the manual route, just no longer read for the cooldown.
+  Coverage: `isManualCooldownActive` gained 3 direct unit tests
+  (`lib/price/getPrice.test.ts`); the refresh-route test mock was
+  renamed to match. 119/119 tests, lint, `next build` all clean.
 
 - **Remaining three architecture-review candidates implemented**
   (2026-08-27, same review as the entry below):
@@ -809,7 +1049,9 @@ verifiable, per `ai-workflow-rules.md`'s "When to Split Work"):
   or SWR poll. `getPrice()`'s own 5-minute staleness check still
   gates whether this actually hits goldapi.io — most polls just
   re-read the cache. User asked for the dashboard to "automatically
-  upgrade every time the API refreshes."
+  upgrade every time the API refreshes." **Superseded 2026-08-27
+  — see "Dashboard refresh moved from a blind 60s interval to
+  tab-re-entry only" near the top of this section.**
 
 - **Edit transaction: `PATCH /api/transactions/[id]`, full replace
   against the same Zod schema as `POST`.** Not a partial-field

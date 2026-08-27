@@ -11,7 +11,8 @@ import {
 import { createContext, useContext, useState } from "react";
 import { cn } from "@/lib/utils";
 import { formatQuantity, formatUsd } from "@/lib/format/money";
-import { computeRowValuation, type TransactionRowLike } from "@/lib/calc/transactionRow";
+import { computeRowValuation } from "@/lib/calc/transactionRow";
+import type { LedgerEntry } from "@/lib/calc/ledgerEntry";
 import type { GoldUnit } from "@/lib/calc/units";
 import { useLocale } from "@/lib/i18n/locale-context";
 import type { Dictionary } from "@/lib/i18n/dictionary";
@@ -29,7 +30,7 @@ import { MonoValue } from "./mono-value";
 import { Panel } from "./panel";
 import { TransactionDialog } from "./transaction-dialog";
 
-export interface TransactionRow extends TransactionRowLike {
+export interface TransactionRow extends LedgerEntry {
   id: string;
   transactionDate: string;
   notes?: string | null;

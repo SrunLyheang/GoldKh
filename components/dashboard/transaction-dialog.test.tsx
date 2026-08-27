@@ -3,7 +3,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { TransactionDialog, type EditableTransaction } from "./transaction-dialog";
-import type { TransactionWithId } from "@/lib/calc/holdings";
+import type { LedgerEntryWithId } from "@/lib/calc/ledgerEntry";
 
 const refreshMock = vi.fn();
 vi.mock("next/navigation", () => ({
@@ -18,7 +18,7 @@ function renderDialog(
     open: true,
     onOpenChange,
     currentPricePerTroyOz: "2000",
-    existingTransactions: [] as TransactionWithId[],
+    existingTransactions: [] as LedgerEntryWithId[],
     ...overrides,
   };
   const result = render(<TransactionDialog {...props} />);
@@ -150,7 +150,7 @@ describe("TransactionDialog", () => {
   });
 
   it("warns when a sell quantity exceeds current holdings", async () => {
-    const existingTransactions: TransactionWithId[] = [
+    const existingTransactions: LedgerEntryWithId[] = [
       {
         id: "existing-1",
         type: "buy",

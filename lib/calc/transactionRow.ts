@@ -1,13 +1,6 @@
 import Decimal from "decimal.js";
-import { priceFromTroyOz, priceToTroyOz, toTroyOz, type GoldUnit } from "./units";
-
-export interface TransactionRowLike {
-  type: "buy" | "sell";
-  quantity: string;
-  unit: GoldUnit;
-  pricePerUnit: string;
-  currency: "USD" | "KHR";
-}
+import { classifyEntry, type LedgerEntry } from "./ledgerEntry";
+import { priceFromTroyOz, priceToTroyOz, toTroyOz } from "./units";
 
 export interface RowValuation {
   pricePerDamlung: string;
@@ -26,14 +19,15 @@ export interface RowValuation {
 // ongoing position on that entry to value. KHR rows show no USD figures
 // since KHR conversion is deferred entirely (project-overview.md).
 export function computeRowValuation(
-  tx: TransactionRowLike,
+  tx: LedgerEntry,
   currentPricePerTroyOz: string
 ): RowValuation {
+  const kind = classifyEntry(tx);
   const priceTroyOz = priceToTroyOz(tx.pricePerUnit, tx.unit);
   const pricePerDamlung = priceFromTroyOz(priceTroyOz, "damlung");
   const pricePerChi = priceFromTroyOz(priceTroyOz, "chi");
 
-  if (tx.currency !== "USD") {
+  if (kind === "non-usd") {
     return {
       pricePerDamlung,
       pricePerChi,
@@ -46,7 +40,7 @@ export function computeRowValuation(
 
   const amountUsd = new Decimal(tx.quantity).times(tx.pricePerUnit).toString();
 
-  if (tx.type === "sell") {
+  if (kind === "sale") {
     return {
       pricePerDamlung,
       pricePerChi,
