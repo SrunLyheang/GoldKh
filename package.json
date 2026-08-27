@@ -16,6 +16,7 @@
     "@clerk/ui": "^1.30.6",
     "@neondatabase/serverless": "^1.1.0",
     "@sentry/nextjs": "^10.70.0",
+    "@vercel/speed-insights": "^2.0.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "decimal.js": "^10.6.0",
