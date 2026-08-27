@@ -37,6 +37,19 @@ Update this file after every meaningful implementation change.
 
 ## Completed
 
+- **2026-08-27 — Vercel deploy fix: lazy DB client (uncommitted, on
+  `landing-page` branch).** Vercel build failed at "Collect page data"
+  for `/api/webhooks/clerk` — `lib/db/client.ts` called
+  `neon(process.env.DATABASE_URL!)` at module-evaluation time, and
+  `DATABASE_URL` is absent during `next build`. Reworked `db` into a
+  Proxy over a lazily-constructed `drizzle` instance (`getDb()` builds
+  it on first property access, throws "DATABASE_URL is not set" only
+  then). Same import-time-secret rationale already documented in
+  `lib/env.ts`. Verified: `next build` now passes with all of
+  `DATABASE_URL`/`CLERK_SECRET_KEY`/`NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`/
+  `GOLDAPI_IO_API_KEY` unset; full suite 150/150 green. Still required
+  on Vercel: set those env vars in Project Settings for runtime.
+
 - **2026-08-27 — Four more themes + new theme picker (uncommitted, on
   `landing-page` branch).** Added Midnight, Emerald, Terminal, Porcelain,
   then a follow-up pass to make each a *distinct personality* (first cut
