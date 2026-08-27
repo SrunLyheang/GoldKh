@@ -407,8 +407,8 @@ export function TransactionHistory({
   return (
     <div>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-        <h2 className="tt-heading text-[15px] text-foreground">
-          [ {t.transactions.title} ]
+        <h2 className="tt-heading tt-bracket text-[15px] text-foreground">
+          {t.transactions.title}
         </h2>
         <Button size="sm" onClick={onAddClick}>
           <Plus className="h-4 w-4" />

@@ -37,6 +37,118 @@ Update this file after every meaningful implementation change.
 
 ## Completed
 
+- **2026-08-27 — Four more themes + new theme picker (uncommitted, on
+  `landing-page` branch).** Added Midnight, Emerald, Terminal, Porcelain,
+  then a follow-up pass to make each a *distinct personality* (first cut
+  varied only palette, so the dark ones rendered near-identically) and
+  to replace the picker UI. All still through the token contract — no
+  dashboard component changed.
+  - `app/globals.css` — four new theme blocks, each pushing corners +
+    elevation + typography to different values: **Midnight** soft-glass
+    (round 16px, large blue glow, no card borders, airy sans-light
+    headings, sans labels); **Emerald** chunky (round 20px, green-tinted
+    glow, sans UPPER 800 −0.03em headings); **Terminal** CRT (square,
+    hard 5px offset, mono UPPER 0.18em everywhere, `[ ]` brackets, grain
+    0.08 + a scanline `.vault-grain::after` layer); **Porcelain** Swiss
+    (crisp 3px, `--shadow-*: none` / hairline border only, sans UPPER
+    0.12em headings + labels). Light-theme grain rule covers
+    `ledger` + `porcelain`.
+  - Every theme block (incl. Vault) now selects
+    `:root[data-theme="x"], [data-theme="x"]` so a nested
+    `<div data-theme="x">` gets the full token set — required by the
+    picker's swatches. Vault keeps no `<html>` attribute at runtime;
+    SSR unaffected.
+  - `lib/theme/theme-context.tsx` — four `THEMES` entries added.
+  - `components/dashboard/theme-toggle.tsx` — rewritten as a `Popover`
+    of live preview swatches (2-col grid; each swatch a mini mockup in
+    a `data-theme` wrapper, painting from real tokens incl. radius +
+    shadow; active gets a ring + check). Trigger shows a swatch + name.
+    Progression over the session: `SegmentedControl` → `Select` →
+    popover. Same `className` prop, both call sites unchanged.
+  - Verified: `tsc --noEmit` clean, 150/150 tests pass, `eslint` clean,
+    `next build` clean.
+  - `context/ui-context.md` Theming section updated (personality table,
+    the dual-selector note, the picker rewrite).
+
+- **2026-08-27 — Root route serves the landing page (uncommitted, on
+  `landing-page` branch).** `app/page.tsx` no longer blindly redirects
+  to `/dashboard`. It now `await auth()`s: signed-in users are still
+  redirected to `/dashboard`, signed-out visitors get `<WelcomeLanding />`
+  (the same component `/welcome` renders). `/welcome` stays as the stable
+  canonical URL. Typecheck clean.
+
+- **2026-08-27 — Multi-theme system + "Ledger" theme (uncommitted, on
+  `landing-page` branch).** User asked to add the `/minimalist-ui` look
+  as a *selectable second theme*, not a replacement, and flagged more
+  themes coming. Chosen approach: a **CSS token contract**, not forked
+  components (forking scales O(themes × components); the token contract
+  is one CSS block per theme).
+  - `lib/theme/theme-context.tsx` — `ThemeProvider`/`useTheme()`,
+    `localStorage` `goldkh-theme`, default `"vault"`, mirrors
+    `LocaleProvider`'s hydration-safe pattern. `data-theme` on `<html>`
+    (`"vault"` = no attribute); effect cleans the attribute on unmount
+    so it can't leak onto the marketing routes. `THEMES` registry
+    drives the toggle.
+  - `components/dashboard/theme-toggle.tsx` — registry-driven
+    `SegmentedControl`, added to the sidebar footer and mobile top bar
+    beside `LanguageToggle`.
+  - `app/globals.css` — bare `:root` stays byte-equivalent to the old
+    Vault values; new **idiom tokens** added there (`--label-*`,
+    `--heading-*`, `--display-font`, `--bracket-open/-close`,
+    `--shadow-lg/-sm`) and `.tt-label` / `.tt-heading` /
+    `.shadow-vault-*` refactored to read them. New `.tt-display` (hero
+    price face) and `.tt-bracket` (section-title `[ … ]` framing as
+    `::before/::after` content, so a theme blanks it via tokens). New
+    `:root[data-theme="ledger"]` block: warm-monochrome palette,
+    `--radius: 8px`, serif heading/display font, empty brackets, soft
+    shadows, plus a `.vault-grain::before` multiply/opacity tweak for
+    paper.
+  - `hero-price-card.tsx` / `transaction-history.tsx` /
+    `price-history-chart.tsx` — `[ … ]` literals removed from JSX, now
+    `.tt-bracket`. `hero-price-card.test.tsx` — two assertions rewritten
+    (bracket chars are no longer in DOM text).
+  - `app/layout.tsx` — `Newsreader` (`next/font/google`,
+    `--font-newsreader`), referenced only by the Ledger theme.
+  - Components never call `useTheme()` (only the shell + toggle do), so
+    no new test mock was needed. Verified: `tsc --noEmit`, `eslint`,
+    Vitest **150/150**, `next build` all clean. Not visually verified
+    against a signed-in session (no Clerk test credentials here — same
+    gap noted on earlier dashboard passes). Design reference: the
+    "Goldsmith's Ledger" artifact mockup.
+  - `context/ui-context.md` gained a **Theming** section.
+
+- **2026-08-27 — Public landing page at `/welcome` (uncommitted, branch
+  `landing-page`).** First user-facing page outside the auth wall. `/`
+  still redirects straight to `/dashboard` (unchanged) — `/welcome` is a
+  standalone marketing page, statically prerendered (`○` in `next build`).
+  Route: `app/welcome/page.tsx` (server, owns `<metadata>`) → renders
+  `components/welcome/welcome-landing.tsx` (`"use client"`, wraps the tree
+  in `LocaleProvider`). Sections: sticky nav, two-column hero with a
+  static replica of the real dashboard hero card (`sample-readout.tsx`,
+  tagged "SAMPLE", hardcoded internally-consistent figures — 5 damlung at
+  a $3,900 avg vs a $4,180 spot), trust strip, 2×2 feature grid, 3-step
+  "how it works", inverted-gold CTA plate, footer. Reuses the Vault +
+  Industrial Brutalism system verbatim (existing tokens only, `.tt-label`
+  / `.tt-heading`, `[ bracket ]` eyebrows via new `section-eyebrow.tsx`,
+  `.shadow-vault-*`, zero radius, `.vault-enter`) and the dashboard's
+  `LanguageToggle`.
+  - **i18n wired in fully** — new `welcome` block in `lib/i18n/dictionary.ts`
+    (`en` + `km`, the usual `typeof en` shape enforcement); the EN/ខ្មែរ
+    toggle switches the whole page, numbers stay Geist Mono tabular via
+    the existing `html[lang="km"]` rule. Verified visually in both locales
+    (screenshots in `.superpowers/`).
+  - **Clerk Core 3 note:** `<SignedIn>`/`<SignedOut>` are removed in
+    `@clerk/nextjs` 7.8 (they throw at render). Auth-aware CTAs now go
+    through `components/welcome/use-signed-in.ts` (`useAuth()` →
+    `isLoaded && isSignedIn`, false until loaded so the signed-out CTAs
+    render first and the page stays static). Signed-out: "Get started" →
+    `/sign-up`, "Sign in" → `/sign-in`. Signed-in: "Go to dashboard" →
+    `/dashboard`.
+  - Tests: `components/welcome/welcome-landing.test.tsx` (6 cases, jsdom,
+    `useAuth` mocked signed-out) — headline, all `/sign-up` CTAs, `/sign-in`
+    link, no dashboard CTA when signed out, SAMPLE tag, "not an exchange".
+    150/150 suite green; `tsc --noEmit`, `eslint`, `next build` all clean.
+
 - **2026-08-27 — API route hardening pass (uncommitted).** Against a
   good-practices checklist:
   - Non-owner PATCH/DELETE on `/api/transactions/[id]` now returns

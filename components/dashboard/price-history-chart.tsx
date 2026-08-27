@@ -141,8 +141,8 @@ export function PriceHistoryChart({
 
   return (
     <div className="rounded-xl border border-border bg-card p-4">
-      <h2 className="tt-heading mb-3 text-[15px] text-foreground">
-        [ Price History ]
+      <h2 className="tt-heading tt-bracket mb-3 text-[15px] text-foreground">
+        Price History
       </h2>
       <div className="h-70 w-full">
         <ResponsiveContainer width="100%" height="100%">
@@ -187,7 +187,7 @@ export function PriceHistoryChart({
             <Line
               type="monotone"
               dataKey="pricePerDamlung"
-              stroke="var(--primary)"
+              stroke="var(--chart-1)"
               strokeWidth={2}
               dot={false}
               activeDot={{ r: 4 }}

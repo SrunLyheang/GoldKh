@@ -79,6 +79,70 @@ const en = {
     notEnoughHistory:
       "Not enough price history yet — check back after a few refreshes.",
   },
+  welcome: {
+    nav: {
+      features: "Features",
+      how: "How it works",
+      signIn: "Sign in",
+      getStarted: "Get started",
+      goToDashboard: "Go to dashboard",
+    },
+    hero: {
+      eyebrow: "Personal gold tracker",
+      headline: "See what your gold is actually worth",
+      subhead:
+        "Record your buys and sells in chi and damlung. GoldKh works out your weighted-average cost, current market value, and unrealized gain or loss against the live spot price.",
+      trustLine: "No money moves through GoldKh — it's a tracker, not an exchange.",
+      sampleTag: "Sample",
+    },
+    trust: {
+      notExchange: "Not an exchange",
+      noMoney: "No money moves",
+      dataYours: "Your data, yours only",
+      units: "USD, chi & damlung",
+    },
+    features: {
+      kicker: "Features",
+      title: "Built for how you actually hold gold",
+      avgCostTitle: "Weighted-average cost",
+      avgCostBody:
+        "Every buy updates your true cost basis. A sell reduces the position without changing what the rest cost you.",
+      livePriceTitle: "A price that's always there",
+      livePriceBody:
+        "The spot price is cached and timestamped. If every provider is down you still see the last known price and how old it is — never a blank screen.",
+      unitsTitle: "Chi and damlung, natively",
+      unitsBody:
+        "Enter quantities the way a Cambodian gold shop quotes them. The headline price is per damlung, with chi and troy ounce alongside.",
+      bilingualTitle: "English and ខ្មែរ",
+      bilingualBody:
+        "Switch the whole interface between English and Khmer at any time. Your numbers stay in tabular figures either way.",
+    },
+    steps: {
+      kicker: "How it works",
+      title: "Tracked in three steps",
+      oneTitle: "Sign in",
+      oneBody:
+        "Create an account with Clerk. Your holdings are visible only to you.",
+      twoTitle: "Record buys and sells",
+      twoBody:
+        "Quantity, unit, price paid, and date. Edit or delete anything later.",
+      threeTitle: "Watch your position",
+      threeBody:
+        "Holdings, market value, and unrealized gain or loss update against the live spot price.",
+    },
+    cta: {
+      title: "Start tracking your gold today",
+      body:
+        "Free to use. No money moves through the system — just a clear picture of what you hold.",
+      button: "Get started",
+    },
+    footer: {
+      tagline: "Personal gold holdings, tracked against the live spot price.",
+      notExchange: "Not an exchange. No money moves through this system.",
+      source: "Source",
+      rights: "© 2026 GoldKh",
+    },
+  },
 };
 
 const km: typeof en = {
@@ -156,6 +220,71 @@ const km: typeof en = {
   chart: {
     notEnoughHistory:
       "ប្រវត្តិតម្លៃមិនទាន់គ្រប់គ្រាន់នៅឡើយទេ — សូមពិនិត្យម្តងទៀតបន្ទាប់ពីធ្វើបច្ចុប្បន្នភាពពីរបីដង។",
+  },
+  welcome: {
+    nav: {
+      features: "លក្ខណៈពិសេស",
+      how: "របៀបដំណើរការ",
+      signIn: "ចូលគណនី",
+      getStarted: "ចាប់ផ្តើម",
+      goToDashboard: "ទៅផ្ទាំងគ្រប់គ្រង",
+    },
+    hero: {
+      eyebrow: "កម្មវិធីតាមដានមាសផ្ទាល់ខ្លួន",
+      headline: "មើលឃើញតម្លៃពិតប្រាកដនៃមាសរបស់អ្នក",
+      subhead:
+        "កត់ត្រាការទិញ និងលក់ជាជី និងដំឡឹង។ GoldKh គណនាថ្លៃដើមមធ្យម តម្លៃទីផ្សារបច្ចុប្បន្ន និងចំណេញ ឬខាតដែលមិនទាន់សម្រេច ធៀបនឹងតម្លៃទីផ្សារផ្ទាល់។",
+      trustLine:
+        "គ្មានប្រាក់ឆ្លងកាត់ GoldKh ទេ — វាជាកម្មវិធីតាមដាន មិនមែនកន្លែងជួរដូរ។",
+      sampleTag: "គំរូ",
+    },
+    trust: {
+      notExchange: "មិនមែនកន្លែងជួរដូរ",
+      noMoney: "គ្មានប្រាក់ឆ្លងកាត់",
+      dataYours: "ទិន្នន័យរបស់អ្នក សម្រាប់តែអ្នក",
+      units: "ដុល្លារ ជី និងដំឡឹង",
+    },
+    features: {
+      kicker: "លក្ខណៈពិសេស",
+      title: "បង្កើតឡើងសម្រាប់របៀបដែលអ្នកកាន់កាប់មាសពិតប្រាកដ",
+      avgCostTitle: "ថ្លៃដើមមធ្យមថ្លឹងទម្ងន់",
+      avgCostBody:
+        "រាល់ការទិញធ្វើបច្ចុប្បន្នភាពថ្លៃដើមពិតរបស់អ្នក។ ការលក់កាត់បន្ថយមូលដ្ឋានកាន់កាប់ ដោយមិនផ្លាស់ប្តូរថ្លៃដើមនៃចំណែកដែលនៅសល់។",
+      livePriceTitle: "តម្លៃដែលមានជានិច្ច",
+      livePriceBody:
+        "តម្លៃទីផ្សារត្រូវបានរក្សាទុក និងដាក់ម៉ោង។ បើគ្រប់ប្រភពដាច់ អ្នកនៅតែឃើញតម្លៃចុងក្រោយ និងថាវាចាស់ប៉ុណ្ណា — មិនដែលមានអេក្រង់ទទេទេ។",
+      unitsTitle: "ជី និងដំឡឹងដោយផ្ទាល់",
+      unitsBody:
+        "បញ្ចូលបរិមាណតាមរបៀបដែលហាងមាសនៅកម្ពុជាកំណត់តម្លៃ។ តម្លៃចម្បងគិតជាដំឡឹង ជាមួយនឹងជី និងអោនស៍ក្បែរនោះ។",
+      bilingualTitle: "អង់គ្លេស និងខ្មែរ",
+      bilingualBody:
+        "ប្តូរចំណុចប្រទាក់ទាំងមូលរវាងអង់គ្លេស និងខ្មែរនៅពេលណាក៏បាន។ លេខរបស់អ្នកនៅតែជាតួលេខតារាងដដែល។",
+    },
+    steps: {
+      kicker: "របៀបដំណើរការ",
+      title: "តាមដានក្នុងបីជំហាន",
+      oneTitle: "ចូលគណនី",
+      oneBody:
+        "បង្កើតគណនីជាមួយ Clerk។ ទ្រព្យសម្បត្តិរបស់អ្នកមើលឃើញតែអ្នកម្នាក់ប៉ុណ្ណោះ។",
+      twoTitle: "កត់ត្រាការទិញ និងលក់",
+      twoBody:
+        "បរិមាណ ឯកតា តម្លៃដែលបានបង់ និងកាលបរិច្ឆេទ។ កែ ឬលុបពេលក្រោយបាន។",
+      threeTitle: "តាមដានមូលដ្ឋានកាន់កាប់",
+      threeBody:
+        "ទ្រព្យសម្បត្តិ តម្លៃទីផ្សារ និងចំណេញ ឬខាតមិនទាន់សម្រេច ធ្វើបច្ចុប្បន្នភាពធៀបនឹងតម្លៃទីផ្សារផ្ទាល់។",
+    },
+    cta: {
+      title: "ចាប់ផ្តើមតាមដានមាសរបស់អ្នកថ្ងៃនេះ",
+      body:
+        "ប្រើប្រាស់ដោយឥតគិតថ្លៃ។ គ្មានប្រាក់ឆ្លងកាត់ប្រព័ន្ធទេ — គ្រាន់តែជារូបភាពច្បាស់នៃអ្វីដែលអ្នកកាន់កាប់។",
+      button: "ចាប់ផ្តើម",
+    },
+    footer: {
+      tagline: "ទ្រព្យសម្បត្តិមាសផ្ទាល់ខ្លួន តាមដានធៀបនឹងតម្លៃទីផ្សារផ្ទាល់។",
+      notExchange: "មិនមែនកន្លែងជួរដូរ។ គ្មានប្រាក់ឆ្លងកាត់ប្រព័ន្ធនេះទេ។",
+      source: "កូដប្រភព",
+      rights: "© 2026 GoldKh",
+    },
   },
 };
 
