@@ -2,16 +2,12 @@ import { verifyWebhook } from "@clerk/nextjs/webhooks";
 import type { NextRequest } from "next/server";
 import { deleteAllTransactionsForUser } from "@/lib/db/queries/transactions";
 
-// Clerk calls this route server-to-server (no session cookie), so unlike
-// every other route in app/api it is verified by signature (svix, via
-// verifyWebhook) instead of auth(). Requires CLERK_WEBHOOK_SIGNING_SECRET
-// and the endpoint registered in the Clerk Dashboard under Webhooks,
-// subscribed to at least user.deleted.
+// Server-to-server call with no session cookie: verified by svix signature
+// (verifyWebhook), not auth(). Needs CLERK_WEBHOOK_SIGNING_SECRET and an
+// endpoint registered in the Clerk Dashboard subscribed to user.deleted.
 //
-// Only user.deleted is handled: it's the one case that leaves orphaned
-// data behind (see progress-tracker.md). Every other event type is
-// acknowledged with 200 and ignored, per Clerk's own guidance not to 4xx
-// on event types you don't act on — a 4xx makes Clerk retry the delivery.
+// Only user.deleted is handled — the one event that leaves orphaned rows.
+// Other events return 200 and are ignored; a 4xx would make Clerk retry.
 export async function POST(request: NextRequest) {
   let evt: Awaited<ReturnType<typeof verifyWebhook>>;
   try {

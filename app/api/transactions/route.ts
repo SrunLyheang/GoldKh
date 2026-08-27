@@ -1,29 +1,27 @@
-import { auth } from "@clerk/nextjs/server";
-import { apiError, apiOk } from "@/lib/api/response";
-import { withAuthAndRateLimit } from "@/lib/api/withAuthAndRateLimit";
+import { apiOk } from "@/lib/api/response";
+import { parseJsonBody } from "@/lib/api/parseJsonBody";
+import { withAuth, withAuthAndRateLimit } from "@/lib/api/withAuthAndRateLimit";
 import {
   createTransactionForUser,
   listTransactionsForUser,
 } from "@/lib/db/queries/transactions";
 import { transactionInputSchema } from "@/lib/validation/transaction";
 
-export async function GET() {
-  const { userId } = await auth();
-  if (!userId) {
-    return apiError("UNAUTHORIZED", "Sign in required", 401);
-  }
-
+export const GET = withAuth(async (_request, { userId }) => {
   const rows = await listTransactionsForUser(userId);
   return apiOk(rows);
-}
+});
 
 export const POST = withAuthAndRateLimit(async (request, { userId }) => {
-  const body: unknown = await request.json();
-  const parsed = transactionInputSchema.safeParse(body);
-  if (!parsed.success) {
-    return apiError("INVALID_INPUT", "Invalid transaction payload", 400);
+  const body = await parseJsonBody(
+    request,
+    transactionInputSchema,
+    "transaction payload"
+  );
+  if (!body.ok) {
+    return body.response;
   }
 
-  const created = await createTransactionForUser(userId, parsed.data);
+  const created = await createTransactionForUser(userId, body.data);
   return apiOk(created, 201);
 });

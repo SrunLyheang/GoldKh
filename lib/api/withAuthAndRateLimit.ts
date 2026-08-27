@@ -7,22 +7,26 @@ type Handler<Ctx> = (
   ctx: Ctx & { userId: string }
 ) => Promise<Response>;
 
-// The one seam for "authenticated + rate-limited route handler" — the
-// auth-then-rate-limit call order and its two error responses used to be
-// copy-pasted at every transaction-mutating route. A wrong order or a
-// missed check here is a bug in the invocation, not in isRateLimited's own
-// logic, so it needed its own interface rather than three call sites that
-// have to remember the same five lines correctly.
-export function withAuthAndRateLimit<Ctx extends object = object>(
-  handler: Handler<Ctx>
-) {
+// Resolves the Clerk session and hands the handler a guaranteed userId, or
+// short-circuits with 401.
+export function withAuth<Ctx extends object = object>(handler: Handler<Ctx>) {
   return async (request: Request, ctx?: Ctx): Promise<Response> => {
     const { userId } = await auth();
     if (!userId) {
       return apiError("UNAUTHORIZED", "Sign in required", 401);
     }
 
-    if (await isRateLimited(userId)) {
+    return handler(request, { ...ctx, userId } as Ctx & { userId: string });
+  };
+}
+
+// withAuth plus a per-user rate limit — the guard for every
+// transaction-mutating route.
+export function withAuthAndRateLimit<Ctx extends object = object>(
+  handler: Handler<Ctx>
+) {
+  return withAuth<Ctx>(async (request, ctx) => {
+    if (await isRateLimited(ctx.userId)) {
       return apiError(
         "RATE_LIMITED",
         "Too many requests — please slow down and try again shortly",
@@ -30,6 +34,6 @@ export function withAuthAndRateLimit<Ctx extends object = object>(
       );
     }
 
-    return handler(request, { ...ctx, userId } as Ctx & { userId: string });
-  };
+    return handler(request, ctx);
+  });
 }

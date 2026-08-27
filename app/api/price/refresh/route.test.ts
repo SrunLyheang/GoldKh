@@ -37,7 +37,9 @@ describe("POST /api/price/refresh", () => {
   it("returns 401 when there is no session", async () => {
     authMock.mockResolvedValue({ userId: null });
 
-    const res = await POST();
+    const res = await POST(
+      new Request("http://localhost/api/price/refresh", { method: "POST" })
+    );
 
     expect(res.status).toBe(401);
     expect(fetchGoldapiPriceMock).not.toHaveBeenCalled();
@@ -47,7 +49,9 @@ describe("POST /api/price/refresh", () => {
     authMock.mockResolvedValue({ userId: "user_123" });
     getLatestSnapshotMock.mockResolvedValue({ capturedAt: new Date() });
 
-    const res = await POST();
+    const res = await POST(
+      new Request("http://localhost/api/price/refresh", { method: "POST" })
+    );
     const body = await res.json();
 
     expect(res.status).toBe(429);
@@ -70,7 +74,9 @@ describe("POST /api/price/refresh", () => {
       capturedAt: new Date(),
     });
 
-    const res = await POST();
+    const res = await POST(
+      new Request("http://localhost/api/price/refresh", { method: "POST" })
+    );
     const body = await res.json();
 
     expect(res.status).toBe(200);
@@ -87,7 +93,9 @@ describe("POST /api/price/refresh", () => {
     getLatestSnapshotMock.mockResolvedValue(undefined);
     fetchGoldapiPriceMock.mockRejectedValue(new Error("network error"));
 
-    const res = await POST();
+    const res = await POST(
+      new Request("http://localhost/api/price/refresh", { method: "POST" })
+    );
     const body = await res.json();
 
     expect(res.status).toBe(502);

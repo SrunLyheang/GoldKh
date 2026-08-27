@@ -89,9 +89,30 @@ describe("PATCH /api/transactions/[id]", () => {
     expect(updateOwnedTransactionMock).not.toHaveBeenCalled();
   });
 
+  it("rejects a non-JSON body with 400 and does not call the DB", async () => {
+    authMock.mockResolvedValue({ userId: "user_123" });
+
+    const res = await PATCH(
+      new Request("http://localhost/api/transactions/tx_1", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: "not json",
+      }),
+      ctx("tx_1")
+    );
+    const body = await res.json();
+
+    expect(res.status).toBe(400);
+    expect(body.error.code).toBe("INVALID_INPUT");
+    expect(updateOwnedTransactionMock).not.toHaveBeenCalled();
+  });
+
   it("scopes the update to the session userId, never a client value", async () => {
     authMock.mockResolvedValue({ userId: "user_123" });
-    updateOwnedTransactionMock.mockResolvedValue({ id: "tx_1" });
+    updateOwnedTransactionMock.mockResolvedValue({
+      ok: true,
+      value: { id: "tx_1" },
+    });
 
     const res = await PATCH(patchRequest(validPayload), ctx("tx_1"));
     const body = await res.json();
@@ -104,15 +125,32 @@ describe("PATCH /api/transactions/[id]", () => {
     expect(body).toEqual({ data: { id: "tx_1" } });
   });
 
-  it("returns 404 when the row doesn't exist or isn't owned by this user", async () => {
+  it("returns 404 when the row does not exist", async () => {
     authMock.mockResolvedValue({ userId: "user_123" });
-    updateOwnedTransactionMock.mockResolvedValue(undefined);
+    updateOwnedTransactionMock.mockResolvedValue({
+      ok: false,
+      reason: "not_found",
+    });
 
-    const res = await PATCH(patchRequest(validPayload), ctx("not-mine"));
+    const res = await PATCH(patchRequest(validPayload), ctx("missing"));
     const body = await res.json();
 
     expect(res.status).toBe(404);
     expect(body.error.code).toBe("NOT_FOUND");
+  });
+
+  it("returns 403 when the row belongs to another user", async () => {
+    authMock.mockResolvedValue({ userId: "user_123" });
+    updateOwnedTransactionMock.mockResolvedValue({
+      ok: false,
+      reason: "forbidden",
+    });
+
+    const res = await PATCH(patchRequest(validPayload), ctx("not-mine"));
+    const body = await res.json();
+
+    expect(res.status).toBe(403);
+    expect(body.error.code).toBe("FORBIDDEN");
   });
 });
 
@@ -145,7 +183,10 @@ describe("DELETE /api/transactions/[id]", () => {
 
   it("scopes the delete to the session userId, never a client value", async () => {
     authMock.mockResolvedValue({ userId: "user_123" });
-    deleteOwnedTransactionMock.mockResolvedValue({ id: "tx_1" });
+    deleteOwnedTransactionMock.mockResolvedValue({
+      ok: true,
+      value: { id: "tx_1" },
+    });
 
     const res = await DELETE(new Request("http://localhost"), ctx("tx_1"));
     const body = await res.json();
@@ -154,14 +195,31 @@ describe("DELETE /api/transactions/[id]", () => {
     expect(body).toEqual({ data: { id: "tx_1" } });
   });
 
-  it("returns 404 when the row doesn't exist or isn't owned by this user", async () => {
+  it("returns 404 when the row does not exist", async () => {
     authMock.mockResolvedValue({ userId: "user_123" });
-    deleteOwnedTransactionMock.mockResolvedValue(undefined);
+    deleteOwnedTransactionMock.mockResolvedValue({
+      ok: false,
+      reason: "not_found",
+    });
 
-    const res = await DELETE(new Request("http://localhost"), ctx("not-mine"));
+    const res = await DELETE(new Request("http://localhost"), ctx("missing"));
     const body = await res.json();
 
     expect(res.status).toBe(404);
     expect(body.error.code).toBe("NOT_FOUND");
+  });
+
+  it("returns 403 when the row belongs to another user", async () => {
+    authMock.mockResolvedValue({ userId: "user_123" });
+    deleteOwnedTransactionMock.mockResolvedValue({
+      ok: false,
+      reason: "forbidden",
+    });
+
+    const res = await DELETE(new Request("http://localhost"), ctx("not-mine"));
+    const body = await res.json();
+
+    expect(res.status).toBe(403);
+    expect(body.error.code).toBe("FORBIDDEN");
   });
 });

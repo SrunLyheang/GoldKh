@@ -12,6 +12,15 @@ export interface NewTransactionInput {
   notes?: string;
 }
 
+type TransactionRow = typeof transactions.$inferSelect;
+
+// Result of a mutation scoped to the session user: `ok` when their row was
+// written, `forbidden` when the row exists under another user, `not_found`
+// when no such row exists.
+export type OwnedMutation<T> =
+  | { ok: true; value: T }
+  | { ok: false; reason: "forbidden" | "not_found" };
+
 export async function listTransactionsForUser(userId: string) {
   return db
     .select()
@@ -31,48 +40,45 @@ export async function createTransactionForUser(
   return created;
 }
 
-// Enforces ownership: a row must belong to userId to be returned, matching
-// code-standards.md's rule that ownership is confirmed before any mutation
-// rather than merely referenced by a client-supplied ID.
-export async function getOwnedTransaction(userId: string, id: string) {
+// Runs only when an ownership-scoped write matched nothing: "someone else's
+// row" (forbidden) vs "no row at all" (not_found). A concurrent delete
+// between the write and this lookup just yields not_found — acceptable.
+async function classifyMiss(
+  id: string
+): Promise<{ ok: false; reason: "forbidden" | "not_found" }> {
   const [row] = await db
-    .select()
+    .select({ id: transactions.id })
     .from(transactions)
-    .where(and(eq(transactions.id, id), eq(transactions.userId, userId)));
-  return row;
+    .where(eq(transactions.id, id));
+  return { ok: false, reason: row ? "forbidden" : "not_found" };
 }
 
-// Same ownership-scoped WHERE as deleteOwnedTransaction — a row is updated
-// only if it belongs to userId. Full replace, not a partial patch: every
-// field in NewTransactionInput is written, matching the same schema POST
-// validates against.
 export async function updateOwnedTransaction(
   userId: string,
   id: string,
   input: NewTransactionInput
-) {
+): Promise<OwnedMutation<TransactionRow>> {
   const [updated] = await db
     .update(transactions)
     .set({ ...input, updatedAt: new Date() })
     .where(and(eq(transactions.id, id), eq(transactions.userId, userId)))
     .returning();
-  return updated;
+  return updated ? { ok: true, value: updated } : classifyMiss(id);
 }
 
-// The WHERE clause carries the same ownership check as getOwnedTransaction
-// — a row is deleted only if it belongs to userId, never merely referenced
-// by a client-supplied ID.
-export async function deleteOwnedTransaction(userId: string, id: string) {
+export async function deleteOwnedTransaction(
+  userId: string,
+  id: string
+): Promise<OwnedMutation<{ id: string }>> {
   const [deleted] = await db
     .delete(transactions)
     .where(and(eq(transactions.id, id), eq(transactions.userId, userId)))
     .returning({ id: transactions.id });
-  return deleted;
+  return deleted ? { ok: true, value: deleted } : classifyMiss(id);
 }
 
-// Called only from the Clerk `user.deleted` webhook — removes every
-// transaction row left behind by a deleted account. See
-// progress-tracker.md's open question on orphaned rows.
+// Called only from the Clerk `user.deleted` webhook — clears rows left
+// behind by a deleted account.
 export async function deleteAllTransactionsForUser(userId: string) {
   return db
     .delete(transactions)

@@ -1,4 +1,5 @@
 import { apiError, apiOk } from "@/lib/api/response";
+import { parseJsonBody } from "@/lib/api/parseJsonBody";
 import { withAuthAndRateLimit } from "@/lib/api/withAuthAndRateLimit";
 import {
   deleteOwnedTransaction,
@@ -8,32 +9,41 @@ import { transactionInputSchema } from "@/lib/validation/transaction";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
+function ownershipError(reason: "forbidden" | "not_found") {
+  return reason === "forbidden"
+    ? apiError("FORBIDDEN", "You don't have access to this transaction", 403)
+    : apiError("NOT_FOUND", "Transaction not found", 404);
+}
+
 export const PATCH = withAuthAndRateLimit<RouteContext>(
   async (request, { userId, params }) => {
-    const body: unknown = await request.json();
-    const parsed = transactionInputSchema.safeParse(body);
-    if (!parsed.success) {
-      return apiError("INVALID_INPUT", "Invalid transaction payload", 400);
+    const body = await parseJsonBody(
+      request,
+      transactionInputSchema,
+      "transaction payload"
+    );
+    if (!body.ok) {
+      return body.response;
     }
 
     const { id } = await params;
-    const updated = await updateOwnedTransaction(userId, id, parsed.data);
-    if (!updated) {
-      return apiError("NOT_FOUND", "Transaction not found", 404);
+    const result = await updateOwnedTransaction(userId, id, body.data);
+    if (!result.ok) {
+      return ownershipError(result.reason);
     }
 
-    return apiOk(updated);
+    return apiOk(result.value);
   }
 );
 
 export const DELETE = withAuthAndRateLimit<RouteContext>(
   async (_request, { userId, params }) => {
     const { id } = await params;
-    const deleted = await deleteOwnedTransaction(userId, id);
-    if (!deleted) {
-      return apiError("NOT_FOUND", "Transaction not found", 404);
+    const result = await deleteOwnedTransaction(userId, id);
+    if (!result.ok) {
+      return ownershipError(result.reason);
     }
 
-    return apiOk({ id: deleted.id });
+    return apiOk({ id: result.value.id });
   }
 );

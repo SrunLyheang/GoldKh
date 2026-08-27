@@ -52,7 +52,7 @@ describe("GET /api/transactions", () => {
   it("returns 401 when there is no session", async () => {
     authMock.mockResolvedValue({ userId: null });
 
-    const res = await GET();
+    const res = await GET(new Request("http://localhost/api/transactions"));
     const body = await res.json();
 
     expect(res.status).toBe(401);
@@ -64,7 +64,7 @@ describe("GET /api/transactions", () => {
     authMock.mockResolvedValue({ userId: "user_123" });
     listTransactionsMock.mockResolvedValue([{ id: "tx_1" }]);
 
-    const res = await GET();
+    const res = await GET(new Request("http://localhost/api/transactions"));
     const body = await res.json();
 
     expect(listTransactionsMock).toHaveBeenCalledWith("user_123");
@@ -103,6 +103,23 @@ describe("POST /api/transactions", () => {
     authMock.mockResolvedValue({ userId: "user_123" });
 
     const res = await POST(jsonRequest({ ...validPayload, unit: "ounce" }));
+    const body = await res.json();
+
+    expect(res.status).toBe(400);
+    expect(body.error.code).toBe("INVALID_INPUT");
+    expect(createTransactionMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects a non-JSON body with 400 and does not call the DB", async () => {
+    authMock.mockResolvedValue({ userId: "user_123" });
+
+    const res = await POST(
+      new Request("http://localhost/api/transactions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: "not json",
+      })
+    );
     const body = await res.json();
 
     expect(res.status).toBe(400);

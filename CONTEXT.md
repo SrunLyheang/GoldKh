@@ -48,6 +48,26 @@ Exactly one of four:
 The refresh button switches on this and owns all of the resulting UI state
 and copy; the module owns the wire contract and nothing else.
 
+## transaction ownership
+
+A `transactions` row belongs to exactly one user — the Clerk session id in
+its `user_id` column, set server-side on insert and never accepted from the
+client (invariant 2). Every read and mutation is scoped by that id in the
+SQL `WHERE`, so a non-owner cannot see or change a row even by guessing its
+id.
+
+`PATCH` / `DELETE /api/transactions/[id]` distinguish two miss cases:
+
+- **forbidden** (HTTP 403) — the row exists but under another user.
+- **not_found** (HTTP 404) — no row has that id.
+
+The 403 deliberately discloses that an id exists. That is an accepted
+trade-off: ids are random UUIDv4, so the disclosure buys an attacker
+nothing, and callers get an honest status. A client edit/delete flow must
+therefore treat 403 the same as 404 for "this transaction is not yours to
+touch" — it is not an auth/session problem and should not trigger a
+re-login.
+
 ## ledger entry
 
 The calc layer's view of one transaction: `type` (buy/sell), `quantity`,

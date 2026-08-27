@@ -37,6 +37,34 @@ Update this file after every meaningful implementation change.
 
 ## Completed
 
+- **2026-08-27 — API route hardening pass (uncommitted).** Against a
+  good-practices checklist:
+  - Non-owner PATCH/DELETE on `/api/transactions/[id]` now returns
+    `403 FORBIDDEN` instead of `404`. `updateOwnedTransaction` /
+    `deleteOwnedTransaction` return an `OwnedMutation` discriminated
+    result (`ok` / `forbidden` / `not_found`); on a scoped-write miss a
+    `classifyMiss` lookup by id decides 403 vs 404.
+  - `request.json()` in `POST /api/transactions` and `PATCH
+    /api/transactions/[id]` no longer crashes to 500 on a malformed
+    body — new `lib/api/parseJsonBody.ts` does JSON-parse + Zod in one
+    place and returns a `400`.
+  - Extracted `withAuth` from `withAuthAndRateLimit` (the latter now
+    composes it); `GET /api/transactions` uses `withAuth` instead of a
+    hand-rolled 401 check.
+  - Removed the unused `getOwnedTransaction` query; dropped the
+    non-null assertion in `price/refresh` (narrow on `!== null`);
+    trimmed over-long comments across the API routes and their helpers.
+  - Code review (subagent) pass: added `lib/db/queries/transactions.test.ts`
+    covering the `classifyMiss` 403-vs-404 decision; `parseJsonBody` takes a
+    `label` arg instead of a hard-coded "transaction payload" message.
+  - Follow-ups from that review, now done: `POST /api/price/refresh` uses
+    the shared `withAuth` wrapper (was the last hand-rolled `auth()` + 401);
+    CONTEXT.md gained a "transaction ownership" entry documenting the
+    403-discloses-id-existence trade-off and that clients treat 403 like 404
+    here (not a re-login trigger).
+  - Full suite green (144), `tsc --noEmit` clean, `next build` clean, lint
+    clean.
+
 - Project scaffold: Next.js + TypeScript (App Router, strict TS),
   Tailwind, shadcn/ui, Clerk, `@neondatabase/serverless`, Drizzle
   (ORM only, empty schema), Zod, Geist Sans/Mono, Vault design
