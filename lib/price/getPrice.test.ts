@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
-import { getPrice, type GetPriceDeps, type PriceResult } from "./getPrice";
+import { getPrice, type GetPriceDeps, type PriceSnapshot } from "./getPrice";
 import { PRICE_STALENESS_MS } from "@/lib/constants/staleness";
 
-function snapshot(overrides: Partial<PriceResult> = {}): PriceResult {
+function snapshot(overrides: Partial<PriceSnapshot> = {}): PriceSnapshot {
   return {
     id: "snap-1",
     pricePerTroyOz: "2000",
@@ -15,7 +15,7 @@ function snapshot(overrides: Partial<PriceResult> = {}): PriceResult {
 function makeDeps(overrides: Partial<GetPriceDeps> = {}): GetPriceDeps {
   return {
     getLatestSnapshot: vi.fn().mockResolvedValue(undefined),
-    insertIfStillStale: vi.fn().mockResolvedValue(snapshot()),
+    insertSnapshotIfStale: vi.fn().mockResolvedValue(snapshot()),
     providers: [],
     ...overrides,
   };
@@ -44,7 +44,7 @@ describe("getPrice", () => {
       .mockResolvedValue({ pricePerTroyOz: "2100", source: "goldapi.io" });
     const deps = makeDeps({
       getLatestSnapshot: vi.fn().mockResolvedValue(stale),
-      insertIfStillStale: vi.fn().mockResolvedValue(inserted),
+      insertSnapshotIfStale: vi.fn().mockResolvedValue(inserted),
       providers: [provider],
     });
 
@@ -62,7 +62,7 @@ describe("getPrice", () => {
     const inserted = snapshot({ source: "backup" });
     const deps = makeDeps({
       getLatestSnapshot: vi.fn().mockResolvedValue(undefined),
-      insertIfStillStale: vi.fn().mockResolvedValue(inserted),
+      insertSnapshotIfStale: vi.fn().mockResolvedValue(inserted),
       providers: [failing, working],
     });
 
@@ -101,7 +101,7 @@ describe("getPrice", () => {
   });
 
   it("re-reads the latest snapshot when a concurrent insert wins the race", async () => {
-    // insertIfStillStale returning undefined models the WHERE NOT EXISTS
+    // insertSnapshotIfStale returning undefined models the WHERE NOT EXISTS
     // conditional insert finding a fresh row already there.
     const wonByAnotherRequest = snapshot({ id: "snap-winner" });
     const provider = vi
@@ -113,7 +113,7 @@ describe("getPrice", () => {
       .mockResolvedValueOnce(wonByAnotherRequest);
     const deps = makeDeps({
       getLatestSnapshot,
-      insertIfStillStale: vi.fn().mockResolvedValue(undefined),
+      insertSnapshotIfStale: vi.fn().mockResolvedValue(undefined),
       providers: [provider],
     });
 

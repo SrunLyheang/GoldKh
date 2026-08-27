@@ -1,20 +1,6 @@
 import Decimal from "decimal.js";
-import { priceToTroyOz, toTroyOz, type GoldUnit } from "./units";
-
-export interface TransactionLike {
-  type: "buy" | "sell";
-  quantity: string;
-  unit: GoldUnit;
-  pricePerUnit: string;
-  currency: "USD" | "KHR";
-}
-
-// Lets a caller exclude one specific row (e.g. "compute holdings as if
-// the row currently being edited didn't exist yet") without a circular
-// import between the calc layer and the transaction components.
-export interface TransactionWithId extends TransactionLike {
-  id: string;
-}
+import { classifyEntry, type LedgerEntry } from "./ledgerEntry";
+import { priceToTroyOz, toTroyOz } from "./units";
 
 export interface Holdings {
   totalTroyOz: string;
@@ -30,19 +16,21 @@ export interface Holdings {
 //
 // KHR rows are excluded entirely, not converted — this aggregate is
 // USD-denominated (see architecture.md invariant 4) and KHR conversion
-// is out of scope (project-overview.md). Mirrors computeRowValuation's
-// per-row treatment of non-USD rows in transactionRow.ts.
-export function computeHoldings(transactions: TransactionLike[]): Holdings {
+// is out of scope (project-overview.md). classifyEntry names that rule;
+// computeRowValuation in transactionRow.ts keys its per-row treatment off
+// the same classification.
+export function computeHoldings(transactions: LedgerEntry[]): Holdings {
   let totalQtyOz = new Decimal(0);
   let totalCostUsd = new Decimal(0);
 
   for (const tx of transactions) {
-    if (tx.currency !== "USD") continue;
+    const kind = classifyEntry(tx);
+    if (kind === "non-usd") continue;
 
     const qtyOz = new Decimal(toTroyOz(tx.quantity, tx.unit));
     const priceOz = new Decimal(priceToTroyOz(tx.pricePerUnit, tx.unit));
 
-    if (tx.type === "buy") {
+    if (kind === "open-buy") {
       totalCostUsd = totalCostUsd.plus(qtyOz.times(priceOz));
       totalQtyOz = totalQtyOz.plus(qtyOz);
     } else {

@@ -9,6 +9,13 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ refresh: refreshMock }),
 }));
 
+function okResponse(cooldownEndsAt: number | null = Date.now() + 5 * 60_000) {
+  return new Response(
+    JSON.stringify({ data: { id: "snap_1", cooldownEndsAt } }),
+    { status: 200 }
+  );
+}
+
 describe("RefreshButton", () => {
   beforeEach(() => {
     refreshMock.mockClear();
@@ -19,17 +26,7 @@ describe("RefreshButton", () => {
   });
 
   it("calls the refresh route and shows a success toast on a 200", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockResolvedValue(
-        new Response(
-          JSON.stringify({
-            data: { id: "snap_1", capturedAt: new Date().toISOString() },
-          }),
-          { status: 200 }
-        )
-      )
-    );
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(okResponse()));
     const user = userEvent.setup();
     render(<RefreshButton cooldownEndsAt={null} />);
 
@@ -43,15 +40,11 @@ describe("RefreshButton", () => {
     });
   });
 
-  it("derives the cooldown deadline from the server's capturedAt, not the click instant", async () => {
-    const capturedAt = new Date(Date.now() - 60_000).toISOString();
+  it("uses the server's cooldownEndsAt for the cooldown window, not the click instant", async () => {
+    // Server says the cooldown lifts in ~4 minutes.
     vi.stubGlobal(
       "fetch",
-      vi.fn().mockResolvedValue(
-        new Response(JSON.stringify({ data: { id: "snap_1", capturedAt } }), {
-          status: 200,
-        })
-      )
+      vi.fn().mockResolvedValue(okResponse(Date.now() + 4 * 60_000))
     );
     const user = userEvent.setup();
     render(<RefreshButton cooldownEndsAt={null} />);
@@ -62,11 +55,39 @@ describe("RefreshButton", () => {
     await waitFor(() => {
       expect(button).toHaveAttribute("aria-disabled", "true");
     });
-    // capturedAt was 1 minute in the past, cooldown is 5 minutes, so
     // ~4 minutes should remain — not a fresh 5-minute window starting now.
     await user.click(button);
     await waitFor(() => {
       expect(screen.getByText("Please wait 4 minutes")).toBeInTheDocument();
+    });
+  });
+
+  it("spins immediately on click and ignores repeat clicks while the fetch is in flight", async () => {
+    let resolveFetch!: (res: Response) => void;
+    const fetchMock = vi.fn().mockImplementation(
+      () =>
+        new Promise<Response>((resolve) => {
+          resolveFetch = resolve;
+        })
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    const user = userEvent.setup();
+    render(<RefreshButton cooldownEndsAt={null} />);
+
+    const button = screen.getByRole("button", { name: /refresh/i });
+    await user.click(button);
+    await user.click(button);
+    await user.click(button);
+
+    // Feedback landed on the first click, before the fetch resolved.
+    expect(button).toHaveAttribute("aria-disabled", "true");
+    expect(screen.getByRole("status")).toBeInTheDocument();
+    // The two extra clicks did not fire more requests.
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+
+    resolveFetch(okResponse());
+    await waitFor(() => {
+      expect(screen.getByText("Refreshed")).toBeInTheDocument();
     });
   });
 
@@ -118,12 +139,13 @@ describe("RefreshButton", () => {
     });
   });
 
-  it("enters cooldown after a 429 instead of treating it as a generic error", async () => {
+  it("enters cooldown from the 429 Retry-After header instead of treating it as a generic error", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn().mockResolvedValue(
         new Response(JSON.stringify({ error: { message: "Too soon" } }), {
           status: 429,
+          headers: { "Retry-After": "180" },
         })
       )
     );

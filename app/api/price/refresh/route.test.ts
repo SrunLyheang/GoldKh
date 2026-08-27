@@ -2,15 +2,13 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const {
   authMock,
-  getLatestManualSnapshotMock,
+  getLatestSnapshotMock,
   insertSnapshotMock,
-  isManualCooldownActiveMock,
   fetchGoldapiPriceMock,
 } = vi.hoisted(() => ({
   authMock: vi.fn(),
-  getLatestManualSnapshotMock: vi.fn(),
+  getLatestSnapshotMock: vi.fn(),
   insertSnapshotMock: vi.fn(),
-  isManualCooldownActiveMock: vi.fn(),
   fetchGoldapiPriceMock: vi.fn(),
 }));
 
@@ -18,16 +16,17 @@ vi.mock("@clerk/nextjs/server", () => ({
   auth: authMock,
 }));
 
-vi.mock("@/lib/price/getPrice", () => ({
-  getLatestManualSnapshot: getLatestManualSnapshotMock,
+vi.mock("@/lib/db/queries/priceSnapshots", () => ({
+  getLatestSnapshot: getLatestSnapshotMock,
   insertSnapshot: insertSnapshotMock,
-  isManualCooldownActive: isManualCooldownActiveMock,
 }));
 
 vi.mock("@/lib/price/providers/goldapi", () => ({
   fetchGoldapiPrice: fetchGoldapiPriceMock,
 }));
 
+// priceFreshness is a pure function of the snapshot's capturedAt — not
+// mocked. Tests drive the cooldown branch by choosing capturedAt.
 import { POST } from "./route";
 
 describe("POST /api/price/refresh", () => {
@@ -44,24 +43,22 @@ describe("POST /api/price/refresh", () => {
     expect(fetchGoldapiPriceMock).not.toHaveBeenCalled();
   });
 
-  it("returns 429 when a manual refresh is still within its cooldown", async () => {
+  it("returns 429 with a Retry-After header when the newest snapshot is still within the cooldown", async () => {
     authMock.mockResolvedValue({ userId: "user_123" });
-    const latestManual = { capturedAt: new Date() };
-    getLatestManualSnapshotMock.mockResolvedValue(latestManual);
-    isManualCooldownActiveMock.mockReturnValue(true);
+    getLatestSnapshotMock.mockResolvedValue({ capturedAt: new Date() });
 
     const res = await POST();
     const body = await res.json();
 
     expect(res.status).toBe(429);
     expect(body.error.code).toBe("COOLDOWN");
+    expect(Number(res.headers.get("Retry-After"))).toBeGreaterThan(0);
     expect(fetchGoldapiPriceMock).not.toHaveBeenCalled();
   });
 
-  it("fetches, inserts a manual snapshot, and returns it when the cooldown has passed", async () => {
+  it("fetches, inserts a manual snapshot, and returns it with cooldownEndsAt when the cooldown has passed", async () => {
     authMock.mockResolvedValue({ userId: "user_123" });
-    getLatestManualSnapshotMock.mockResolvedValue(undefined);
-    isManualCooldownActiveMock.mockReturnValue(false);
+    getLatestSnapshotMock.mockResolvedValue(undefined);
     fetchGoldapiPriceMock.mockResolvedValue({
       pricePerTroyOz: "2500.0000",
       source: "goldapi.io",
@@ -82,12 +79,12 @@ describe("POST /api/price/refresh", () => {
       { manual: true }
     );
     expect(body.data.id).toBe("snap_1");
+    expect(typeof body.data.cooldownEndsAt).toBe("number");
   });
 
   it("returns 502 when the provider throws", async () => {
     authMock.mockResolvedValue({ userId: "user_123" });
-    getLatestManualSnapshotMock.mockResolvedValue(undefined);
-    isManualCooldownActiveMock.mockReturnValue(false);
+    getLatestSnapshotMock.mockResolvedValue(undefined);
     fetchGoldapiPriceMock.mockRejectedValue(new Error("network error"));
 
     const res = await POST();

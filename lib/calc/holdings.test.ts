@@ -1,12 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { computeHoldings, type TransactionLike } from "./holdings";
+import { computeHoldings } from "./holdings";
+import type { LedgerEntry } from "./ledgerEntry";
 
 function buy(
   quantity: string,
   unit: "chi" | "damlung",
   price: string,
   currency: "USD" | "KHR" = "USD"
-): TransactionLike {
+): LedgerEntry {
   return { type: "buy", quantity, unit, pricePerUnit: price, currency };
 }
 
@@ -15,7 +16,7 @@ function sell(
   unit: "chi" | "damlung",
   price: string,
   currency: "USD" | "KHR" = "USD"
-): TransactionLike {
+): LedgerEntry {
   return { type: "sell", quantity, unit, pricePerUnit: price, currency };
 }
 
