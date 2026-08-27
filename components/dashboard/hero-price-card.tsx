@@ -53,7 +53,7 @@ export function HeroPriceCard({
               <UnitToggle value={displayUnit} onChange={onDisplayUnitChange} />
             )}
           </div>
-          <MonoValue className="mt-1.5 block text-[34px] font-semibold tracking-tight leading-tight sm:text-[46px]">
+          <MonoValue className="tt-display mt-1.5 block text-[34px] font-semibold tracking-tight leading-tight sm:text-[46px]">
             {formatUsd(headlinePrice)}
           </MonoValue>
           <MonoValue tone="muted" className="mt-1.5 block text-[12.5px]">
@@ -71,7 +71,10 @@ export function HeroPriceCard({
               }
             />
             <MonoValue tone="muted" className="tt-label text-[11px]">
-              [{isStale ? t.hero.stale : t.hero.live}] {t.hero.asOf(timeLabel)}
+              <span className="tt-bracket">
+                {isStale ? t.hero.stale : t.hero.live}
+              </span>{" "}
+              {t.hero.asOf(timeLabel)}
             </MonoValue>
           </div>
           <RefreshButton cooldownEndsAt={refreshCooldownEndsAt} />

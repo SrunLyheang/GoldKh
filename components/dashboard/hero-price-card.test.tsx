@@ -32,12 +32,16 @@ describe("HeroPriceCard", () => {
 
   it('labels a fresh price "Live"', () => {
     renderCard({ isStale: false });
-    expect(screen.getByText(/^\[Live\] as of/)).toBeInTheDocument();
+    // The "[ ]" framing is pseudo-element content driven by theme tokens,
+    // so it is not part of the DOM text — assert the word and timestamp.
+    expect(screen.getByText("Live")).toBeInTheDocument();
+    expect(screen.getByText(/as of/)).toBeInTheDocument();
   });
 
-  it('labels a stale price "Stale", not an error/gain color', () => {
+  it('labels a stale price "Stale", not "Live"', () => {
     renderCard({ isStale: true });
-    expect(screen.getByText(/^\[Stale\] as of/)).toBeInTheDocument();
+    expect(screen.getByText("Stale")).toBeInTheDocument();
+    expect(screen.queryByText("Live")).not.toBeInTheDocument();
   });
 
   it("shows the spot-vs-retail-premium disclaimer", () => {

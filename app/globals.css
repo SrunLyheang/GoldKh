@@ -50,8 +50,16 @@
     --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-:root {
-    /* Vault — dark only, no light mode. See context/ui-context.md. */
+:root,
+:root[data-theme="vault"],
+[data-theme="vault"] {
+    /* Vault — dark only, no light mode. The `[data-theme="vault"]`
+       selectors are only so the theme picker can preview Vault inside a
+       scoped wrapper; the provider still sets NO attribute on <html> for
+       Vault, so SSR is unaffected. Every theme block below is likewise
+       written as `:root[data-theme="x"], [data-theme="x"]` so a nested
+       `<div data-theme="x">` (the picker's swatches) gets the full token
+       set, not just the <html> element. See context/ui-context.md. */
     --background: #0f0c08;
     --foreground: #f5f1e8;
     --card: #151009;
@@ -80,6 +88,26 @@
        corners everywhere. Every rounded-* utility derives from this one
        token, so zeroing it is the single edit that squares the app. */
     --radius: 0px;
+
+    /* Theme idiom tokens. These carry the Vault (Industrial Brutalism)
+       values; each `[data-theme]` block below overrides them. Components
+       reach the idiom only through `.tt-label` / `.tt-heading` /
+       `.tt-display` / `.tt-bracket` / `.shadow-vault-*`, never by
+       hardcoding it — that is what makes a new theme one CSS block.
+       See context/ui-context.md's Theming section. */
+    --label-font: var(--font-mono);
+    --label-transform: uppercase;
+    --label-tracking: 0.08em;
+    --heading-font: var(--font-sans);
+    --heading-transform: uppercase;
+    --heading-tracking: -0.01em;
+    --heading-weight: 700;
+    --display-font: var(--font-mono);
+    --bracket-open: "[ ";
+    --bracket-close: " ]";
+    --shadow-lg: 4px 4px 0 0 var(--border);
+    --shadow-sm: 2px 2px 0 0 var(--border);
+
     --sidebar: #151009;
     --sidebar-foreground: #f5f1e8;
     --sidebar-primary: #e8b84b;
@@ -88,6 +116,295 @@
     --sidebar-accent-foreground: #f5f1e8;
     --sidebar-border: #2a2013;
     --sidebar-ring: #e8b84b;
+}
+
+/* ---- Ledger theme (minimalist-ui direction) --------------------------
+   Warm monochrome paper, editorial serif headings, soft borders and
+   shadows, rounded corners. Selectable from the sidebar theme toggle;
+   Vault stays the default (no `data-theme` attribute). Adding another
+   theme means another block just like this one — nothing in the
+   components changes. See context/ui-context.md's Theming section and
+   the "Goldsmith's Ledger" mockup. */
+:root[data-theme="ledger"],
+[data-theme="ledger"] {
+    --background: #f7f6f3;
+    --foreground: #201f1c;
+    --card: #fcfbf9;
+    --card-foreground: #201f1c;
+    --popover: #fcfbf9;
+    --popover-foreground: #201f1c;
+    --primary: #201f1c;
+    --primary-foreground: #f7f6f3;
+    --secondary: #efede7;
+    --secondary-foreground: #201f1c;
+    --muted: #efede7;
+    --muted-foreground: #6b6862;
+    --accent: #eae7df;
+    --accent-foreground: #201f1c;
+    --destructive: #9e2f2c;
+    --state-gain: #35633a;
+    --border: #e6e2da;
+    --input: #d8d3c8;
+    --ring: #9a7b4f;
+    --chart-1: #9a7b4f;
+    --chart-2: #6b6862;
+    --chart-3: #35633a;
+    --chart-4: #9e2f2c;
+    --chart-5: #201f1c;
+
+    --radius: 8px;
+
+    /* Labels stay mono + uppercase (they read the same in both themes).
+       Headings and the hero price switch to the editorial serif and
+       lose the bracket framing; elevation goes soft. */
+    --heading-font: var(--font-newsreader), Georgia, "Times New Roman", serif;
+    --heading-transform: none;
+    --heading-tracking: -0.02em;
+    --heading-weight: 500;
+    --display-font: var(--font-newsreader), Georgia, "Times New Roman", serif;
+    --bracket-open: "";
+    --bracket-close: "";
+    --shadow-lg: 0 1px 2px 0 rgb(32 31 28 / 0.05);
+    --shadow-sm: 0 1px 2px 0 rgb(32 31 28 / 0.03);
+
+    --sidebar: #f7f6f3;
+    --sidebar-foreground: #201f1c;
+    --sidebar-primary: #201f1c;
+    --sidebar-primary-foreground: #f7f6f3;
+    --sidebar-accent: #eae7df;
+    --sidebar-accent-foreground: #201f1c;
+    --sidebar-border: #e6e2da;
+    --sidebar-ring: #9a7b4f;
+}
+
+/* ---- Midnight theme — "soft glass" -------------------------------
+   Deep cool blue-black, a bright indigo accent, and a completely
+   different elevation language from Vault: no visible card borders,
+   large soft blue GLOW instead of a hard plate, generously rounded
+   corners. Headings are airy — sans, sentence-case, LIGHT weight,
+   positive tracking. Labels drop to sans too. No bracket framing.
+   See context/ui-context.md's Theming section. */
+:root[data-theme="midnight"],
+[data-theme="midnight"] {
+    --background: #090d18;
+    --foreground: #eaeefb;
+    --card: #121a30;
+    --card-foreground: #eaeefb;
+    --popover: #141c34;
+    --popover-foreground: #eaeefb;
+    --primary: #7c9cff;
+    --primary-foreground: #0a1020;
+    --secondary: #1b2440;
+    --secondary-foreground: #eaeefb;
+    --muted: #1b2440;
+    --muted-foreground: #93a0c4;
+    --accent: #202b4d;
+    --accent-foreground: #eaeefb;
+    --destructive: #ff8087;
+    --state-gain: #5fe3a1;
+    --border: #1e2842;
+    --input: #2a3657;
+    --ring: #7c9cff;
+    --chart-1: #7c9cff;
+    --chart-2: #93a0c4;
+    --chart-3: #5fe3a1;
+    --chart-4: #ff8087;
+    --chart-5: #eaeefb;
+
+    --radius: 16px;
+
+    --label-font: var(--font-sans);
+    --label-transform: uppercase;
+    --label-tracking: 0.04em;
+    --heading-font: var(--font-sans);
+    --heading-transform: none;
+    --heading-tracking: 0.01em;
+    --heading-weight: 300;
+    --display-font: var(--font-mono);
+    --bracket-open: "";
+    --bracket-close: "";
+    --shadow-lg: 0 28px 64px -24px rgb(124 156 255 / 0.35), 0 6px 18px -8px rgb(0 0 0 / 0.55);
+    --shadow-sm: 0 12px 28px -14px rgb(124 156 255 / 0.28);
+
+    --sidebar: #0c1122;
+    --sidebar-foreground: #eaeefb;
+    --sidebar-primary: #7c9cff;
+    --sidebar-primary-foreground: #0a1020;
+    --sidebar-accent: #202b4d;
+    --sidebar-accent-foreground: #eaeefb;
+    --sidebar-border: #1e2842;
+    --sidebar-ring: #7c9cff;
+}
+
+/* ---- Emerald theme — "chunky" ----------------------------------
+   Deep forest green, a vivid emerald accent, very round corners and
+   a soft green-tinted shadow. Headings are the opposite of Midnight's:
+   sans, UPPERCASE, HEAVY (800), tightly tracked — a stout, confident
+   voice. Labels stay mono. No bracket framing (that stays Vault's).
+   See context/ui-context.md's Theming section. */
+:root[data-theme="emerald"],
+[data-theme="emerald"] {
+    --background: #071410;
+    --foreground: #eafaf1;
+    --card: #0c211a;
+    --card-foreground: #eafaf1;
+    --popover: #0c211a;
+    --popover-foreground: #eafaf1;
+    --primary: #34d17e;
+    --primary-foreground: #04120b;
+    --secondary: #122b22;
+    --secondary-foreground: #eafaf1;
+    --muted: #122b22;
+    --muted-foreground: #86a99a;
+    --accent: #163a2c;
+    --accent-foreground: #eafaf1;
+    --destructive: #f5766f;
+    --state-gain: #34d17e;
+    --border: #1e4234;
+    --input: #1e4234;
+    --ring: #34d17e;
+    --chart-1: #34d17e;
+    --chart-2: #86a99a;
+    --chart-3: #8ef0bb;
+    --chart-4: #f5766f;
+    --chart-5: #eafaf1;
+
+    --radius: 20px;
+
+    --label-tracking: 0.1em;
+    --heading-font: var(--font-sans);
+    --heading-transform: uppercase;
+    --heading-tracking: -0.03em;
+    --heading-weight: 800;
+    --display-font: var(--font-mono);
+    --bracket-open: "";
+    --bracket-close: "";
+    --shadow-lg: 0 20px 44px -18px rgb(52 209 126 / 0.26), 0 4px 12px -6px rgb(0 0 0 / 0.4);
+    --shadow-sm: 0 8px 20px -10px rgb(52 209 126 / 0.22);
+
+    --sidebar: #0a1b15;
+    --sidebar-foreground: #eafaf1;
+    --sidebar-primary: #34d17e;
+    --sidebar-primary-foreground: #04120b;
+    --sidebar-accent: #163a2c;
+    --sidebar-accent-foreground: #eafaf1;
+    --sidebar-border: #1e4234;
+    --sidebar-ring: #34d17e;
+}
+
+/* ---- Terminal theme — "CRT" ----------------------------------
+   Pure black, phosphor green, everything mono and WIDE-tracked with
+   heavy [ … ] bracket framing and zero radius. Hard offset shadow.
+   The grain rule below adds scanlines on top. Pushed further than
+   before — wider tracking, blacker ground, brighter phosphor.
+   See context/ui-context.md's Theming section. */
+:root[data-theme="terminal"],
+[data-theme="terminal"] {
+    --background: #020604;
+    --foreground: #b8ffd8;
+    --card: #050c08;
+    --card-foreground: #b8ffd8;
+    --popover: #050c08;
+    --popover-foreground: #b8ffd8;
+    --primary: #2bff88;
+    --primary-foreground: #02150a;
+    --secondary: #08150f;
+    --secondary-foreground: #b8ffd8;
+    --muted: #08150f;
+    --muted-foreground: #4f9c78;
+    --accent: #0b1f16;
+    --accent-foreground: #b8ffd8;
+    --destructive: #ff5a5a;
+    --state-gain: #2bff88;
+    --border: #123324;
+    --input: #123324;
+    --ring: #2bff88;
+    --chart-1: #2bff88;
+    --chart-2: #4f9c78;
+    --chart-3: #7ee0a4;
+    --chart-4: #ff5a5a;
+    --chart-5: #b8ffd8;
+
+    --radius: 0px;
+
+    --label-tracking: 0.18em;
+    --heading-font: var(--font-mono);
+    --heading-transform: uppercase;
+    --heading-tracking: 0.18em;
+    --heading-weight: 400;
+    --display-font: var(--font-mono);
+    --bracket-open: "[ ";
+    --bracket-close: " ]";
+    --shadow-lg: 5px 5px 0 0 var(--border);
+    --shadow-sm: 3px 3px 0 0 var(--border);
+
+    --sidebar: #050c08;
+    --sidebar-foreground: #b8ffd8;
+    --sidebar-primary: #2bff88;
+    --sidebar-primary-foreground: #02150a;
+    --sidebar-accent: #0b1f16;
+    --sidebar-accent-foreground: #b8ffd8;
+    --sidebar-border: #123324;
+    --sidebar-ring: #2bff88;
+}
+
+/* ---- Porcelain theme — "Swiss / flat" -------------------------
+   Cool near-white, a strong blue accent, crisp 3px corners and
+   NO shadow at all — elevation reads only through the hairline
+   border. Headings and labels are sans, UPPERCASE, widely tracked
+   — International-Typographic-Style signage. Distinct from Ledger,
+   which is warm paper + serif + soft shadow. Grain darkens faintly
+   (multiply), set below. See context/ui-context.md's Theming. */
+:root[data-theme="porcelain"],
+[data-theme="porcelain"] {
+    --background: #fbfcfd;
+    --foreground: #0f1729;
+    --card: #ffffff;
+    --card-foreground: #0f1729;
+    --popover: #ffffff;
+    --popover-foreground: #0f1729;
+    --primary: #1d4ed8;
+    --primary-foreground: #ffffff;
+    --secondary: #eef1f6;
+    --secondary-foreground: #0f1729;
+    --muted: #eef1f6;
+    --muted-foreground: #5a6473;
+    --accent: #e6ebf3;
+    --accent-foreground: #0f1729;
+    --destructive: #c81e1e;
+    --state-gain: #15803d;
+    --border: #dce1e9;
+    --input: #c3cbd6;
+    --ring: #1d4ed8;
+    --chart-1: #1d4ed8;
+    --chart-2: #5a6473;
+    --chart-3: #15803d;
+    --chart-4: #c81e1e;
+    --chart-5: #0f1729;
+
+    --radius: 3px;
+
+    --label-font: var(--font-sans);
+    --label-transform: uppercase;
+    --label-tracking: 0.14em;
+    --heading-font: var(--font-sans);
+    --heading-transform: uppercase;
+    --heading-tracking: 0.12em;
+    --heading-weight: 600;
+    --display-font: var(--font-mono);
+    --bracket-open: "";
+    --bracket-close: "";
+    --shadow-lg: none;
+    --shadow-sm: none;
+
+    --sidebar: #ffffff;
+    --sidebar-foreground: #0f1729;
+    --sidebar-primary: #1d4ed8;
+    --sidebar-primary-foreground: #ffffff;
+    --sidebar-accent: #e6ebf3;
+    --sidebar-accent-foreground: #0f1729;
+    --sidebar-border: #dce1e9;
+    --sidebar-ring: #1d4ed8;
 }
 
 @layer base {
@@ -108,10 +425,10 @@
    (stat/transaction cards) to keep the same hierarchy the blurred
    versions had. See context/ui-context.md. */
 .shadow-vault-lg {
-  box-shadow: 4px 4px 0 0 var(--border);
+  box-shadow: var(--shadow-lg);
 }
 .shadow-vault-sm {
-  box-shadow: 2px 2px 0 0 var(--border);
+  box-shadow: var(--shadow-sm);
 }
 
 /* A faint fixed grain so the near-black background reads as a surface
@@ -127,23 +444,71 @@
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
+/* Overlay grain reads as light-on-dark; on the light themes' paper it
+   needs to darken instead, and more faintly. */
+:root[data-theme="ledger"] .vault-grain::before,
+:root[data-theme="porcelain"] .vault-grain::before {
+  opacity: 0.03;
+  mix-blend-mode: multiply;
+}
+
+/* Terminal leans into the CRT look — a touch more visible grain plus
+   horizontal scanlines from a second fixed layer. Decorative, inert. */
+:root[data-theme="terminal"] .vault-grain::before {
+  opacity: 0.08;
+}
+:root[data-theme="terminal"] .vault-grain::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.5;
+  background-image: repeating-linear-gradient(
+    0deg,
+    rgb(0 0 0 / 0.18) 0px,
+    rgb(0 0 0 / 0.18) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+}
+
 /* Brutalist micro-typography — every label, nav item, table header, and
    piece of metadata routes through this instead of plain muted text, per
    the industrial-brutalist-ui skill's section 3.2. Mono + uppercase +
    wide tracking reads as terminal/telemetry data rather than UI copy. */
 .tt-label {
-  font-family: var(--font-mono);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
+  font-family: var(--label-font);
+  text-transform: var(--label-transform);
+  letter-spacing: var(--label-tracking);
 }
 
 /* Structural headers — tight negative tracking so uppercase glyphs read
    as one solid block, per section 3.1. Used for section titles, not
    body copy. */
 .tt-heading {
-  text-transform: uppercase;
-  letter-spacing: -0.01em;
-  font-weight: 700;
+  font-family: var(--heading-font);
+  text-transform: var(--heading-transform);
+  letter-spacing: var(--heading-tracking);
+  font-weight: var(--heading-weight);
+}
+
+/* The one hero price headline. Vault keeps it on the mono tabular face
+   (ui-context.md's numbers rule); a theme may point --display-font at a
+   serif. tabular-nums stays on either way so digits still align. */
+.tt-display {
+  font-family: var(--display-font);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Bracket framing on section titles ("[ LEDGER ]"). The characters are
+   pseudo-element content so a theme blanks them through the tokens
+   without any JSX change. */
+.tt-bracket::before {
+  content: var(--bracket-open);
+}
+.tt-bracket::after {
+  content: var(--bracket-close);
 }
 
 /* One authored entrance: dashboard sections cascade in rather than

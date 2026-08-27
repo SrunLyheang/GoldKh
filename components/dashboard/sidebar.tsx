@@ -8,6 +8,7 @@ import { usePathname } from "next/navigation";
 import { useLocale } from "@/lib/i18n/locale-context";
 import { cn } from "@/lib/utils";
 import { LanguageToggle } from "./language-toggle";
+import { ThemeToggle } from "./theme-toggle";
 
 // "History" was removed — it pointed at "/dashboard#history", an anchor
 // on this same page rather than a real separate route. Add a real nav
@@ -93,6 +94,7 @@ export function Sidebar({
           })}
         </nav>
         <div className="flex flex-col gap-4 border-t border-border px-4 py-5">
+          <ThemeToggle className="self-start" />
           <LanguageToggle className="self-start" />
           <UserButton
             appearance={{ elements: { userButtonBox: "flex-row-reverse" } }}

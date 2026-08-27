@@ -1,7 +1,88 @@
 # UI Context
 
-Design direction: **Vault**. Dark, warm-toned, gold-accented.
-Confirmed — this is the decided design, not a proposal.
+Design direction: **Vault**. Dark, warm-toned, gold-accented. This is
+the **default** theme and the one every design decision below is written
+against. As of 2026-08-27 it is no longer the only theme — see
+**Theming** immediately below.
+
+## Theming
+
+The dashboard supports multiple selectable themes. Vault is the default.
+Six ship as of 2026-08-27:
+
+Each theme is a distinct *personality*, not just a recolour — corners,
+elevation language, and heading/label typography all diverge:
+
+| Theme | Personality | Corners | Elevation | Headings / labels |
+| --- | --- | --- | --- | --- |
+| **Vault** | Brutalist ledger (default) | square `0` | hard 4px offset plate | sans UPPER tight 700; mono UPPER labels; `[ … ]` brackets |
+| **Ledger** | Editorial `minimalist-ui` | `8px` | soft blur, tiny | **serif** (Newsreader) normal 500; mono UPPER labels; no brackets |
+| **Midnight** | Soft glass | round `16px` | **large blue glow, no card borders** | sans **normal-case light 300**, airy; **sans** UPPER labels `0.04em`; no brackets |
+| **Emerald** | Chunky | very round `20px` | soft green-tinted glow | sans **UPPER heavy 800 −0.03em**; mono UPPER labels `0.1em`; no brackets |
+| **Terminal** | CRT | square `0` | hard 5px offset **+ scanline `::after` layer** | **mono UPPER `0.18em`** everywhere incl. hero price; heavy `[ … ]`; grain `0.08` |
+| **Porcelain** | Swiss / flat | crisp `3px` | **none — hairline border only** | sans **UPPER `0.12em` 600**; **sans** UPPER labels `0.14em`; no brackets |
+
+Every `globals.css` theme block is written
+`:root[data-theme="x"], [data-theme="x"]` (not `:root[...]` alone) so a
+nested `<div data-theme="x">` resolves the full token set — that is what
+lets the theme picker paint each swatch from the real theme. Vault also
+gets an explicit `[data-theme="vault"]` selector for the same reason;
+the provider still sets **no** attribute on `<html>` for Vault, so SSR
+is unaffected.
+
+The user plans to add more.
+
+**Architecture — a CSS token contract, not forked components.**
+
+- `lib/theme/theme-context.tsx` — `ThemeProvider` + `useTheme()`,
+  `localStorage` key `goldkh-theme`, defaults to `"vault"`, mirrors
+  `LocaleProvider` (starts on the default every render, reads the stored
+  value in an effect, so no hydration mismatch). Sets `data-theme` on
+  `document.documentElement`; `"vault"` sets **no attribute**. Exports a
+  `THEMES` registry (`{ id, label }[]`).
+- `ThemeToggle` (`components/dashboard/theme-toggle.tsx`) — registry-
+  driven, in the sidebar footer and the mobile top bar next to
+  `LanguageToggle`. A `Popover` (the shadcn one) whose trigger shows a
+  two-chip swatch + current theme name, opening a 2-col grid of **live
+  preview swatches**. Each swatch is a mini mockup wrapped in
+  `<div data-theme={id}>` — it paints from that theme's real tokens
+  (including `--radius` and `--shadow-*`), so nothing hardcodes a
+  colour and a new `THEMES` entry renders correctly with zero change
+  here. Went through `SegmentedControl` → `Select` → this popover as
+  the registry grew.
+- `app/globals.css` — the bare `:root` block is Vault. Each other theme
+  is one `:root[data-theme="<id>"]` block overriding **only tokens**.
+  Beyond the usual shadcn colors, `:root` now carries **idiom tokens**
+  so the Industrial-Brutalism specifics are theme-swappable without
+  touching a single component:
+
+  | Token group | Vault value | Consumed by |
+  | --- | --- | --- |
+  | `--label-font/-transform/-tracking` | mono, uppercase, `0.08em` | `.tt-label` |
+  | `--heading-font/-transform/-tracking/-weight` | sans, uppercase, `-0.01em`, 700 | `.tt-heading` |
+  | `--display-font` | `var(--font-mono)` | `.tt-display` (hero price only) |
+  | `--bracket-open` / `--bracket-close` | `"[ "` / `" ]"` | `.tt-bracket::before/::after` |
+  | `--shadow-lg` / `--shadow-sm` | hard `4px/2px` offset | `.shadow-vault-lg/-sm` |
+  | `--radius` | `0px` | every `rounded-*` utility |
+
+  The `[ … ]` framing on section titles and the Live/Stale label is now
+  pseudo-element content from the bracket tokens — **not** literal
+  characters in JSX — so a theme blanks it by setting the tokens to
+  `""`.
+
+**Adding a theme:** one `THEMES` entry + one `:root[data-theme="<id>"]`
+block. No component changes. If a theme needs the grain overlay tuned,
+add a `:root[data-theme="<id>"] .vault-grain::before { … }` rule. Light
+themes (Ledger, Porcelain) share one such rule — dark overlay grain
+becomes a faint `multiply` on paper; Terminal has its own that raises
+opacity for the CRT look.
+
+**Newsreader** (`next/font/google`, `--font-newsreader`) is loaded in
+the root layout but referenced only by the Ledger theme's heading/
+display tokens; Vault never renders it.
+
+Everything from here down describes the **Vault** theme specifically.
+Confirmed — Vault itself is the decided design, not a proposal.
 
 ## Theme
 
