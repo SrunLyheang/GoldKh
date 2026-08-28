@@ -1,10 +1,10 @@
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
-// The `[ LABEL ]` bracket framing the dashboard already uses on its
-// hero dot and section headings (see hero-price-card.tsx,
-// context/progress-tracker.md's Industrial Brutalism entry), pulled
-// into one place for the landing page's section eyebrows.
+// Small label that sits above a section title. The editorial "Assay"
+// landing treatment keeps eyebrows quiet — mono, uppercase, wide
+// tracking, muted — with no bracket framing (that stays the dashboard's
+// Vault idiom). See context/progress-tracker.md.
 export function SectionEyebrow({
   children,
   className,
@@ -13,10 +13,13 @@ export function SectionEyebrow({
   className?: string;
 }) {
   return (
-    <p className={cn("tt-label text-[11px] text-primary", className)}>
-      <span aria-hidden>[ </span>
+    <p
+      className={cn(
+        "font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground",
+        className
+      )}
+    >
       {children}
-      <span aria-hidden> ]</span>
     </p>
   );
 }

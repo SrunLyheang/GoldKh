@@ -1,46 +1,164 @@
 "use client";
 
-import { Activity, Coins, Languages, Scale } from "lucide-react";
+import type { ReactNode } from "react";
 import { useLocale } from "@/lib/i18n/locale-context";
 import { SectionEyebrow } from "./section-eyebrow";
+import { useReveal, useInView } from "./use-reveal";
 
-// Four features in a hairline 2×2 grid — same gap-px-on-border-fill
-// construction the dashboard stat grid uses, so the cells read as one
-// ruled block rather than four floating cards.
+const SERIF = "font-[family-name:var(--font-newsreader)]";
+
+// Asymmetric hairline bento: one tall cell (weighted-average cost, the
+// idea the whole product turns on), two stacked cells, and one wide row.
+// Single 1px ruled block — gap-px over a bg-border fill, same as the
+// dashboard stat grid — so it reads as one sheet, not four cards.
 export function FeatureGrid() {
   const { t } = useLocale();
   const f = t.welcome.features;
-
-  const items = [
-    { icon: Scale, title: f.avgCostTitle, body: f.avgCostBody },
-    { icon: Activity, title: f.livePriceTitle, body: f.livePriceBody },
-    { icon: Coins, title: f.unitsTitle, body: f.unitsBody },
-    { icon: Languages, title: f.bilingualTitle, body: f.bilingualBody },
-  ];
+  const {
+    ref: headRef,
+    revealClass: headReveal,
+    style: headStyle,
+  } = useReveal<HTMLDivElement>();
+  const { ref: gridRef, visible: gridVisible } = useInView<HTMLDivElement>();
 
   return (
     <section
       id="features"
-      className="mx-auto max-w-[1120px] scroll-mt-20 px-5 py-20 sm:px-8 sm:py-28"
+      className="mx-auto max-w-5xl scroll-mt-24 px-5 py-20 sm:py-28"
     >
-      <SectionEyebrow>{f.kicker}</SectionEyebrow>
-      <h2 className="tt-heading mt-4 max-w-[22ch] text-2xl leading-[1.1] sm:text-4xl">
-        {f.title}
-      </h2>
+      <div
+        ref={headRef}
+        style={headStyle}
+        className={`${headReveal} max-w-2xl`}
+      >
+        <SectionEyebrow>{f.kicker}</SectionEyebrow>
+        <h2
+          className={`${SERIF} mt-4 text-[28px] font-normal leading-[1.12] tracking-[-0.02em] text-foreground sm:text-[38px]`}
+        >
+          {f.title}
+        </h2>
+      </div>
 
-      <div className="mt-12 grid gap-px border border-border bg-border sm:grid-cols-2">
-        {items.map(({ icon: Icon, title, body }) => (
-          <article key={title} className="bg-card p-6 sm:p-8">
-            <span className="inline-flex border border-border bg-muted p-2.5 text-primary">
-              <Icon className="h-4 w-4" aria-hidden strokeWidth={1.75} />
-            </span>
-            <h3 className="tt-heading mt-5 text-[15px] text-foreground">{title}</h3>
-            <p className="mt-2.5 text-[13px] leading-relaxed text-muted-foreground">
-              {body}
-            </p>
-          </article>
-        ))}
+      <div
+        ref={gridRef}
+        className={`landing-stagger ${
+          gridVisible ? "is-visible" : ""
+        } mt-12 grid gap-px overflow-hidden rounded-xl border border-border bg-border sm:grid-cols-3 sm:grid-rows-2`}
+      >
+        <article className="bg-card p-7 sm:row-span-2 sm:p-9">
+          <IconChip>
+            <IconScale />
+          </IconChip>
+          <h3 className={`${SERIF} mt-5 text-[19px] text-foreground`}>
+            {f.avgCostTitle}
+          </h3>
+          <p className="mt-2.5 max-w-[34ch] text-[13.5px] leading-[1.7] text-muted-foreground">
+            {f.avgCostBody}
+          </p>
+        </article>
+
+        <FeatureCell
+          icon={<IconPulse />}
+          title={f.livePriceTitle}
+          body={f.livePriceBody}
+        />
+        <FeatureCell
+          icon={<IconCoins />}
+          title={f.unitsTitle}
+          body={f.unitsBody}
+        />
+
+        <article className="bg-card p-7 sm:col-span-2 sm:p-9">
+          <div className="flex items-start gap-4">
+            <IconChip>
+              <IconGlyph />
+            </IconChip>
+            <div>
+              <h3 className={`${SERIF} text-[19px] text-foreground`}>
+                {f.bilingualTitle}
+              </h3>
+              <p className="mt-2 max-w-[58ch] text-[13.5px] leading-[1.7] text-muted-foreground">
+                {f.bilingualBody}
+              </p>
+            </div>
+          </div>
+        </article>
       </div>
     </section>
+  );
+}
+
+function FeatureCell({
+  icon,
+  title,
+  body,
+}: {
+  icon: ReactNode;
+  title: string;
+  body: string;
+}) {
+  return (
+    <article className="bg-card p-7 sm:p-9">
+      <IconChip>{icon}</IconChip>
+      <h3 className={`${SERIF} mt-4 text-[17px] text-foreground`}>{title}</h3>
+      <p className="mt-2.5 text-[13.5px] leading-[1.7] text-muted-foreground">
+        {body}
+      </p>
+    </article>
+  );
+}
+
+function IconChip({ children }: { children: ReactNode }) {
+  return (
+    <span className="inline-flex w-fit rounded-md border border-border bg-muted p-2.5 text-foreground">
+      {children}
+    </span>
+  );
+}
+
+const svgProps = {
+  width: 16,
+  height: 16,
+  viewBox: "0 0 24 24",
+  fill: "none",
+  stroke: "currentColor",
+  strokeWidth: 1.6,
+  strokeLinecap: "round" as const,
+  strokeLinejoin: "round" as const,
+  "aria-hidden": true,
+};
+
+function IconScale() {
+  return (
+    <svg {...svgProps}>
+      <path d="M12 3v18M7 6h10M9 21h6" />
+      <path d="M7 6 4 13a3 3 0 0 0 6 0L7 6ZM17 6l-3 7a3 3 0 0 0 6 0l-3-7Z" />
+    </svg>
+  );
+}
+
+function IconPulse() {
+  return (
+    <svg {...svgProps}>
+      <path d="M3 12h3.5l2.2-6 3.4 12 2.3-8 1.4 2H21" />
+    </svg>
+  );
+}
+
+function IconCoins() {
+  return (
+    <svg {...svgProps}>
+      <ellipse cx="12" cy="6" rx="7" ry="3" />
+      <path d="M5 6v6c0 1.66 3.13 3 7 3s7-1.34 7-3V6M5 12v6c0 1.66 3.13 3 7 3s7-1.34 7-3v-6" />
+    </svg>
+  );
+}
+
+function IconGlyph() {
+  return (
+    <svg {...svgProps}>
+      <path d="M4 6h9M8.5 6c0 4.5-1.8 7.6-4.5 9.5M6 10c0 2.7 2.3 5 5.5 5.7" />
+      <path d="M13.5 20 17.5 10 21.5 20M15 16.5h5" />
+    </svg>
   );
 }

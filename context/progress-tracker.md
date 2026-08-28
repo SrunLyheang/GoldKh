@@ -37,6 +37,45 @@ Update this file after every meaningful implementation change.
 
 ## Completed
 
+- **2026-08-28 — Landing page redesign: "Assay" editorial (uncommitted,
+  on `landing-page` branch).** Re-skinned the marketing page
+  (`components/welcome/*`) from the dark Vault/Industrial-Brutalism look
+  to a warm editorial minimalism — Newsreader serif display, warm bone
+  paper, hairline bento, gold used only as the brand mark + one hero
+  rule. Explicitly *not* following `redesign/direction.md` (per user).
+  - **Self-contained light/dark theme.** New `LandingThemeProvider`
+    (`components/welcome/landing-theme.tsx`) stamps `data-landing-theme`
+    on the page wrapper; `goldkh-landing-theme` localStorage key; **light
+    is the hard default** (no OS auto-detect). `globals.css` gains two
+    scoped token blocks `[data-landing-theme="light"|"dark"]` plus
+    `html:has(...)` body-bg rules and a `.landing-reveal` scroll-entry
+    class. The dashboard's 6-theme `:root`/`[data-theme]` system is
+    untouched.
+  - **New layouts.** Centered masthead hero (was left-copy/right-card);
+    the sample dashboard data is now the **assay strip** — one
+    full-width ruled readout, mono tabular figures over hanging labels
+    (`sample-readout.tsx`, export renamed `SampleReadout` → `AssayStrip`);
+    asymmetric hairline feature bento (tall + stacked + wide); how-it-
+    works as numbered ledger rows; quiet hairline-framed CTA.
+  - `components/welcome/landing-theme-toggle.tsx` (sun/moon, inline SVG,
+    in the nav), `components/welcome/use-reveal.ts` (IntersectionObserver
+    scroll-entry, `prefers-reduced-motion` honored in CSS), and
+    `section-eyebrow.tsx` de-bracketed. `lucide-react` dropped from the
+    feature grid for inline geometric SVG icons. No i18n dictionary
+    changes — all copy reused.
+  - **Khmer + mobile fit pass.** `globals.css` gains
+    `html[lang="km"] .landing-root` rules that zero `letter-spacing` and
+    `text-transform` on the mono eyebrows/labels (Khmer has no case and
+    the wide tracking was splitting its syllable clusters) and point the
+    serif headings at `--font-khmer` with `line-height: 1.45` for the
+    stacked diacritics. Hero headline dropped to `34px` on mobile
+    (`58px` unchanged ≥sm); how-it-works middle column `13rem` → `14rem`
+    so the longest km step title clears the body column.
+  - Verified: `tsc --noEmit` clean, `eslint components/welcome` clean,
+    `vitest run components/welcome` 6/6 green; visual check in Chrome at
+    1280px and 390px, light + dark, English + Khmer, toggle persistence
+    confirmed.
+
 - **2026-08-27 — Vercel deploy fix: lazy DB client (uncommitted, on
   `landing-page` branch).** Vercel build failed at "Collect page data"
   for `/api/webhooks/clerk` — `lib/db/client.ts` called
@@ -1757,3 +1796,63 @@ verifiable, per `ai-workflow-rules.md`'s "When to Split Work"):
   `app/api/price/refresh/`, and the touched files, all uncommitted)
   and matching the plan. Remaining step: commit this work — nothing
   from the refresh-button rework has been committed to git yet.
+
+- **2026-08-28:** user reported that on entering the app the hero
+  price updates but the price-history chart does not, until a manual
+  page refresh. Root cause: `app/dashboard/page.tsx` loaded `getPrice()`,
+  `listTransactionsForUser()`, and `listRecentPriceSnapshots()` in a
+  single `Promise.all`. When the cached price is stale, `getPrice()`
+  appends a new `price_snapshots` row as a side effect, but the
+  concurrent `listRecentPriceSnapshots()` SELECT had already run — so
+  the chart series was missing the just-written snapshot until the next
+  RSC render. Fix: run `listRecentPriceSnapshots()` after `getPrice()`
+  resolves; transactions still load in parallel with `getPrice()`.
+  Typecheck clean.
+
+- **2026-08-28:** trimmed redundant copy on the welcome/landing
+  page. The "no money moves / not an exchange" idea was stated four
+  times; removed the hero `trustLine` (the TrustRail directly below
+  already carries "Not an exchange" / "No money moves") and dropped
+  the repeated "No money moves through the system" clause from
+  `welcome.cta.body`, in both `en` and `km`. Deleted the now-unused
+  `welcome.hero.trustLine` key and its `<p>` in
+  `components/welcome/landing-hero.tsx`. Typecheck clean; welcome
+  tests pass (6/6).
+
+- **2026-08-28:** rewrote the entire Khmer (`km`) side of
+  `lib/i18n/dictionary.ts` for natural, native phrasing across the
+  dashboard and welcome/landing pages. Highlights: fixed "ជួរដូរ" →
+  "ជួញដូរ" (correct word for "trade/exchange"); "Refresh" now
+  "ផ្ទុកតម្លៃឡើងវិញ" (reload) instead of the heavy
+  "ធ្វើបច្ចុប្បន្នភាព"; "Total Holdings" now "មាសសរុបដែលកាន់កាប់"
+  instead of the over-broad "ទ្រព្យសម្បត្តិសរុប"; restored the
+  dropped "couldn't reach the server" clause in the refresh error
+  strings; softened disclaimer/feature/steps copy to spoken
+  register ("ស្រុកខ្មែរ", "ម្ដងៗ", "គេនិយាយ"). No keys or function
+  signatures changed; `en` untouched; typecheck clean.
+
+- **2026-08-28:** extended the welcome/landing page's motion, scoped
+  to `components/welcome/*` only (dashboard untouched). Built on the
+  existing CSS scroll-reveal pattern rather than adding a `motion`
+  dependency. Added to `app/globals.css`: a one-shot
+  `landing-nav-enter` keyframe (header settles down −8px on first
+  paint) and a `.landing-stagger` container whose direct children
+  step in with position-based `transition-delay` (0/70/140/210/280ms,
+  capped at 350ms) once `.is-visible` is toggled. New `useInView`
+  hook in `components/welcome/use-reveal.ts` (shares the observer
+  settings with `useReveal`, returns `{ ref, visible }`) drives the
+  stagger containers. Applied: nav entrance; hero masthead now a
+  stagger (eyebrow → headline → gold rule → subhead → CTAs) instead
+  of one block reveal; feature bento staggers its 4 cells; how-it-
+  works staggers its 3 numbered rows; TrustRail staggers its 4
+  items. All transform/opacity only; every rule has a
+  `prefers-reduced-motion: reduce` no-op. Typecheck, lint clean; new
+  classes verified in the served SSR HTML and compiled CSS.
+  **Smoothing pass (same day):** retuned for an Apple-style glide —
+  durations ~0.9–1.1s (from 0.5–0.6s), added a `blur(6–10px) → 0`
+  burn-off and a sub-pixel `scale(0.985–0.99) → 1` alongside the
+  translate, longer travel (12px → 18–22px), shared `--ease-glide`
+  token (`cubic-bezier(0.16, 1, 0.3, 1)`), `will-change` hints, and
+  tighter stagger steps (60ms) so entries overlap into one flow
+  instead of discrete pops. `filter` reset added to the reduced-
+  motion blocks.

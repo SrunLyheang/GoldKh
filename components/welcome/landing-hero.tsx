@@ -1,67 +1,83 @@
 "use client";
 
-import type { CSSProperties } from "react";
 import Link from "next/link";
 import { useLocale } from "@/lib/i18n/locale-context";
-import { SampleReadout } from "./sample-readout";
+import { AssayStrip } from "./sample-readout";
 import { SectionEyebrow } from "./section-eyebrow";
+import { useReveal, useInView } from "./use-reveal";
 import { useSignedIn } from "./use-signed-in";
 
-const PRIMARY_CTA_CLASS =
-  "tt-label inline-flex items-center gap-2 border border-primary bg-primary px-5 py-3 text-[11px] text-primary-foreground shadow-vault-sm transition-transform hover:-translate-y-0.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring";
+const SERIF = "font-[family-name:var(--font-newsreader)]";
 
-// Two-column hero: the pitch on the left, a static replica of the real
-// dashboard hero card on the right (SampleReadout). The card is the only
-// product surface shown on the page — no stock illustration — so the
-// second column carries a small enter-delay to land just after the copy.
+const PRIMARY_CTA =
+  "inline-flex items-center gap-2 rounded-md bg-primary px-5 py-2.5 text-[13px] font-medium text-primary-foreground transition-transform hover:-translate-y-px active:translate-y-0 active:scale-[0.98] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring";
+
+// Centered editorial masthead: eyebrow, a large serif headline, one
+// short gold rule (the page's only brand-coloured mark besides the
+// wordmark), the pitch, then the calls to action. The product itself
+// shows once, below, as the AssayStrip — a single ruled readout rather
+// than a boxed app screenshot.
 export function LandingHero() {
   const { t } = useLocale();
   const signedIn = useSignedIn();
+  const { ref: headRef, visible: headVisible } = useInView<HTMLDivElement>();
+  const {
+    ref: stripRef,
+    revealClass: stripReveal,
+    style: stripStyle,
+  } = useReveal<HTMLDivElement>(140);
 
   return (
-    <section className="mx-auto grid max-w-[1120px] gap-12 px-5 py-16 sm:px-8 sm:py-24 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:gap-16">
-      <div className="vault-enter">
+    <section className="mx-auto max-w-5xl px-5 pb-14 pt-16 sm:pb-20 sm:pt-24">
+      <div
+        ref={headRef}
+        className={`landing-stagger ${
+          headVisible ? "is-visible" : ""
+        } mx-auto max-w-2xl text-center`}
+      >
         <SectionEyebrow>{t.welcome.hero.eyebrow}</SectionEyebrow>
-        <h1 className="tt-heading mt-5 max-w-[16ch] text-3xl leading-[1.05] sm:text-5xl">
+        <h1
+          className={`${SERIF} mt-6 text-[34px] font-normal leading-[1.08] tracking-[-0.02em] text-foreground sm:text-[58px]`}
+        >
           {t.welcome.hero.headline}
         </h1>
-        <p className="mt-5 max-w-[52ch] text-[14px] leading-relaxed text-muted-foreground sm:text-[15px]">
+        <div
+          aria-hidden
+          className="mx-auto mt-7 h-px w-14 bg-[var(--brand-gold)]"
+        />
+        <p className="mx-auto mt-7 max-w-[52ch] text-[15px] leading-[1.7] text-muted-foreground">
           {t.welcome.hero.subhead}
         </p>
 
-        <div className="mt-8 flex flex-wrap items-center gap-4">
+        <div className="mt-9 flex flex-wrap items-center justify-center gap-4">
           {signedIn ? (
-            <Link href="/dashboard" className={PRIMARY_CTA_CLASS}>
+            <Link href="/dashboard" className={PRIMARY_CTA}>
               {t.welcome.nav.goToDashboard}
               <span aria-hidden>&rarr;</span>
             </Link>
           ) : (
             <>
-              <Link href="/sign-up" className={PRIMARY_CTA_CLASS}>
+              <Link href="/sign-up" className={PRIMARY_CTA}>
                 {t.welcome.nav.getStarted}
                 <span aria-hidden>&rarr;</span>
               </Link>
               <Link
                 href="/sign-in"
-                className="tt-label text-[11px] text-muted-foreground transition-colors hover:text-foreground"
+                className="text-[13px] text-muted-foreground transition-colors hover:text-foreground"
               >
                 {t.welcome.nav.signIn}
               </Link>
             </>
           )}
         </div>
-
-        <p className="tt-label mt-6 flex items-center gap-2 text-[10px] text-muted-foreground">
-          <span aria-hidden className="h-1.5 w-1.5 bg-primary" />
-          {t.welcome.hero.trustLine}
-        </p>
       </div>
 
       <div
-        className="vault-enter flex justify-center lg:justify-end"
-        style={{ "--enter-delay": "120ms" } as CSSProperties}
+        ref={stripRef}
+        style={stripStyle}
+        className={`${stripReveal} mt-14 sm:mt-16`}
       >
-        <SampleReadout />
+        <AssayStrip />
       </div>
     </section>
   );

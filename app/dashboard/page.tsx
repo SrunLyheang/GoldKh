@@ -16,11 +16,16 @@ export default async function DashboardPage() {
   const { userId } = await auth();
   if (!userId) return null;
 
-  const [price, transactions, recentSnapshots] = await Promise.all([
+  // getPrice() can append a new row to price_snapshots as a side effect when
+  // the cached price is stale. listRecentPriceSnapshots() must run *after* it
+  // resolves, or the chart is built from a snapshot list that's missing the
+  // row getPrice() just wrote — the hero price updates but the graph doesn't
+  // until the next refresh. Transactions have no such dependency.
+  const [price, transactions] = await Promise.all([
     getPrice(),
     listTransactionsForUser(userId),
-    listRecentPriceSnapshots(),
   ]);
+  const recentSnapshots = await listRecentPriceSnapshots();
 
   // One derived view of the price's age — stale treatment and the manual
   // refresh lock both read off it. The lock holds until the price on screen
