@@ -1,11 +1,6 @@
 import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
 
-// Baseline security headers only — a full Content-Security-Policy is
-// deferred (see architecture.md's Deployment and Operations section)
-// pending an audit of what Clerk's embedded UI and Recharts actually
-// load/execute. `frame-ancestors 'self'` here is a single-directive CSP
-// scoped to clickjacking protection, not a substitute for the real thing.
 const securityHeaders = [
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
