@@ -88,6 +88,11 @@ when a first-time user should be watching their first holding land.
    `StatRow`, matching the Transaction History and Price History header
    treatment. New dict key `stat.sectionLabel: "Position"`. Gives the page
    a consistent five-beat structure.
+   Price History all carry an eyebrow or a `[ … ]` title; the four stat
+   cards float unlabelled between them. Add one `.tt-label .tt-bracket`
+   eyebrow — `[ POSITION ]` — above the grid inside `StatRow`. New dict
+   key `stat.sectionLabel: "Position"`. Gives the page a consistent
+   five-beat structure.
 3. **P&L card tone edge.** `AnimatedPnlCard` already tints its fill
    `gain`/`loss` at 6%. Add a 2px left border in the same tone token
    (`border-l-2 border-l-state-gain` / `border-l-destructive`) so the
@@ -183,3 +188,7 @@ un-localized literal `"Price History"` chart title (pre-existing).
   section, empty state with three-step flow, and `MonoValue` `signed` prop.
 - `context/progress-tracker.md`: "Dashboard polish — user-first pass" entry
   added with status and deferred findings.
+- `context/ui-context.md`: mark "Negative gain/loss alignment" resolved;
+  note the `[ POSITION ]` stat eyebrow, the sync bar, and that success
+  feedback is toast-only.
+- `context/progress-tracker.md`: a "Dashboard polish" entry.
