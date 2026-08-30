@@ -60,6 +60,14 @@ const en = {
     totalPaid: "Total amount paid",
     perUnitEquiv: (unit: string) => `Price per ${unit}`,
     currentSpot: "Current spot",
+    priceHardLow:
+      "That's less than a tenth of the current spot price. Check the total amount and quantity before saving.",
+    priceHardHigh:
+      "That's more than ten times the current spot price. Check the total amount and quantity before saving.",
+    priceSoftLow:
+      "This is well below the current spot price — double-check the total amount if that's unexpected.",
+    priceSoftHigh:
+      "This is well above the current spot price — double-check the total amount if that's unexpected.",
     date: "Date",
     notes: "Notes (optional)",
     saveTransaction: "Save transaction",
@@ -198,6 +206,14 @@ const km: typeof en = {
     totalPaid: "ចំនួនប្រាក់សរុបដែលបានបង់",
     perUnitEquiv: (unit: string) => `តម្លៃក្នុងមួយ ${unit}`,
     currentSpot: "តម្លៃទីផ្សារបច្ចុប្បន្ន",
+    priceHardLow:
+      "តម្លៃនេះតិចជាងមួយភាគដប់នៃតម្លៃទីផ្សារបច្ចុប្បន្ន។ សូមពិនិត្យចំនួនប្រាក់សរុប និងបរិមាណ មុននឹងរក្សាទុក។",
+    priceHardHigh:
+      "តម្លៃនេះច្រើនជាងដប់ដងនៃតម្លៃទីផ្សារបច្ចុប្បន្ន។ សូមពិនិត្យចំនួនប្រាក់សរុប និងបរិមាណ មុននឹងរក្សាទុក។",
+    priceSoftLow:
+      "តម្លៃនេះទាបជាងតម្លៃទីផ្សារបច្ចុប្បន្នច្រើន — សូមពិនិត្យចំនួនប្រាក់សរុបម្តងទៀត បើមិនរំពឹងទុក។",
+    priceSoftHigh:
+      "តម្លៃនេះខ្ពស់ជាងតម្លៃទីផ្សារបច្ចុប្បន្នច្រើន — សូមពិនិត្យចំនួនប្រាក់សរុបម្តងទៀត បើមិនរំពឹងទុក។",
     date: "កាលបរិច្ឆេទ",
     notes: "កំណត់ចំណាំ (បើចង់)",
     saveTransaction: "រក្សាទុកប្រតិបត្តិការ",

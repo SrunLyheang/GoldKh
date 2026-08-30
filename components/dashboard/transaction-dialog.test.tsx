@@ -157,6 +157,87 @@ describe("TransactionDialog", () => {
     expect(screen.getByLabelText("Total amount paid")).toHaveValue(1250);
   });
 
+  it("blocks submit and shows an inline message when the per-unit price is wildly off spot", async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    const user = userEvent.setup();
+    renderDialog();
+
+    // Spot ≈ $241/chi at currentPricePerTroyOz "2000"; $100000 for one
+    // chi is ~414× spot — a hard reject.
+    await user.type(screen.getByLabelText("Quantity"), "1");
+    await user.type(screen.getByLabelText("Total amount paid"), "100000");
+    await user.click(screen.getByRole("button", { name: /save transaction/i }));
+
+    expect(
+      await screen.findByText(/more than ten times the current spot price/i)
+    ).toBeInTheDocument();
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("shows a non-gating notice but still submits when the price is only mildly off spot", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response(JSON.stringify({ data: { id: "real-3" } }), { status: 200 })
+      )
+    );
+    const user = userEvent.setup();
+    const { onOpenChange } = renderDialog();
+
+    // Spot ≈ $241/chi; $1000 for one chi is ~4× spot — soft, not hard.
+    await user.type(screen.getByLabelText("Quantity"), "1");
+    await user.type(screen.getByLabelText("Total amount paid"), "1000");
+
+    expect(
+      await screen.findByText(/well above the current spot price/i)
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /save transaction/i }));
+
+    await waitFor(() => {
+      expect(onOpenChange).toHaveBeenCalledWith(false);
+    });
+    expect(fetch).toHaveBeenCalledWith(
+      "/api/transactions",
+      expect.objectContaining({ method: "POST" })
+    );
+  });
+
+  it("skips the sanity check for KHR rows", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response(JSON.stringify({ data: { id: "1" } }), { status: 200 })
+      )
+    );
+    const transaction: EditableTransaction = {
+      id: "txn-khr",
+      type: "buy",
+      quantity: "1",
+      unit: "chi",
+      // Nonsensical against the USD spot, but valid as a KHR amount.
+      pricePerUnit: "999999",
+      currency: "KHR",
+      transactionDate: "2026-08-01",
+    };
+    const user = userEvent.setup();
+    renderDialog({ transaction, existingTransactions: [] });
+
+    expect(
+      screen.queryByText(/current spot price/i)
+    ).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /save transaction/i }));
+
+    await waitFor(() => {
+      expect(fetch).toHaveBeenCalledWith(
+        "/api/transactions/txn-khr",
+        expect.objectContaining({ method: "PATCH" })
+      );
+    });
+  });
+
   it("rolls back the optimistic add and shows the server error on failure", async () => {
     vi.stubGlobal(
       "fetch",

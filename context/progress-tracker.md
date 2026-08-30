@@ -28,8 +28,8 @@ Update this file after every meaningful implementation change.
   doesn't need it). Error-handling/toast/animation pieces from the
   `testing` branch are cherry-picked in phases 5–6. Neither branch
   merges as a unit.
-- Phase status: **Phase 1 complete & verified (uncommitted). Awaiting
-  go-ahead for Phase 2.**
+- Phase status: **Phase 1 committed (`0d581c2`). Phase 2 complete &
+  verified (uncommitted). Awaiting go-ahead for Phase 3.**
 
 ### Phase 1 — Issue #2: "Total amount paid" input (2026-08-30, uncommitted)
 
@@ -57,6 +57,33 @@ Update this file after every meaningful implementation change.
   React. (The `testing` branch already made this same change.)
 - Storage/schema/API unchanged — the wire payload keeps `pricePerUnit`.
 - Verified: `tsc --noEmit`, `eslint`, `vitest run` (152/152),
+  `next build` all clean.
+
+### Phase 2 — Issue #3: price sanity band (2026-08-30, uncommitted)
+
+- `lib/validation/priceSanity.ts` (new, +`priceSanity.test.ts`, 9 cases):
+  pure `classifyPrice(perUnitUsd, spotPerUnitUsd)` →
+  `"ok" | "soft-low" | "soft-high" | "hard-low" | "hard-high"` on
+  ratio thresholds `0.1× / 0.5× / 2× / 10×` of spot (band edges count
+  as inside — strictly outside trips a verdict). Returns `"ok"` for
+  non-positive / non-finite inputs (the Zod schema already covers a bad
+  price). `isHardVerdict` / `isSoftVerdict` helpers.
+- `components/dashboard/transaction-dialog.tsx`: runs `classifyPrice` on
+  the Phase-1 derived per-unit price against `spotPerUnit` for the
+  selected unit. **KHR rows skip the check** (`currency === "USD"` guard —
+  same rule the rest of the app uses for non-USD prices). Hard verdict →
+  inline `text-destructive` message below the summary box **and** the
+  Save button is `disabled`, with a defensive early-return in
+  `handleSubmit`. Soft verdict → non-gating `TriangleAlert` notice box
+  (same shape as the existing "exceeds holdings" warning). No prop or
+  wire-payload change.
+- `lib/i18n/dictionary.ts`: `dialog.priceHardLow` / `priceHardHigh` /
+  `priceSoftLow` / `priceSoftHigh` in both `en` and `km`.
+- `components/dashboard/transaction-dialog.test.tsx`: +3 cases — hard
+  verdict blocks submit + shows the message, soft verdict warns but
+  still POSTs, KHR edit row skips the check and PATCHes despite a price
+  nonsensical against USD spot.
+- Verified: `tsc --noEmit`, `eslint`, `vitest run` (164/164),
   `next build` all clean.
 
 ## Current Goal

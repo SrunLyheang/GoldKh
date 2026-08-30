@@ -28,6 +28,11 @@ import { useLocale } from "@/lib/i18n/locale-context";
 import { cn } from "@/lib/utils";
 import { formatQuantity, formatUsd } from "@/lib/format/money";
 import { transactionInputSchema } from "@/lib/validation/transaction";
+import {
+  classifyPrice,
+  isHardVerdict,
+  isSoftVerdict,
+} from "@/lib/validation/priceSanity";
 import { computeHoldings } from "@/lib/calc/holdings";
 import type { LedgerEntryWithId } from "@/lib/calc/ledgerEntry";
 import { fromTroyOz, priceFromTroyOz, toTroyOz } from "@/lib/calc/units";
@@ -169,6 +174,26 @@ export function TransactionDialog({
 
   const spotPerUnit = priceFromTroyOz(currentPricePerTroyOz, unit);
 
+  // Fat-finger guard: compare the derived per-unit price against the
+  // current spot rate for the selected unit. KHR rows skip it — the rest
+  // of the app treats non-USD prices as un-comparable to the USD spot.
+  const priceVerdict =
+    currency === "USD" && derivedPricePerUnit !== ""
+      ? classifyPrice(Number(derivedPricePerUnit), Number(spotPerUnit))
+      : "ok";
+  const priceIsHard = isHardVerdict(priceVerdict);
+  const priceIsSoft = isSoftVerdict(priceVerdict);
+  const priceVerdictMessage =
+    priceVerdict === "hard-low"
+      ? t.dialog.priceHardLow
+      : priceVerdict === "hard-high"
+        ? t.dialog.priceHardHigh
+        : priceVerdict === "soft-low"
+          ? t.dialog.priceSoftLow
+          : priceVerdict === "soft-high"
+            ? t.dialog.priceSoftHigh
+            : null;
+
   const holdingsExcludingSelf = useMemo(
     () =>
       computeHoldings(
@@ -187,6 +212,12 @@ export function TransactionDialog({
     setError(null);
 
     if (!parsed.success) {
+      return;
+    }
+
+    // A price wildly off spot (an extra zero, a wrong unit) blocks the
+    // save; the inline message below the summary box explains why.
+    if (priceIsHard) {
       return;
     }
 
@@ -392,6 +423,16 @@ export function TransactionDialog({
                 </div>
               </div>
 
+              {priceVerdictMessage && priceIsHard && (
+                <p className="text-[11.5px] text-destructive">{priceVerdictMessage}</p>
+              )}
+              {priceVerdictMessage && priceIsSoft && (
+                <div className="flex items-start gap-2 rounded-lg border border-border bg-muted/30 px-3 py-2.5 text-[12px] text-muted-foreground">
+                  <TriangleAlert className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                  <span>{priceVerdictMessage}</span>
+                </div>
+              )}
+
               <div className="grid gap-2">
                 <Label htmlFor="transactionDate">{t.dialog.date}</Label>
                 <DateField
@@ -420,7 +461,11 @@ export function TransactionDialog({
 
               {error && <p className="text-[12.5px] text-destructive">{error}</p>}
 
-              <Button type="submit" disabled={submitting} className="w-full">
+              <Button
+                type="submit"
+                disabled={submitting || priceIsHard}
+                className="w-full"
+              >
                 {t.dialog.saveTransaction}
               </Button>
             </form>
