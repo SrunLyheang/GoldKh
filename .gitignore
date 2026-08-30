@@ -48,3 +48,6 @@ next-env.d.ts
 .superpowers/
 redesign/
 *.local
+
+# local git worktrees
+.worktrees/

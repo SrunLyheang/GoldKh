@@ -54,6 +54,23 @@ function isParseableNumber(value: string): boolean {
   return /^\d*\.?\d*$/.test(value) && value !== "" && value !== ".";
 }
 
+// The user enters the total they paid for the whole transaction; the
+// ledger stores price per unit. Divide, then round to the schema's 4-dp
+// cap — a stored pricePerUnit × quantity can then differ from the
+// entered total by a sub-cent rounding remainder, which is acceptable at
+// this scale. Returns "" while either input is still mid-typing or the
+// quantity is zero (Decimal.div throws on divide-by-zero).
+function derivePricePerUnit(totalPaid: string, quantity: string): string {
+  if (
+    !isParseableNumber(totalPaid) ||
+    !isParseableNumber(quantity) ||
+    Number(quantity) <= 0
+  ) {
+    return "";
+  }
+  return new Decimal(totalPaid).div(quantity).toDecimalPlaces(4).toString();
+}
+
 // Always fully controlled by the caller (`open`/`onOpenChange`) — no
 // built-in trigger button in either mode. Add's trigger buttons live in
 // EmptyState and TransactionHistory's header, but both open the SAME
@@ -110,7 +127,13 @@ export function TransactionDialog({
     transaction ? formatQuantity(transaction.quantity) : ""
   );
   const [unit, setUnit] = useState<"chi" | "damlung">(transaction?.unit ?? "chi");
-  const [pricePerUnit, setPricePerUnit] = useState(transaction?.pricePerUnit ?? "");
+  // Edit mode seeds the field with total = pricePerUnit × quantity, the
+  // inverse of what happens on submit.
+  const [totalPaid, setTotalPaid] = useState(
+    transaction
+      ? new Decimal(transaction.pricePerUnit).times(transaction.quantity).toString()
+      : ""
+  );
   const [currency, setCurrency] = useState<"USD" | "KHR">(transaction?.currency ?? "USD");
   const [transactionDate, setTransactionDate] = useState(
     transaction?.transactionDate ?? toDateKey(new Date())
@@ -125,11 +148,13 @@ export function TransactionDialog({
     setTouched((prev) => ({ ...prev, [field]: true }));
   }
 
+  const derivedPricePerUnit = derivePricePerUnit(totalPaid, quantity);
+
   const payload = {
     type,
     quantity,
     unit,
-    pricePerUnit,
+    pricePerUnit: derivedPricePerUnit,
     currency,
     transactionDate,
     notes: notes || undefined,
@@ -142,10 +167,6 @@ export function TransactionDialog({
     return fieldErrors[field]?.[0];
   }
 
-  const totalCost =
-    isParseableNumber(quantity) && isParseableNumber(pricePerUnit)
-      ? new Decimal(quantity).times(pricePerUnit).toString()
-      : null;
   const spotPerUnit = priceFromTroyOz(currentPricePerTroyOz, unit);
 
   const holdingsExcludingSelf = useMemo(
@@ -179,7 +200,7 @@ export function TransactionDialog({
         type,
         quantity,
         unit,
-        pricePerUnit,
+        pricePerUnit: derivedPricePerUnit,
         currency,
         transactionDate,
         notes: notes || null,
@@ -315,7 +336,7 @@ export function TransactionDialog({
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="pricePerUnit">{t.dialog.pricePerUnit}</Label>
+                <Label htmlFor="pricePerUnit">{t.dialog.totalPaid}</Label>
                 <div className="flex gap-2">
                   <Input
                     id="pricePerUnit"
@@ -323,8 +344,8 @@ export function TransactionDialog({
                     type="number"
                     step="any"
                     min="0"
-                    value={pricePerUnit}
-                    onChange={(e) => setPricePerUnit(e.target.value)}
+                    value={totalPaid}
+                    onChange={(e) => setTotalPaid(e.target.value)}
                     onBlur={() => touch("pricePerUnit")}
                     aria-invalid={!!fieldError("pricePerUnit")}
                     required
@@ -352,13 +373,15 @@ export function TransactionDialog({
 
               <div className="rounded-lg border border-border bg-muted/30 px-3.5 py-3 text-[12.5px]">
                 <div className="flex items-center justify-between">
-                  <span className="tt-label text-[10.5px] text-muted-foreground">{t.dialog.totalCost}</span>
+                  <span className="tt-label text-[10.5px] text-muted-foreground">
+                    {t.dialog.perUnitEquiv(unitLabel(unit).toLowerCase())}
+                  </span>
                   <span className="font-mono tabular-nums text-foreground">
-                    {totalCost === null
+                    {derivedPricePerUnit === ""
                       ? "—"
                       : currency === "USD"
-                        ? formatUsd(totalCost)
-                        : `${new Intl.NumberFormat("en-US").format(Number(totalCost))} KHR`}
+                        ? formatUsd(derivedPricePerUnit)
+                        : `${new Intl.NumberFormat("en-US").format(Number(derivedPricePerUnit))} KHR`}
                   </span>
                 </div>
                 <div className="mt-1.5 flex items-center justify-between">

@@ -12,6 +12,53 @@ Update this file after every meaningful implementation change.
   the remaining work toward hardening (rate limiting, the
   `user.deleted` webhook, UI test coverage) over new features.
 
+## Active: current-issues fix plan (2026-08-30)
+
+- Branch `fix/current-issues` off `main`. Six phases, one at a time,
+  user gates each — full plan and grilling decisions in
+  `context/design-specs/current-issues-plan.md`.
+- Addresses the four issues in `context/design-specs/current-issues.md`:
+  (#2) dialog input becomes "Total amount paid", per-unit derived on
+  submit; (#3) client-side price-vs-spot sanity band (hard 0.1×–10×,
+  soft 0.5×–2×); (#1) weighted-average realized gain/loss panel — a
+  full-width strip below the stat row, shown only once a sell exists;
+  (#4) chart Y-domain clamp + off-scale break-even caret.
+- The `realized-gain-loss-fifo` branch's FIFO engine is **not** adopted
+  (contradicts `project-overview.md` + `product-strategy.md`; issue #1
+  doesn't need it). Error-handling/toast/animation pieces from the
+  `testing` branch are cherry-picked in phases 5–6. Neither branch
+  merges as a unit.
+- Phase status: **Phase 1 complete & verified (uncommitted). Awaiting
+  go-ahead for Phase 2.**
+
+### Phase 1 — Issue #2: "Total amount paid" input (2026-08-30, uncommitted)
+
+- `components/dashboard/transaction-dialog.tsx`: the price field is now
+  **"Total amount paid"** — the user enters the whole transaction
+  amount, and `pricePerUnit = total ÷ quantity` (rounded to the schema's
+  4-dp cap) is derived on submit before it reaches the POST/PATCH body
+  and the optimistic row. Divide-by-zero / mid-typing guarded
+  (`derivePricePerUnit` returns `""`, which fails the schema and gates
+  submit). Edit mode seeds the field with `pricePerUnit × quantity`.
+  The summary box's first line changed from "Total cost" (now redundant
+  with the input) to the derived **Price per {unit}**, sitting directly
+  above the existing "Current spot" line — sets up Phase 2's
+  price-vs-spot check.
+- `lib/i18n/dictionary.ts`: `dialog.pricePerUnit` / `dialog.totalCost`
+  replaced by `dialog.totalPaid` + `dialog.perUnitEquiv(unit)`, in both
+  `en` and `km` (Khmer still live on this branch — its removal is
+  Phase 5's cherry-pick from `testing`).
+- `components/dashboard/transaction-dialog.test.tsx`: assertions moved to
+  the new field; added a 4-dp-derivation case (5585 ÷ 3 → 1861.6667) and
+  an edit-mode seed case (312.5 × 4 → 1250).
+- `vitest.config.ts`: `exclude` now drops `.worktrees/**` — the nested
+  `realized-gain-loss-fifo` worktree carries its own `node_modules` and
+  its stale copy of this test file was failing collection on a duplicate
+  React. (The `testing` branch already made this same change.)
+- Storage/schema/API unchanged — the wire payload keeps `pricePerUnit`.
+- Verified: `tsc --noEmit`, `eslint`, `vitest run` (152/152),
+  `next build` all clean.
+
 ## Current Goal
 
 - Rate limiting on the transaction-mutating routes is implemented —
