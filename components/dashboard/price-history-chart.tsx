@@ -17,6 +17,10 @@ import { useLocale } from "@/lib/i18n/locale-context";
 interface PriceHistoryChartProps {
   points: ChartPoint[];
   breakEvenPerDamlung?: number;
+  // False while the spot market is closed (weekends). The line still
+  // renders from the last snapshots; a badge and a note explain why it
+  // hasn't moved. Defaults to open so existing call sites are unaffected.
+  marketOpen?: boolean;
 }
 // "Nice" step sizes to pick from when sizing y-axis gridlines.
 const NICE_STEPS = [5, 10, 20, 25, 50, 100, 200, 250, 500, 1000, 2000, 5000];
@@ -124,14 +128,38 @@ function TooltipContent({
 export function PriceHistoryChart({
   points,
   breakEvenPerDamlung,
+  marketOpen = true,
 }: PriceHistoryChartProps) {
   const { t } = useLocale();
+  const marketClosed = marketOpen === false;
+
+  const marketClosedBadge = marketClosed ? (
+    <span className="tt-bracket tt-label text-[10.5px] text-muted-foreground">
+      {t.chart.marketClosed}
+    </span>
+  ) : null;
+
+  const marketClosedNote = marketClosed ? (
+    <p className="mt-2 text-[11.5px] text-muted-foreground">
+      {t.chart.marketClosedNote}
+    </p>
+  ) : null;
+
   if (points.length < 2) {
     return (
-      <div className="flex h-70 items-center justify-center rounded-xl border border-border bg-card">
-        <p className="text-[12.5px] text-muted-foreground">
-          {t.chart.notEnoughHistory}
-        </p>
+      <div className="rounded-xl border border-border bg-card p-4">
+        <div className="mb-3 flex items-center gap-2">
+          <h2 className="tt-heading tt-bracket text-[15px] text-foreground">
+            Price History
+          </h2>
+          {marketClosedBadge}
+        </div>
+        <div className="flex h-60 items-center justify-center">
+          <p className="text-[12.5px] text-muted-foreground">
+            {t.chart.notEnoughHistory}
+          </p>
+        </div>
+        {marketClosedNote}
       </div>
     );
   }
@@ -141,9 +169,12 @@ export function PriceHistoryChart({
 
   return (
     <div className="rounded-xl border border-border bg-card p-4">
-      <h2 className="tt-heading tt-bracket mb-3 text-[15px] text-foreground">
-        Price History
-      </h2>
+      <div className="mb-3 flex items-center gap-2">
+        <h2 className="tt-heading tt-bracket text-[15px] text-foreground">
+          Price History
+        </h2>
+        {marketClosedBadge}
+      </div>
       <div className="h-70 w-full">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart
@@ -201,6 +232,7 @@ export function PriceHistoryChart({
           {formatUsd(String(breakEvenPerDamlung))}/damlung).
         </p>
       )}
+      {marketClosedNote}
     </div>
   );
 }

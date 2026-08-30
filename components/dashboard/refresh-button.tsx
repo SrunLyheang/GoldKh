@@ -22,8 +22,12 @@ function minutesFromMs(ms: number): number {
 // a click during cooldown is what surfaces the "please wait" toast.
 export function RefreshButton({
   cooldownEndsAt: initialCooldownEndsAt,
+  marketClosed = false,
 }: {
   cooldownEndsAt: number | null;
+  // True on weekends — the route would only reject the fetch, so the
+  // button greys out and a click explains why instead of hitting it.
+  marketClosed?: boolean;
 }) {
   const router = useRouter();
   const { t } = useLocale();
@@ -66,6 +70,11 @@ export function RefreshButton({
     // click rather than firing a second POST.
     if (isRefreshing) return;
 
+    if (marketClosed) {
+      showToast(t.refresh.marketClosed);
+      return;
+    }
+
     if (inCooldown && cooldownEndsAt) {
       showToast(t.refresh.pleaseWait(minutesFromMs(cooldownEndsAt - Date.now())));
       return;
@@ -92,6 +101,9 @@ export function RefreshButton({
           }
           showToast(outcome.message ?? t.refresh.couldntRefresh);
           return;
+        case "marketClosed":
+          showToast(t.refresh.marketClosed);
+          return;
         case "refreshed":
           setCooldownEndsAt(outcome.cooldownEndsAt);
           setInCooldown(outcome.cooldownEndsAt !== null);
@@ -113,9 +125,15 @@ export function RefreshButton({
       <Button
         variant="secondary"
         size="sm"
-        aria-disabled={busy || inCooldown}
-        className={busy || inCooldown ? "opacity-50" : undefined}
-        title={inCooldown ? t.refresh.refreshedRecently : undefined}
+        aria-disabled={busy || inCooldown || marketClosed}
+        className={busy || inCooldown || marketClosed ? "opacity-50" : undefined}
+        title={
+          marketClosed
+            ? t.refresh.marketClosed
+            : inCooldown
+              ? t.refresh.refreshedRecently
+              : undefined
+        }
         onClick={handleClick}
       >
         {busy ? <Spinner size="xs" /> : <RefreshCw className="h-4 w-4" />}

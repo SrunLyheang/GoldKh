@@ -82,6 +82,27 @@ describe("requestPriceRefresh", () => {
     });
   });
 
+  it("returns marketClosed on a 409 with a MARKET_CLOSED code", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        jsonResponse(
+          {
+            error: {
+              code: "MARKET_CLOSED",
+              message: "Market's closed — prices resume Monday",
+            },
+          },
+          { status: 409 }
+        )
+      )
+    );
+
+    await expect(requestPriceRefresh()).resolves.toEqual({
+      kind: "marketClosed",
+    });
+  });
+
   it("returns unreachable when fetch itself rejects", async () => {
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("offline")));
 

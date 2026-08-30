@@ -44,6 +44,20 @@ describe("HeroPriceCard", () => {
     expect(screen.queryByText("Live")).not.toBeInTheDocument();
   });
 
+  it("shows a market-closed note when the market is closed", () => {
+    renderCard({ marketOpen: false });
+    expect(
+      screen.getByText("Market closed — prices resume Monday.")
+    ).toBeInTheDocument();
+  });
+
+  it("shows no market-closed note while the market is open", () => {
+    renderCard({ marketOpen: true });
+    expect(
+      screen.queryByText("Market closed — prices resume Monday.")
+    ).not.toBeInTheDocument();
+  });
+
   it("shows the spot-vs-retail-premium disclaimer", () => {
     renderCard();
     expect(

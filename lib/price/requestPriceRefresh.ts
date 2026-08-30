@@ -12,6 +12,7 @@
 export type RefreshOutcome =
   | { kind: "refreshed"; cooldownEndsAt: number | null }
   | { kind: "cooldown"; cooldownEndsAt: number | null; message: string | null }
+  | { kind: "marketClosed" }
   | { kind: "unreachable" }
   | { kind: "failed"; message: string | null };
 
@@ -26,6 +27,12 @@ export async function requestPriceRefresh(): Promise<RefreshOutcome> {
   if (!res.ok) {
     const body = await res.json().catch(() => null);
     const message: string | null = body?.error?.message ?? null;
+
+    // The market-closed guard is a 409 the caller renders as its own state
+    // (button disabled, "resumes Monday" copy) rather than a generic error.
+    if (res.status === 409 && body?.error?.code === "MARKET_CLOSED") {
+      return { kind: "marketClosed" };
+    }
 
     if (res.status === 429) {
       // Retry-After is a remaining-duration in seconds; anchor it to now,

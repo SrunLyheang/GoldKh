@@ -6,6 +6,7 @@ import {
   type PriceSnapshot,
 } from "@/lib/db/queries/priceSnapshots";
 import { priceFreshness } from "./freshness";
+import { isMarketOpen } from "./marketHours";
 import { fetchGoldapiPrice, type NormalizedPrice } from "./providers/goldapi";
 
 // Re-exported so freshness.ts and callers that only speak the price layer
@@ -21,12 +22,14 @@ export interface GetPriceDeps {
     staleMs: number
   ) => Promise<PriceSnapshot | undefined>;
   providers: Array<() => Promise<NormalizedPrice>>;
+  isMarketOpen: () => boolean;
 }
 
 const defaultDeps: GetPriceDeps = {
   getLatestSnapshot,
   insertSnapshotIfStale,
   providers: PROVIDERS,
+  isMarketOpen,
 };
 
 // Reads newest, checks age, returns if fresh — otherwise walks the
@@ -37,7 +40,11 @@ export async function getPrice(
   deps: GetPriceDeps = defaultDeps
 ): Promise<PriceSnapshot> {
   const latest = await deps.getLatestSnapshot();
-  if (latest && !priceFreshness(latest).isStale) {
+  // When the spot market is closed the price cannot have moved, so any
+  // cached snapshot is served as-is however stale — no goldapi.io request
+  // is spent on a weekend. With no cache at all we still fall through to
+  // the providers below: a first-ever price beats an empty dashboard.
+  if (latest && (!deps.isMarketOpen() || !priceFreshness(latest).isStale)) {
     return latest;
   }
 

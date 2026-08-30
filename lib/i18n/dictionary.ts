@@ -23,6 +23,7 @@ const en = {
     pleaseWait: (minutes: number) => `Please wait ${minutes} minutes`,
     couldntReach: "Couldn't reach the server — try again shortly",
     couldntRefresh: "Couldn't refresh the price — try again shortly",
+    marketClosed: "Market's closed — prices resume Monday",
   },
   stat: {
     totalHoldings: "Total Holdings",
@@ -86,6 +87,9 @@ const en = {
   chart: {
     notEnoughHistory:
       "Not enough price history yet — check back after a few refreshes.",
+    marketClosed: "Market closed",
+    marketClosedNote:
+      "Showing the last price from Friday's close. Trading resumes Monday.",
   },
   welcome: {
     nav: {
@@ -169,6 +173,7 @@ const km: typeof en = {
     pleaseWait: (minutes: number) => `សូមរង់ចាំ ${minutes} នាទីសិន`,
     couldntReach: "ភ្ជាប់ម៉ាស៊ីនមេមិនបាន — សូមព្យាយាមម្ដងទៀតបន្តិចទៀត",
     couldntRefresh: "ផ្ទុកតម្លៃឡើងវិញមិនបាន — សូមព្យាយាមម្ដងទៀតបន្តិចទៀត",
+    marketClosed: "ទីផ្សារបិទ — តម្លៃនឹងបន្តនៅថ្ងៃច័ន្ទ",
   },
   stat: {
     totalHoldings: "មាសសរុបដែលកាន់កាប់",
@@ -232,6 +237,9 @@ const km: typeof en = {
   chart: {
     notEnoughHistory:
       "ប្រវត្តិតម្លៃមិនទាន់មានគ្រប់គ្រាន់ទេ — សូមពិនិត្យមើលម្ដងទៀត បន្ទាប់ពីផ្ទុកតម្លៃឡើងវិញពីរបីដង។",
+    marketClosed: "ទីផ្សារបិទ",
+    marketClosedNote:
+      "កំពុងបង្ហាញតម្លៃចុងក្រោយពីថ្ងៃសុក្រ។ ការជួញដូរនឹងបើកឡើងវិញនៅថ្ងៃច័ន្ទ។",
   },
   welcome: {
     nav: {

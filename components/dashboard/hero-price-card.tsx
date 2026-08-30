@@ -14,6 +14,7 @@ interface HeroPriceCardProps {
   capturedAt: Date;
   isStale: boolean;
   refreshCooldownEndsAt: number | null;
+  marketOpen?: boolean;
   displayUnit?: GoldUnit;
   onDisplayUnitChange?: (unit: GoldUnit) => void;
 }
@@ -25,10 +26,12 @@ export function HeroPriceCard({
   capturedAt,
   isStale,
   refreshCooldownEndsAt,
+  marketOpen = true,
   displayUnit = "damlung",
   onDisplayUnitChange,
 }: HeroPriceCardProps) {
   const { t } = useLocale();
+  const marketClosed = marketOpen === false;
   const timeLabel = new Intl.DateTimeFormat("en-US", {
     hour: "numeric",
     minute: "2-digit",

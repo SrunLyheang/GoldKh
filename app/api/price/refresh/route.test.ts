@@ -5,11 +5,13 @@ const {
   getLatestSnapshotMock,
   insertSnapshotMock,
   fetchGoldapiPriceMock,
+  isMarketOpenMock,
 } = vi.hoisted(() => ({
   authMock: vi.fn(),
   getLatestSnapshotMock: vi.fn(),
   insertSnapshotMock: vi.fn(),
   fetchGoldapiPriceMock: vi.fn(),
+  isMarketOpenMock: vi.fn(),
 }));
 
 vi.mock("@clerk/nextjs/server", () => ({
@@ -25,6 +27,10 @@ vi.mock("@/lib/price/providers/goldapi", () => ({
   fetchGoldapiPrice: fetchGoldapiPriceMock,
 }));
 
+vi.mock("@/lib/price/marketHours", () => ({
+  isMarketOpen: isMarketOpenMock,
+}));
+
 // priceFreshness is a pure function of the snapshot's capturedAt — not
 // mocked. Tests drive the cooldown branch by choosing capturedAt.
 import { POST } from "./route";
@@ -32,6 +38,21 @@ import { POST } from "./route";
 describe("POST /api/price/refresh", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    isMarketOpenMock.mockReturnValue(true);
+  });
+
+  it("returns 409 MARKET_CLOSED without calling the provider when the market is closed", async () => {
+    authMock.mockResolvedValue({ userId: "user_123" });
+    isMarketOpenMock.mockReturnValue(false);
+
+    const res = await POST(
+      new Request("http://localhost/api/price/refresh", { method: "POST" })
+    );
+    const body = await res.json();
+
+    expect(res.status).toBe(409);
+    expect(body.error.code).toBe("MARKET_CLOSED");
+    expect(fetchGoldapiPriceMock).not.toHaveBeenCalled();
   });
 
   it("returns 401 when there is no session", async () => {
