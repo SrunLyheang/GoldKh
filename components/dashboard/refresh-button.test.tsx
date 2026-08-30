@@ -139,6 +139,52 @@ describe("RefreshButton", () => {
     });
   });
 
+  it("is disabled and shows a market-closed toast without fetching when the market is closed", async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    const user = userEvent.setup();
+    render(<RefreshButton cooldownEndsAt={null} marketClosed />);
+
+    const button = screen.getByRole("button", { name: /refresh/i });
+    expect(button).toHaveAttribute("aria-disabled", "true");
+
+    await user.click(button);
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    await waitFor(() => {
+      expect(
+        screen.getByText("Market's closed — prices resume Monday")
+      ).toBeInTheDocument();
+    });
+  });
+
+  it("shows a market-closed toast when the route returns the marketClosed outcome", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            error: {
+              code: "MARKET_CLOSED",
+              message: "Market's closed — prices resume Monday",
+            },
+          }),
+          { status: 409 }
+        )
+      )
+    );
+    const user = userEvent.setup();
+    render(<RefreshButton cooldownEndsAt={null} />);
+
+    await user.click(screen.getByRole("button", { name: /refresh/i }));
+
+    await waitFor(() => {
+      expect(
+        screen.getByText("Market's closed — prices resume Monday")
+      ).toBeInTheDocument();
+    });
+  });
+
   it("enters cooldown from the 429 Retry-After header instead of treating it as a generic error", async () => {
     vi.stubGlobal(
       "fetch",

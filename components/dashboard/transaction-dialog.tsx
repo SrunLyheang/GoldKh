@@ -25,9 +25,15 @@ import { DateField } from "@/components/ui/date-field";
 import { toDateKey } from "@/components/ui/calendar";
 import { LoadingScreen } from "@/components/ui/loading";
 import { useLocale } from "@/lib/i18n/locale-context";
+import { notify } from "@/lib/ui/toast";
 import { cn } from "@/lib/utils";
 import { formatQuantity, formatUsd } from "@/lib/format/money";
 import { transactionInputSchema } from "@/lib/validation/transaction";
+import {
+  classifyPrice,
+  isHardVerdict,
+  isSoftVerdict,
+} from "@/lib/validation/priceSanity";
 import { computeHoldings } from "@/lib/calc/holdings";
 import type { LedgerEntryWithId } from "@/lib/calc/ledgerEntry";
 import { fromTroyOz, priceFromTroyOz, toTroyOz } from "@/lib/calc/units";
@@ -52,6 +58,23 @@ export type AddSettledResult =
 // that isn't a complete number.
 function isParseableNumber(value: string): boolean {
   return /^\d*\.?\d*$/.test(value) && value !== "" && value !== ".";
+}
+
+// The user enters the total they paid for the whole transaction; the
+// ledger stores price per unit. Divide, then round to the schema's 4-dp
+// cap — a stored pricePerUnit × quantity can then differ from the
+// entered total by a sub-cent rounding remainder, which is acceptable at
+// this scale. Returns "" while either input is still mid-typing or the
+// quantity is zero (Decimal.div throws on divide-by-zero).
+function derivePricePerUnit(totalPaid: string, quantity: string): string {
+  if (
+    !isParseableNumber(totalPaid) ||
+    !isParseableNumber(quantity) ||
+    Number(quantity) <= 0
+  ) {
+    return "";
+  }
+  return new Decimal(totalPaid).div(quantity).toDecimalPlaces(4).toString();
 }
 
 // Always fully controlled by the caller (`open`/`onOpenChange`) — no
@@ -110,14 +133,19 @@ export function TransactionDialog({
     transaction ? formatQuantity(transaction.quantity) : ""
   );
   const [unit, setUnit] = useState<"chi" | "damlung">(transaction?.unit ?? "chi");
-  const [pricePerUnit, setPricePerUnit] = useState(transaction?.pricePerUnit ?? "");
+  // Edit mode seeds the field with total = pricePerUnit × quantity, the
+  // inverse of what happens on submit.
+  const [totalPaid, setTotalPaid] = useState(
+    transaction
+      ? new Decimal(transaction.pricePerUnit).times(transaction.quantity).toString()
+      : ""
+  );
   const [currency, setCurrency] = useState<"USD" | "KHR">(transaction?.currency ?? "USD");
   const [transactionDate, setTransactionDate] = useState(
     transaction?.transactionDate ?? toDateKey(new Date())
   );
   const [notes, setNotes] = useState(transaction?.notes ?? "");
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [attemptedSubmit, setAttemptedSubmit] = useState(false);
 
@@ -125,11 +153,13 @@ export function TransactionDialog({
     setTouched((prev) => ({ ...prev, [field]: true }));
   }
 
+  const derivedPricePerUnit = derivePricePerUnit(totalPaid, quantity);
+
   const payload = {
     type,
     quantity,
     unit,
-    pricePerUnit,
+    pricePerUnit: derivedPricePerUnit,
     currency,
     transactionDate,
     notes: notes || undefined,
@@ -142,11 +172,27 @@ export function TransactionDialog({
     return fieldErrors[field]?.[0];
   }
 
-  const totalCost =
-    isParseableNumber(quantity) && isParseableNumber(pricePerUnit)
-      ? new Decimal(quantity).times(pricePerUnit).toString()
-      : null;
   const spotPerUnit = priceFromTroyOz(currentPricePerTroyOz, unit);
+
+  // Fat-finger guard: compare the derived per-unit price against the
+  // current spot rate for the selected unit. KHR rows skip it — the rest
+  // of the app treats non-USD prices as un-comparable to the USD spot.
+  const priceVerdict =
+    currency === "USD" && derivedPricePerUnit !== ""
+      ? classifyPrice(Number(derivedPricePerUnit), Number(spotPerUnit))
+      : "ok";
+  const priceIsHard = isHardVerdict(priceVerdict);
+  const priceIsSoft = isSoftVerdict(priceVerdict);
+  const priceVerdictMessage =
+    priceVerdict === "hard-low"
+      ? t.dialog.priceHardLow
+      : priceVerdict === "hard-high"
+        ? t.dialog.priceHardHigh
+        : priceVerdict === "soft-low"
+          ? t.dialog.priceSoftLow
+          : priceVerdict === "soft-high"
+            ? t.dialog.priceSoftHigh
+            : null;
 
   const holdingsExcludingSelf = useMemo(
     () =>
@@ -163,9 +209,15 @@ export function TransactionDialog({
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setAttemptedSubmit(true);
-    setError(null);
 
     if (!parsed.success) {
+      notify.error(t.dialog.toast.checkFields);
+      return;
+    }
+
+    // A price wildly off spot (an extra zero, a wrong unit) blocks the
+    // save; the inline message below the summary box explains why.
+    if (priceIsHard) {
       return;
     }
 
@@ -179,7 +231,7 @@ export function TransactionDialog({
         type,
         quantity,
         unit,
-        pricePerUnit,
+        pricePerUnit: derivedPricePerUnit,
         currency,
         transactionDate,
         notes: notes || null,
@@ -201,22 +253,30 @@ export function TransactionDialog({
       body = await res.json();
     } catch {
       setSubmitting(false);
-      const message = t.dialog.couldntSave;
+      const message = t.dialog.toast.network;
       if (isOptimistic) {
         onAddSettled!(tempId!, { ok: false, message });
       }
-      setError(message);
+      notify.error(message);
       return;
     }
 
     setSubmitting(false);
 
     if (!res.ok || "error" in body) {
-      const message = body.error?.message ?? t.dialog.somethingWrong;
+      const code: string | undefined = body?.error?.code;
+      const message =
+        code === "RATE_LIMITED"
+          ? t.dialog.toast.rateLimited
+          : code === "UNAUTHORIZED"
+            ? t.dialog.toast.sessionExpired
+            : code === "INVALID_INPUT"
+              ? t.dialog.toast.invalidInput
+              : t.dialog.toast.serverError;
       if (isOptimistic) {
         onAddSettled!(tempId!, { ok: false, message });
       }
-      setError(message);
+      notify.error(message);
       return;
     }
 
@@ -224,7 +284,15 @@ export function TransactionDialog({
       onAddSettled!(tempId!, { ok: true });
     }
     if (isEdit) {
+      notify.success(t.dialog.toast.updated);
       onEditSuccess?.();
+    } else {
+      const qty = formatQuantity(quantity);
+      notify.success(
+        type === "buy"
+          ? t.dialog.toast.buyAdded(qty, unitLabel(unit))
+          : t.dialog.toast.sellRecorded(qty, unitLabel(unit))
+      );
     }
     onOpenChange(false);
     router.refresh();
@@ -315,7 +383,7 @@ export function TransactionDialog({
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="pricePerUnit">{t.dialog.pricePerUnit}</Label>
+                <Label htmlFor="pricePerUnit">{t.dialog.totalPaid}</Label>
                 <div className="flex gap-2">
                   <Input
                     id="pricePerUnit"
@@ -323,8 +391,8 @@ export function TransactionDialog({
                     type="number"
                     step="any"
                     min="0"
-                    value={pricePerUnit}
-                    onChange={(e) => setPricePerUnit(e.target.value)}
+                    value={totalPaid}
+                    onChange={(e) => setTotalPaid(e.target.value)}
                     onBlur={() => touch("pricePerUnit")}
                     aria-invalid={!!fieldError("pricePerUnit")}
                     required
@@ -352,13 +420,15 @@ export function TransactionDialog({
 
               <div className="rounded-lg border border-border bg-muted/30 px-3.5 py-3 text-[12.5px]">
                 <div className="flex items-center justify-between">
-                  <span className="tt-label text-[10.5px] text-muted-foreground">{t.dialog.totalCost}</span>
+                  <span className="tt-label text-[10.5px] text-muted-foreground">
+                    {t.dialog.perUnitEquiv(unitLabel(unit).toLowerCase())}
+                  </span>
                   <span className="font-mono tabular-nums text-foreground">
-                    {totalCost === null
+                    {derivedPricePerUnit === ""
                       ? "—"
                       : currency === "USD"
-                        ? formatUsd(totalCost)
-                        : `${new Intl.NumberFormat("en-US").format(Number(totalCost))} KHR`}
+                        ? formatUsd(derivedPricePerUnit)
+                        : `${new Intl.NumberFormat("en-US").format(Number(derivedPricePerUnit))} KHR`}
                   </span>
                 </div>
                 <div className="mt-1.5 flex items-center justify-between">
@@ -368,6 +438,16 @@ export function TransactionDialog({
                   </span>
                 </div>
               </div>
+
+              {priceVerdictMessage && priceIsHard && (
+                <p className="text-[11.5px] text-destructive">{priceVerdictMessage}</p>
+              )}
+              {priceVerdictMessage && priceIsSoft && (
+                <div className="flex items-start gap-2 rounded-lg border border-border bg-muted/30 px-3 py-2.5 text-[12px] text-muted-foreground">
+                  <TriangleAlert className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                  <span>{priceVerdictMessage}</span>
+                </div>
+              )}
 
               <div className="grid gap-2">
                 <Label htmlFor="transactionDate">{t.dialog.date}</Label>
@@ -395,9 +475,11 @@ export function TransactionDialog({
                 )}
               </div>
 
-              {error && <p className="text-[12.5px] text-destructive">{error}</p>}
-
-              <Button type="submit" disabled={submitting} className="w-full">
+              <Button
+                type="submit"
+                disabled={submitting || priceIsHard}
+                className="w-full"
+              >
                 {t.dialog.saveTransaction}
               </Button>
             </form>

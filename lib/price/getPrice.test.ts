@@ -17,6 +17,7 @@ function makeDeps(overrides: Partial<GetPriceDeps> = {}): GetPriceDeps {
     getLatestSnapshot: vi.fn().mockResolvedValue(undefined),
     insertSnapshotIfStale: vi.fn().mockResolvedValue(snapshot()),
     providers: [],
+    isMarketOpen: () => true,
     ...overrides,
   };
 }
@@ -98,6 +99,41 @@ describe("getPrice", () => {
     await expect(getPrice(deps)).rejects.toThrow(
       "All price providers failed"
     );
+  });
+
+  it("serves the cached snapshot without calling a provider when the market is closed", async () => {
+    const stale = snapshot({
+      capturedAt: new Date(Date.now() - PRICE_STALENESS_MS - 1000),
+    });
+    const provider = vi.fn();
+    const deps = makeDeps({
+      getLatestSnapshot: vi.fn().mockResolvedValue(stale),
+      providers: [provider],
+      isMarketOpen: () => false,
+    });
+
+    const result = await getPrice(deps);
+
+    expect(result).toBe(stale);
+    expect(provider).not.toHaveBeenCalled();
+  });
+
+  it("still calls a provider when the market is closed but there is no cache at all", async () => {
+    const provider = vi
+      .fn()
+      .mockResolvedValue({ pricePerTroyOz: "2100", source: "goldapi.io" });
+    const inserted = snapshot({ id: "snap-cold-start" });
+    const deps = makeDeps({
+      getLatestSnapshot: vi.fn().mockResolvedValue(undefined),
+      insertSnapshotIfStale: vi.fn().mockResolvedValue(inserted),
+      providers: [provider],
+      isMarketOpen: () => false,
+    });
+
+    const result = await getPrice(deps);
+
+    expect(provider).toHaveBeenCalledOnce();
+    expect(result).toBe(inserted);
   });
 
   it("re-reads the latest snapshot when a concurrent insert wins the race", async () => {

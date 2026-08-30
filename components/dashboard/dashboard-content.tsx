@@ -4,11 +4,13 @@ import { useEffect, useState, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
 import { computeGainLoss } from "@/lib/calc/gainLoss";
 import { computeHoldings } from "@/lib/calc/holdings";
+import { computeRealized } from "@/lib/calc/realized";
 import { fromTroyOz, priceFromTroyOz, type GoldUnit } from "@/lib/calc/units";
 import type { ChartPoint } from "@/lib/calc/priceHistory";
 import { EmptyState } from "./empty-state";
 import { HeroPriceCard } from "./hero-price-card";
 import { PriceHistoryChart } from "./price-history-chart";
+import { RealizedPanel } from "./realized-panel";
 import { StatRow } from "./stat-row";
 import { TransactionHistory, type TransactionRow } from "./transaction-history";
 import { TransactionDialog, type AddSettledResult } from "./transaction-dialog";
@@ -29,6 +31,7 @@ export function DashboardContent({
   isStale,
   chartPoints,
   refreshCooldownEndsAt,
+  marketOpen = true,
 }: {
   transactions: TransactionRow[];
   pricePerTroyOz: string;
@@ -38,6 +41,7 @@ export function DashboardContent({
   isStale: boolean;
   chartPoints: ChartPoint[];
   refreshCooldownEndsAt: number | null;
+  marketOpen?: boolean;
 }) {
   const router = useRouter();
   const [addOpen, setAddOpen] = useState(false);
@@ -106,6 +110,7 @@ export function DashboardContent({
     holdings.averageCostPerTroyOz,
     pricePerTroyOz
   );
+  const realized = computeRealized(rows);
   const hasHoldings = Number(holdings.totalTroyOz) > 0;
 
   return (
@@ -118,6 +123,7 @@ export function DashboardContent({
           capturedAt={capturedAt}
           isStale={isStale}
           refreshCooldownEndsAt={refreshCooldownEndsAt}
+          marketOpen={marketOpen}
           displayUnit={displayUnit}
           onDisplayUnitChange={setDisplayUnit}
         />
@@ -154,7 +160,19 @@ export function DashboardContent({
               displayUnit={displayUnit}
             />
           </div>
-          <div className="vault-enter" style={{ "--enter-delay": "140ms" } as CSSProperties}>
+          {realized.saleCount > 0 && (
+            <div
+              className="vault-enter"
+              style={{ "--enter-delay": "140ms" } as CSSProperties}
+            >
+              <RealizedPanel
+                realizedUsd={realized.realizedUsd}
+                realizedPercent={realized.realizedPercent}
+                saleCount={realized.saleCount}
+              />
+            </div>
+          )}
+          <div className="vault-enter" style={{ "--enter-delay": "180ms" } as CSSProperties}>
             <TransactionHistory
               rows={rows}
               currentPricePerTroyOz={pricePerTroyOz}
@@ -172,6 +190,7 @@ export function DashboardContent({
       <div className="vault-enter" style={{ "--enter-delay": "200ms" } as CSSProperties}>
         <PriceHistoryChart
           points={chartPoints}
+          marketOpen={marketOpen}
           breakEvenPerDamlung={
             hasHoldings
               ? Number(priceFromTroyOz(holdings.averageCostPerTroyOz, "damlung"))

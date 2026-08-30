@@ -6,6 +6,7 @@ import {
   ArrowUpRight,
   MoreVertical,
   Pencil,
+  TriangleAlert,
   Trash2,
 } from "lucide-react";
 import { createContext, useContext, useState } from "react";
@@ -13,7 +14,8 @@ import { cn } from "@/lib/utils";
 import { formatQuantity, formatUsd } from "@/lib/format/money";
 import { computeRowValuation } from "@/lib/calc/transactionRow";
 import type { LedgerEntry } from "@/lib/calc/ledgerEntry";
-import type { GoldUnit } from "@/lib/calc/units";
+import { priceFromTroyOz, type GoldUnit } from "@/lib/calc/units";
+import { classifyPrice, isHardVerdict } from "@/lib/validation/priceSanity";
 import { useLocale } from "@/lib/i18n/locale-context";
 import type { Dictionary } from "@/lib/i18n/dictionary";
 import { unitLabels } from "@/lib/i18n/unit-labels";
@@ -51,6 +53,19 @@ function getRowDisplay(
   const pricePerDisplayUnit =
     displayUnit === "chi" ? valuation.pricePerChi : valuation.pricePerDamlung;
   const isGain = valuation.pnlUsd !== null && Number(valuation.pnlUsd) >= 0;
+  // Flag a USD row whose per-unit price is more than 10× off the current
+  // spot rate (same hard band as the Add dialog's Phase 2 guard) — most
+  // likely a pre-fix row where the total was typed into the per-unit
+  // field. The ratio is unit-independent, so comparing in the display
+  // unit is fine. Not auto-corrected — the user edits it.
+  const priceLooksOffSpot =
+    row.currency === "USD" &&
+    isHardVerdict(
+      classifyPrice(
+        Number(pricePerDisplayUnit),
+        Number(priceFromTroyOz(currentPricePerTroyOz, displayUnit))
+      )
+    );
   // Both cells fall back to "—" for two different reasons that used to
   // look identical: KHR conversion is deferred entirely (project-
   // overview.md), and a sell row simply has no ongoing position to
@@ -77,6 +92,7 @@ function getRowDisplay(
     valuation,
     pricePerDisplayUnit,
     isGain,
+    priceLooksOffSpot,
     blankValueReason,
     paidAmount,
     unitLabel,
@@ -192,6 +208,7 @@ function Row({
     valuation,
     pricePerDisplayUnit,
     isGain,
+    priceLooksOffSpot,
     blankValueReason,
     paidAmount,
     unitLabel,
@@ -231,7 +248,17 @@ function Row({
         {paidAmount}
       </td>
       <td className="py-3 pr-3 text-right font-mono text-[13px] tabular-nums text-muted-foreground">
-        {formatUsd(pricePerDisplayUnit)}
+        <span className="inline-flex items-center justify-end gap-1">
+          {priceLooksOffSpot && (
+            <span title={t.transactions.priceOffSpot} className="cursor-help">
+              <TriangleAlert
+                className="h-3 w-3 text-destructive"
+                aria-label={t.transactions.priceOffSpot}
+              />
+            </span>
+          )}
+          {formatUsd(pricePerDisplayUnit)}
+        </span>
       </td>
       <td className="py-3 pr-3 text-right font-mono text-[13px] tabular-nums text-foreground">
         {valuation.currentValueUsd ? (
@@ -294,6 +321,7 @@ function TransactionCard({
     valuation,
     pricePerDisplayUnit,
     isGain,
+    priceLooksOffSpot,
     blankValueReason,
     paidAmount,
     unitLabel,
@@ -347,9 +375,19 @@ function TransactionCard({
           <p className="tt-label text-[10.5px] text-muted-foreground">
             /{unitLabels(t, displayUnit).primaryLower}
           </p>
-          <MonoValue tone="muted" className="mt-0.5 block text-[13px]">
-            {formatUsd(pricePerDisplayUnit)}
-          </MonoValue>
+          <span className="mt-0.5 flex items-center gap-1">
+            {priceLooksOffSpot && (
+              <span title={t.transactions.priceOffSpot} className="cursor-help">
+                <TriangleAlert
+                  className="h-3 w-3 text-destructive"
+                  aria-label={t.transactions.priceOffSpot}
+                />
+              </span>
+            )}
+            <MonoValue tone="muted" className="block text-[13px]">
+              {formatUsd(pricePerDisplayUnit)}
+            </MonoValue>
+          </span>
         </div>
         <div>
           <p className="tt-label text-[10.5px] text-muted-foreground">{t.transactions.currentValue}</p>

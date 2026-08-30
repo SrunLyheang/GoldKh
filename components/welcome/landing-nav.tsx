@@ -2,7 +2,6 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { LanguageToggle } from "@/components/dashboard/language-toggle";
 import { useLocale } from "@/lib/i18n/locale-context";
 import { LandingThemeToggle } from "./landing-theme-toggle";
 import { useSignedIn } from "./use-signed-in";
@@ -44,7 +43,6 @@ export function LandingNav() {
         </nav>
 
         <div className="flex items-center gap-2.5">
-          <LanguageToggle />
           <LandingThemeToggle />
           {signedIn ? (
             <Link href="/dashboard" className={CTA_CLASS}>

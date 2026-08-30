@@ -81,6 +81,9 @@ what that changed (rate limiting priority, UI test coverage).
 - Weighted average cost across all buys.
 - Current market value at the latest cached price.
 - Unrealized gain/loss in absolute and percentage terms.
+- Realized gain/loss on gold already sold, on the same weighted
+  average basis (proceeds minus the average cost of the sold
+  quantity). Added 2026-08-30 — see `progress-tracker.md`.
 
 A sell reduces quantity and leaves the average cost per unit
 unchanged — proceeds don't touch the basis of what remains.
@@ -94,6 +97,7 @@ now hold 7 chi, still at a $300 average cost.
 - Clerk-authenticated multi-user accounts.
 - Buy and sell transaction recording with full history.
 - Weighted average cost basis.
+- Realized gain/loss on sold gold, weighted average basis.
 - Cached, multi-provider gold price fetching.
 - Display in USD and in Cambodian gold units (chi, damlung).
 
@@ -102,7 +106,8 @@ now hold 7 chi, still at a $300 average cost.
 - KHR display and USD-to-KHR conversion — deferred; the price
   layer stores USD only and conversion will be added later.
 - FIFO or per-lot cost basis. Weighted average only.
-- Realized gain/loss and tax reporting.
+- Tax reporting — Cambodia has no gold capital-gains regime to
+  report against.
 - Price alerts, notifications, and the Telegram bot.
 - Sharing, collaboration, or any multi-owner data.
   -Payment systems

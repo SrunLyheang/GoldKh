@@ -1,9 +1,10 @@
-export type Locale = "en" | "km";
+export type Locale = "en";
 
-// Flat-ish nested dictionary, one entry per user-facing string. Both
-// locales must share the exact same shape — `Dictionary` is derived from
-// `en`, so a missing `km` key is a type error, not a silent English
-// fallback at runtime.
+// Flat-ish nested dictionary, one entry per user-facing string. Only
+// English ships right now — the Khmer locale and its toggle were removed
+// 2026-08-29 pending a translation review. `Dictionary` is derived from
+// `en`; re-adding a second locale means restoring a `const km: typeof en`
+// object plus a toggle.
 const en = {
   language: { en: "English", km: "Khmer" },
   nav: { dashboard: "Dashboard" },
@@ -12,6 +13,7 @@ const en = {
     live: "Live",
     stale: "Stale",
     asOf: (time: string) => `as of ${time}`,
+    marketClosed: "Market closed — prices resume Monday.",
     disclaimer:
       "Cambodian gold shops price differently from the global spot rate shown here, so your local buying/selling price may not match exactly.",
   },
@@ -23,6 +25,7 @@ const en = {
     pleaseWait: (minutes: number) => `Please wait ${minutes} minutes`,
     couldntReach: "Couldn't reach the server — try again shortly",
     couldntRefresh: "Couldn't refresh the price — try again shortly",
+    marketClosed: "Market's closed — prices resume Monday",
   },
   stat: {
     totalHoldings: "Total Holdings",
@@ -50,6 +53,8 @@ const en = {
       `Actions for ${type} of ${quantity} ${unit}`,
     khrNote: "KHR entries aren't converted to USD yet",
     sellNote: "Sell rows show proceeds, not an ongoing position",
+    priceOffSpot:
+      "This price is far from the current spot rate — it may be a typo. Edit the transaction to fix it.",
   },
   dialog: {
     editTitle: "Edit transaction",
@@ -57,9 +62,17 @@ const en = {
     editDescription: "Update the details of this transaction.",
     addDescription: "Record a buy or sell against your gold holdings.",
     quantity: "Quantity",
-    pricePerUnit: "Price per unit",
-    totalCost: "Total cost",
+    totalPaid: "Total amount paid",
+    perUnitEquiv: (unit: string) => `Price per ${unit}`,
     currentSpot: "Current spot",
+    priceHardLow:
+      "That's less than a tenth of the current spot price. Check the total amount and quantity before saving.",
+    priceHardHigh:
+      "That's more than ten times the current spot price. Check the total amount and quantity before saving.",
+    priceSoftLow:
+      "This is well below the current spot price — double-check the total amount if that's unexpected.",
+    priceSoftHigh:
+      "This is well above the current spot price — double-check the total amount if that's unexpected.",
     date: "Date",
     notes: "Notes (optional)",
     saveTransaction: "Save transaction",
@@ -69,6 +82,21 @@ const en = {
       `This exceeds your current holdings of ${quantity} ${unit}.`,
     couldntSave: "Couldn't reach the server — the transaction was not saved.",
     somethingWrong: "Something went wrong",
+    toast: {
+      buyAdded: (quantity: string, unit: string) =>
+        `Added ${quantity} ${unit} to your holdings.`,
+      sellRecorded: (quantity: string, unit: string) =>
+        `Recorded sale of ${quantity} ${unit}.`,
+      updated: "Transaction updated.",
+      checkFields: "Check the highlighted fields.",
+      invalidInput:
+        "Something in this transaction isn't valid. Check your entries and try again.",
+      rateLimited: "You're saving too fast — wait a moment and try again.",
+      sessionExpired: "Your session expired. Sign in again to save.",
+      serverError:
+        "Couldn't save — something went wrong on our end. Try again.",
+      network: "No connection. Check your internet and try again.",
+    },
   },
   empty: {
     title: "No holdings yet",
@@ -78,6 +106,16 @@ const en = {
   chart: {
     notEnoughHistory:
       "Not enough price history yet — check back after a few refreshes.",
+    marketClosed: "Market closed",
+    marketClosedNote:
+      "Showing the last price from Friday's close. Trading resumes Monday.",
+  },
+  realized: {
+    eyebrow: "Realized",
+    fromSales: (count: number) =>
+      `from ${count} ${count === 1 ? "sale" : "sales"}`,
+    caption:
+      "Money you've locked in by selling gold, measured against what you paid for it. Gold you still hold isn't counted here — that's your unrealized figure above.",
   },
   welcome: {
     nav: {
@@ -142,143 +180,5 @@ const en = {
   },
 };
 
-const km: typeof en = {
-  language: { en: "អង់គ្លេស", km: "ខ្មែរ" },
-  nav: { dashboard: "ផ្ទាំងគ្រប់គ្រង" },
-  hero: {
-    pricePer: (unit: string) => `តម្លៃមួយ${unit}`,
-    live: "ទាន់សម័យ",
-    stale: "តម្លៃចាស់",
-    asOf: (time: string) => `គិតត្រឹមម៉ោង ${time}`,
-    disclaimer:
-      "ហាងមាសនៅស្រុកខ្មែរកំណត់តម្លៃខុសពីតម្លៃទីផ្សារពិភពលោកដែលបង្ហាញនៅទីនេះ ដូច្នេះតម្លៃទិញ ឬលក់នៅផ្សារក្នុងស្រុក អាចខុសគ្នាខ្លះ។",
-  },
-  unit: { chi: "ជី", damlung: "ដំឡឹង" },
-  refresh: {
-    label: "ផ្ទុកតម្លៃឡើងវិញ",
-    refreshedRecently: "ទើបតែផ្ទុកឡើងវិញ",
-    refreshed: "ផ្ទុកឡើងវិញរួច",
-    pleaseWait: (minutes: number) => `សូមរង់ចាំ ${minutes} នាទីសិន`,
-    couldntReach: "ភ្ជាប់ម៉ាស៊ីនមេមិនបាន — សូមព្យាយាមម្ដងទៀតបន្តិចទៀត",
-    couldntRefresh: "ផ្ទុកតម្លៃឡើងវិញមិនបាន — សូមព្យាយាមម្ដងទៀតបន្តិចទៀត",
-  },
-  stat: {
-    totalHoldings: "មាសសរុបដែលកាន់កាប់",
-    averageCost: "តម្លៃដើមមធ្យម",
-    marketValue: "តម្លៃទីផ្សារ",
-    gainLoss: "ចំណេញ/ខាត មិនទាន់សម្រេច",
-    atCurrentSpot: "តាមតម្លៃទីផ្សារបច្ចុប្បន្ន",
-    per: (unit: string) => `ក្នុងមួយ${unit}`,
-  },
-  transactions: {
-    title: "ប្រវត្តិប្រតិបត្តិការ",
-    addTransaction: "បន្ថែមប្រតិបត្តិការ",
-    date: "កាលបរិច្ឆេទ",
-    quantity: "បរិមាណ",
-    paid: "ប្រាក់បានបង់",
-    currentValue: "តម្លៃបច្ចុប្បន្ន",
-    pnl: "ចំណេញ/ខាត",
-    buy: "ទិញ",
-    sell: "លក់",
-    saving: "កំពុងរក្សាទុក…",
-    edit: "កែ",
-    delete: "លុប",
-    cancel: "បោះបង់",
-    actionsFor: (type: string, quantity: string, unit: string) =>
-      `សកម្មភាពសម្រាប់ការ${type} ${quantity} ${unit}`,
-    khrNote: "ប្រតិបត្តិការជាប្រាក់រៀល មិនទាន់បម្លែងទៅជាដុល្លារនៅឡើយទេ",
-    sellNote: "ជួរលក់បង្ហាញប្រាក់ដែលទទួលបាន មិនមែនបរិមាណមាសដែលនៅកាន់កាប់ទេ",
-  },
-  dialog: {
-    editTitle: "កែប្រតិបត្តិការ",
-    addTitle: "បន្ថែមប្រតិបត្តិការ",
-    editDescription: "កែប្រែព័ត៌មានលម្អិតរបស់ប្រតិបត្តិការនេះ។",
-    addDescription: "កត់ត្រាការទិញ ឬការលក់មាសរបស់អ្នក។",
-    quantity: "បរិមាណ",
-    pricePerUnit: "តម្លៃក្នុងមួយឯកតា",
-    totalCost: "តម្លៃសរុប",
-    currentSpot: "តម្លៃទីផ្សារបច្ចុប្បន្ន",
-    date: "កាលបរិច្ឆេទ",
-    notes: "កំណត់ចំណាំ (បើចង់)",
-    saveTransaction: "រក្សាទុកប្រតិបត្តិការ",
-    savingChanges: "កំពុងរក្សាទុកការកែប្រែ…",
-    savingTransaction: "កំពុងរក្សាទុកប្រតិបត្តិការ…",
-    exceedsHoldings: (quantity: string, unit: string) =>
-      `លើសពីមាសដែលអ្នកកាន់កាប់បច្ចុប្បន្ន ${quantity} ${unit}។`,
-    couldntSave: "ភ្ជាប់ម៉ាស៊ីនមេមិនបាន — ប្រតិបត្តិការមិនបានរក្សាទុកទេ។",
-    somethingWrong: "មានបញ្ហាបានកើតឡើង",
-  },
-  empty: {
-    title: "មិនទាន់មានមាសនៅឡើយទេ",
-    description:
-      "កត់ត្រាការទិញលើកដំបូងរបស់អ្នក ដើម្បីចាប់ផ្ដើមតាមដានតម្លៃមាសរបស់អ្នកធៀបនឹងតម្លៃទីផ្សារផ្ទាល់។",
-  },
-  chart: {
-    notEnoughHistory:
-      "ប្រវត្តិតម្លៃមិនទាន់មានគ្រប់គ្រាន់ទេ — សូមពិនិត្យមើលម្ដងទៀត បន្ទាប់ពីផ្ទុកតម្លៃឡើងវិញពីរបីដង។",
-  },
-  welcome: {
-    nav: {
-      features: "លក្ខណៈពិសេស",
-      how: "របៀបប្រើ",
-      signIn: "ចូលគណនី",
-      getStarted: "ចាប់ផ្ដើម",
-      goToDashboard: "ទៅផ្ទាំងគ្រប់គ្រង",
-    },
-    hero: {
-      eyebrow: "កម្មវិធីតាមដានមាសផ្ទាល់ខ្លួន",
-      headline: "ដឹងច្បាស់ថាមាសរបស់អ្នកមានតម្លៃប៉ុន្មានពិតប្រាកដ",
-      subhead:
-        "កត់ត្រាការទិញ និងការលក់មាសរបស់អ្នកជាជី និងដំឡឹង។ GoldKh គណនាតម្លៃដើមមធ្យម តម្លៃទីផ្សារបច្ចុប្បន្ន ព្រមទាំងចំណេញ ឬខាតដែលអ្នកមិនទាន់សម្រេច ធៀបនឹងតម្លៃមាសផ្ទាល់។",
-      sampleTag: "គំរូ",
-    },
-    trust: {
-      notExchange: "មិនមែនកន្លែងជួញដូរ",
-      noMoney: "គ្មានប្រាក់ឆ្លងកាត់",
-      dataYours: "ទិន្នន័យរបស់អ្នក សម្រាប់តែអ្នក",
-      units: "ដុល្លារ ជី និងដំឡឹង",
-    },
-    features: {
-      kicker: "លក្ខណៈពិសេស",
-      title: "រចនាឡើងតាមរបៀបដែលអ្នកកាន់កាប់មាសពិតៗ",
-      avgCostTitle: "តម្លៃដើមមធ្យមតាមទម្ងន់",
-      avgCostBody:
-        "រាល់ការទិញម្ដងៗ នឹងធ្វើឱ្យតម្លៃដើមពិតរបស់អ្នកប្រែប្រួល។ រីឯការលក់ គ្រាន់តែបន្ថយបរិមាណមាសដែលអ្នកកាន់កាប់ ដោយមិនប៉ះពាល់ដល់តម្លៃដើមនៃមាសដែលនៅសល់ឡើយ។",
-      livePriceTitle: "តម្លៃដែលមានឱ្យមើលជានិច្ច",
-      livePriceBody:
-        "តម្លៃទីផ្សារត្រូវបានរក្សាទុក ព្រមទាំងកត់ម៉ោងច្បាស់លាស់។ បើប្រភពទាំងអស់ដាច់ អ្នកនៅតែឃើញតម្លៃចុងក្រោយបំផុត និងដឹងថាវាចាស់ប៉ុន្មាន — មិនដែលឃើញអេក្រង់ទទេឡើយ។",
-      unitsTitle: "គិតជាជី និងដំឡឹងតែម្ដង",
-      unitsBody:
-        "បញ្ចូលបរិមាណតាមរបៀបដែលហាងមាសនៅស្រុកខ្មែរគេនិយាយ។ តម្លៃសំខាន់គិតជាដំឡឹង រួមមានជី និងអោនស៍ (troy ounce) នៅជាប់គ្នាផង។",
-      bilingualTitle: "អង់គ្លេស និងខ្មែរ",
-      bilingualBody:
-        "ប្ដូរភាសាទាំងកម្មវិធីរវាងអង់គ្លេស និងខ្មែរបានគ្រប់ពេល។ លេខទាំងអស់នៅតែតម្រៀបស្មើគ្នាជាតួលេខតារាងដដែល។",
-    },
-    steps: {
-      kicker: "របៀបប្រើ",
-      title: "តាមដានបានក្នុងបីជំហានប៉ុណ្ណោះ",
-      oneTitle: "ចូលគណនី",
-      oneBody: "បង្កើតគណនី។ មានតែអ្នកម្នាក់ប៉ុណ្ណោះ ដែលអាចមើលឃើញមាសរបស់អ្នក។",
-      twoTitle: "កត់ត្រាការទិញ និងការលក់",
-      twoBody:
-        "បំពេញបរិមាណ ឯកតា តម្លៃដែលបានបង់ និងកាលបរិច្ឆេទ។ ចង់កែ ឬលុបពេលក្រោយក៏បាន។",
-      threeTitle: "តាមដានស្ថានភាពមាសរបស់អ្នក",
-      threeBody:
-        "បរិមាណមាស តម្លៃទីផ្សារ និងចំណេញ ឬខាតដែលមិនទាន់សម្រេច នឹងប្រែប្រួលទៅតាមតម្លៃមាសផ្ទាល់។",
-    },
-    cta: {
-      title: "ចាប់ផ្ដើមតាមដានមាសរបស់អ្នកឥឡូវនេះ",
-      body: "ប្រើដោយឥតគិតថ្លៃ — ជួយឱ្យអ្នកមើលឃើញច្បាស់ថាអ្នកកាន់កាប់មាសប៉ុន្មាន។",
-      button: "ចាប់ផ្ដើម",
-    },
-    footer: {
-      tagline: "តាមដានមាសផ្ទាល់ខ្លួនរបស់អ្នក ធៀបនឹងតម្លៃទីផ្សារផ្ទាល់។",
-      notExchange: "មិនមែនកន្លែងជួញដូរទេ។ គ្មានប្រាក់ឆ្លងកាត់ប្រព័ន្ធនេះឡើយ។",
-      source: "ប្រភពកូដ",
-      rights: "© 2026 GoldKh",
-    },
-  },
-};
-
-export const dictionary = { en, km } as const;
+export const dictionary = { en } as const;
 export type Dictionary = typeof en;

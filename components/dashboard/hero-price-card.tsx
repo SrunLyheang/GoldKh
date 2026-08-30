@@ -2,6 +2,7 @@ import type { GoldUnit } from "@/lib/calc/units";
 import { formatUsd } from "@/lib/format/money";
 import { useLocale } from "@/lib/i18n/locale-context";
 import { unitLabels } from "@/lib/i18n/unit-labels";
+import { COUNT_UP_MS, useCountUp } from "@/lib/ui/use-count-up";
 import { MonoValue } from "./mono-value";
 import { Panel } from "./panel";
 import { RefreshButton } from "./refresh-button";
@@ -14,6 +15,7 @@ interface HeroPriceCardProps {
   capturedAt: Date;
   isStale: boolean;
   refreshCooldownEndsAt: number | null;
+  marketOpen?: boolean;
   displayUnit?: GoldUnit;
   onDisplayUnitChange?: (unit: GoldUnit) => void;
 }
@@ -25,10 +27,12 @@ export function HeroPriceCard({
   capturedAt,
   isStale,
   refreshCooldownEndsAt,
+  marketOpen = true,
   displayUnit = "damlung",
   onDisplayUnitChange,
 }: HeroPriceCardProps) {
   const { t } = useLocale();
+  const marketClosed = marketOpen === false;
   const timeLabel = new Intl.DateTimeFormat("en-US", {
     hour: "numeric",
     minute: "2-digit",
@@ -39,6 +43,14 @@ export function HeroPriceCard({
   const secondaryPrice = isChi ? pricePerDamlung : pricePerChi;
   const { primary: primaryUnitLabel, secondaryLower: secondaryUnitLabel } =
     unitLabels(t, displayUnit);
+
+  // Rolls from zero to the live price on every page entry. A unit toggle
+  // afterwards snaps (see useCountUp's `from` mode).
+  const headlineDisplay = useCountUp(Number(headlinePrice), {
+    from: 0,
+    durationMs: COUNT_UP_MS,
+    format: (value) => formatUsd(String(value)),
+  });
 
   return (
     <Panel size="lg" className="relative overflow-hidden">
@@ -54,7 +66,7 @@ export function HeroPriceCard({
             )}
           </div>
           <MonoValue className="tt-display mt-1.5 block text-[34px] font-semibold tracking-tight leading-tight sm:text-[46px]">
-            {formatUsd(headlinePrice)}
+            {headlineDisplay}
           </MonoValue>
           <MonoValue tone="muted" className="mt-1.5 block text-[12.5px]">
             {formatUsd(pricePerTroyOz)}/oz · {formatUsd(secondaryPrice)}/
@@ -77,7 +89,15 @@ export function HeroPriceCard({
               {t.hero.asOf(timeLabel)}
             </MonoValue>
           </div>
-          <RefreshButton cooldownEndsAt={refreshCooldownEndsAt} />
+          {marketClosed && (
+            <MonoValue tone="muted" className="tt-label text-[11px]">
+              {t.hero.marketClosed}
+            </MonoValue>
+          )}
+          <RefreshButton
+            cooldownEndsAt={refreshCooldownEndsAt}
+            marketClosed={marketClosed}
+          />
         </div>
       </div>
       <p className="mt-5 text-[11.5px] text-muted-foreground">

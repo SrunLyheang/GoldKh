@@ -194,6 +194,23 @@ muted 11.5px label, over a 19px mono value at weight 600, over a
 12px mono muted sub-line. The gain/loss card colors both its
 value and sub-line green or red.
 
+**Realized panel** — Full-width `Panel size="lg"` between the stat
+row and the transaction history, in the same 32px block rhythm.
+**Rendered only when the user has at least one USD sell**
+(`computeRealized(...).saleCount > 0`) — before the first sale the
+dashboard is unchanged. Deliberately the same shape as the hero
+price card: left readout (a `.tt-label` line — `[ REALIZED ]`
+bracket eyebrow + "from N sales" — over a 34/40px mono value, over
+a mono percent sub-line), right a `--muted-foreground` caption
+capped at ~34ch, `sm:text-right`, stacking under the value below
+`sm`. So the dashboard opens and closes on two matching full-width
+readouts (spot price / realized result) with the stat chips
+between. Value + percent take the gain/loss tone; **exactly $0 is
+neutral** ("broke even"). Everything routes through `Panel`,
+`.tt-label`, `MonoValue`'s `tone`, and the state tokens, so it
+themes with no per-theme rule. Realized figure is weighted-average
+(`lib/calc/realized.ts`), not FIFO.
+
 **Transaction history** — Header row with the title and a gold
 "Add transaction" button carrying an icon and label. Below it, a
 real `<table>` in a `max-height: 320px` scroll container (both
@@ -252,7 +269,11 @@ These need a visual treatment before the dashboard is complete:
 
 - **Negative gain/loss alignment.** The minus sign occupies a
   character cell. Right-aligned mono columns need a consistent
-  approach so positive and negative values line up.
+  approach so positive and negative values line up. Still open —
+  the realized panel (added 2026-08-30) uses the same raw
+  `formatUsd` treatment as the stat row's gain/loss card, so
+  aligning the sign is one shared change across both, not a
+  per-component fix.
 - **Long transaction lists.** The scroll container is defined,
   but not what a user with 200 rows sees — pagination, or
   scroll alone.

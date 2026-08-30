@@ -12,6 +12,304 @@ Update this file after every meaningful implementation change.
   the remaining work toward hardening (rate limiting, the
   `user.deleted` webhook, UI test coverage) over new features.
 
+## Done: weekend market-closed handling (2026-08-30, on `fix/current-issues`, uncommitted)
+
+- Separate from the current-issues plan below — a fifth issue the user
+  raised: goldapi.io's feed only echoes Friday's close over the weekend,
+  so calling it Sat/Sun burns the 100/month free-tier quota for no new
+  data, and the dashboard gave no sign the price was frozen.
+- `lib/price/marketHours.ts` (new, pure): `isMarketOpen(now = new Date())`.
+  Spot gold trades Sunday 22:00 UTC → Friday 21:00 UTC; fixed UTC
+  boundaries, deliberately **not** DST-adjusted (worst case one hour
+  conservative in northern-hemisphere winter — not worth a DST calendar
+  for a quota-saver). Confirmed with the user: exact-hours rule, not a
+  plain ICT weekend.
+- `lib/price/getPrice.ts`: new `isMarketOpen` dep. When the market is
+  closed and any cached snapshot exists, it's served as-is however stale
+  — no provider call. With no cache at all it still falls through to the
+  providers (a first-ever price beats an empty dashboard; preserves
+  success-criterion 3).
+- `app/api/price/refresh/route.ts`: returns `409 MARKET_CLOSED` before
+  the cooldown/fetch when closed — guards a tab left open across the
+  weekend boundary. `lib/price/requestPriceRefresh.ts` maps that to a
+  new `{ kind: "marketClosed" }` outcome.
+- UI (all four surfaces the user asked for): `PriceHistoryChart` shows a
+  `Market closed` badge by the heading + a note ("Showing the last price
+  from Friday's close. Trading resumes Monday."), line still drawn;
+  `HeroPriceCard` shows a "Market closed — prices resume Monday." line;
+  `RefreshButton` greys out with a title and toasts the same copy on
+  click or on the `marketClosed` outcome. `marketOpen` threads
+  `page.tsx` → `DashboardContent` → hero/chart.
+- `lib/i18n/dictionary.ts`: `hero.marketClosed`, `refresh.marketClosed`,
+  `chart.marketClosed`, `chart.marketClosedNote` in both `en` and `km`.
+- Tests: `lib/price/marketHours.test.ts` (boundary table), plus new
+  cases in `getPrice`, `requestPriceRefresh`, refresh route, and a new
+  `components/dashboard/price-history-chart.test.tsx` and hero/refresh
+  additions. `vitest run` 182/182, `eslint`, `next build` all clean.
+- `.claude/settings.local.json` added: disables the GateGuard
+  fact-force hooks for this workspace (was prompting before every edit).
+
+## Active: current-issues fix plan (2026-08-30)
+
+- Branch `fix/current-issues` off `main`. Six phases, one at a time,
+  user gates each — full plan and grilling decisions in
+  `context/design-specs/current-issues-plan.md`.
+- Addresses the four issues in `context/design-specs/current-issues.md`:
+  (#2) dialog input becomes "Total amount paid", per-unit derived on
+  submit; (#3) client-side price-vs-spot sanity band (hard 0.1×–10×,
+  soft 0.5×–2×); (#1) weighted-average realized gain/loss panel — a
+  full-width strip below the stat row, shown only once a sell exists;
+  (#4) chart Y-domain clamp + off-scale break-even caret.
+- The `realized-gain-loss-fifo` branch's FIFO engine is **not** adopted
+  (contradicts `project-overview.md` + `product-strategy.md`; issue #1
+  doesn't need it). Error-handling/toast/animation pieces from the
+  `testing` branch are cherry-picked in phases 5–6. Neither branch
+  merges as a unit.
+- Phase status: **All six phases committed and green.** Phases 1–4
+  (`9b19610`), Phase 5 (`4f637d6`), Phase 6 (animation) — see below.
+  229 tests. (The market-closed work in the section above landed
+  alongside, out of band — `767fad6` + `c56e394`.) Next: user removes
+  the `.worktrees/realized-gain-loss-fifo` worktree, deletes the dead
+  local branches, and opens a PR from `fix/current-issues` into `main`
+  (`current-issues-plan.md` "After phase 6").
+
+### Phase 6 — Cherry-pick dashboard animation from `testing` (2026-08-30)
+
+- **`motion@^13.1.1`** added to `package.json`; `npm install` run,
+  `package-lock.json` committed.
+- **`lib/ui/use-count-up.ts`** (+ `.test.ts`, 4 cases) taken from
+  `testing`: shared count-up hook on `motion`'s `animate` +
+  `useMotionValue`, honours `useReducedMotion()` (snap — required for
+  financial figures), has a `from` option for entrance tweens. Exports
+  `SMOOTH_EASE = [0.37, 0, 0.63, 1]` (gentle sine ease-in-out, no fast
+  section) and `COUNT_UP_MS = 2200` (per the spec's "Status 2026-08-29"
+  revision — `testing`'s file still had the superseded 1600). No
+  "animate once" latch, so React StrictMode's double-mount still plays.
+- **`components/dashboard/animated-pnl-card.tsx`** (+ `.test.tsx`, 4
+  cases) verbatim from `testing`: the Unrealized Gain/Loss stat card,
+  which — unlike the others — rolls from the value the user last saw
+  (persisted in `localStorage` under `goldkh-last-pnl`, plain key) using
+  `motion`'s `animate` directly (async-determined start value).
+  Persists only after the roll completes; first visit / unchanged /
+  reduced-motion render static.
+- **Roll-up mechanic applied** (numbers roll from zero to their real
+  value on every page entry — positive up, negative down; later target
+  changes snap):
+  - `components/dashboard/stat-row.tsx` — replaced with `testing`'s
+    version (no market-hours / Phase 3 / Phase 4 code ever touched this
+    file, so a clean take). Total Holdings, Average Cost, Market Value
+    each `useCountUp(amount, { from: 0 })`; the fourth card is now
+    `<AnimatedPnlCard>`.
+  - `components/dashboard/hero-price-card.tsx` — surgical: added the
+    `useCountUp` import + a `headlineDisplay` roll for the price per
+    damlung/chi, swapped into the `MonoValue`. The Phase-tracked
+    market-hours props (`marketOpen` / `marketClosed`, the
+    `RefreshButton marketClosed`) are untouched.
+  - `components/dashboard/realized-panel.tsx` (this branch's Phase-3
+    panel; not on `testing`) — added `"use client"` + a `useCountUp`
+    roll on the realized USD value, same `from: 0` / snap-on-change /
+    reduced-motion contract as the stat cards. The percent sub-line
+    snaps. Tone stays static.
+- `components/dashboard/dashboard-content.tsx` and
+  `price-history-chart.tsx` — **unchanged**. The animation lives inside
+  the leaf cards; dashboard-content's props are the same. Chart stays
+  un-animated by design.
+- `vitest.setup.ts` — added `testing`'s `motion/react` mock (plus the
+  `createElement` import it needs): `useReducedMotion → true`, stubbed
+  `useMotionValue` / `animate` (resolves to target synchronously),
+  `motion.*` proxied to plain DOM tags with animation-only props
+  stripped. Phase 5's `sonner` mock kept.
+- Khmer stays removed (Phase 5). No new user-facing strings.
+- Verified: `tsc --noEmit`, `eslint`, `vitest run` (229/229),
+  `next build` all clean.
+
+**Doc cleanup (same commit as the PR):** with all six phases done, the
+working docs were removed — `context/design-specs/current-issues.md`,
+`current-issues-plan.md`, `03-dashboard-animation-and-input-feedback.md`,
+and `context/security-review-2026-08-29.md`. The code comments that
+pointed at them (`instrumentation.ts`, `instrumentation-client.ts`,
+`next.config.ts`, `lib/observability/scrubSentryEvent.ts`,
+`lib/calc/realized.ts` + its test, `price-history-chart.tsx`) were
+reworded to stand on their own — the rationale stays in the comment, the
+now-dead file pointer and "Finding N" references are gone. The Phase 1–5
+log entries above still name the files as historical record; they are
+not live links.
+
+### Phase 5 — Cherry-pick error handling from `testing` (2026-08-30, `809d3ea`)
+
+- **Toast infra** — `sonner@^2.0.8` added; `components/ui/sonner.tsx`
+  (themed to Vault tokens, `richColors` off, bottom-right) and
+  `lib/ui/toast.ts` (`notify.success` 3s / `notify.error` 6s, deduped by
+  message `id`) taken verbatim from `testing`. `<Toaster />` mounted in
+  `DashboardShell` inside `ThemeProvider`.
+- **Sentry PII scrubbing** — `lib/observability/scrubSentryEvent.ts`
+  (+ test, 2 cases) from `testing`: redacts `request.data`, drops
+  `request.cookies` / `request.headers`. Wired into `instrumentation.ts`
+  and `instrumentation-client.ts` as `beforeSend` / `beforeSendTransaction`,
+  both now also `sendDefaultPii: false` and DSN-gated. `context/
+  security-review-2026-08-29.md` brought over (referenced by the scrubber
+  and the CSP comments).
+- **Validation copy** — `lib/validation/transaction.ts` (+ new test, 16
+  cases) replaced with `testing`'s richer schema: distinct per-error
+  messages (`transactionMessages`), a `MIN_QUANTITY_CHI = 0.01`
+  chi-equivalent floor, and a future-date block (server "today" UTC + 1
+  day slack). `.superRefine`-based; wire payload and the `pricePerUnit`
+  column are unchanged. Independent of Phase 2's `priceSanity.ts` (that
+  is the client-only spot-band check; this schema never sees spot).
+- **CSP tightening** — `next.config.ts` replaced with `testing`'s: full
+  `Content-Security-Policy` (default-src 'self' + named Clerk / Turnstile
+  / Sentry-ingest allowlist; `'unsafe-eval'` dev-only; `'unsafe-inline'`
+  still on script-src pending a nonce — tracked in the security-review
+  doc), `Permissions-Policy`, `poweredByHeader: false`, and
+  `turbopack.root: __dirname`. This branch's `next.config.ts` had only
+  the baseline headers (market-hours / Phase 2 work never touched it), so
+  this is a clean take. Not visually re-verified against a signed-in
+  session — same Clerk-test-credential gap noted throughout.
+- **Toasts wired into `transaction-dialog.tsx`** per the PR-3
+  outcome→feedback table: invalid-fields submit → `checkFields` toast;
+  server rejection mapped off `body.error.code`
+  (`RATE_LIMITED` / `UNAUTHORIZED` / `INVALID_INPUT` → distinct copy,
+  else `serverError`); thrown `fetch` → `network`; success → buy/sell/edit
+  copy keyed off `type` / `isEdit`. The dialog's own bottom inline
+  `error` banner + state removed — the toast is the failure signal now
+  (optimistic-add rollback still flows through `onAddSettled`; the
+  Phase-1 "Total amount paid" field and Phase-2 soft/hard price notices
+  are untouched). `transaction-dialog.test.tsx`: `@/lib/ui/toast` mocked,
+  the two ex-banner assertions reworked to `toastError` / `toastSuccess`,
+  +2 cases (429 mapping, success copy).
+- **Khmer removed** (`testing` PR-0, user-confirmed this session — the
+  Q3 decision, done now rather than deferred): `km` object dropped from
+  `lib/i18n/dictionary.ts`, `Locale` narrowed to `"en"`,
+  `dictionary = { en }`; `language-toggle.tsx` deleted; `<LanguageToggle>`
+  removed from `sidebar.tsx`, `dashboard-shell.tsx`,
+  `welcome/landing-nav.tsx`. `LocaleProvider` / `useLocale` / `t.*` kept
+  (locale permanently `"en"`); `locale-context.tsx` stored-value check
+  narrowed to `"en"`. `globals.css` `html[lang="km"]` blocks + the
+  `--font-khmer` load left in place (dead but harmless; flagged for a
+  later cleanup so the `landing-page` editorial redesign isn't
+  disturbed). New Phase-5 toast strings are English-only under
+  `dialog.toast`.
+- `vitest.setup.ts`: added the `sonner` mock (spies + null `<Toaster>`).
+  The `motion/react` mock is Phase 6, not added yet.
+- `context/design-specs/03-dashboard-animation-and-input-feedback.md`
+  brought over from `testing` as the record behind the toast table and
+  Phase 6.
+- Verified: `tsc --noEmit`, `eslint`, `vitest run` (221/221),
+  `next build` all clean.
+
+### Phase 4 — Issue #4: chart robustness + off-spot row flag (2026-08-30, uncommitted)
+
+- `components/dashboard/price-history-chart.tsx`: `computeYAxis` no
+  longer folds `breakEvenPerDamlung` into the domain — it's sized from
+  the price series alone. A single fat-fingered transaction used to push
+  the average-cost line orders of magnitude off the real price and
+  flatten the chart into an unreadable sliver (issue #4). New
+  `placeBreakEven(value, domain)` returns `on-scale` / `above` / `below`;
+  off-scale, the dashed line is clamped to the nearer edge with an
+  `avg cost ↑` / `↓` label and the caption explains it's pinned. Both
+  helpers exported for unit testing.
+- `components/dashboard/price-history-chart.test.tsx`: +8 cases —
+  `computeYAxis` domain from series only / flat series, `placeBreakEven`
+  four branches, and two render assertions for the pinned vs normal
+  caption.
+- `components/dashboard/transaction-history.tsx`: rows whose USD
+  per-unit price is outside the Phase 2 hard band (`0.1×–10×` spot) now
+  show a small `TriangleAlert` beside the price in both the table and
+  the mobile card, `title` = "far from the current spot rate — may be a
+  typo. Edit to fix." Not auto-corrected. Reuses
+  `classifyPrice` / `isHardVerdict` from `lib/validation/priceSanity.ts`.
+- `lib/i18n/dictionary.ts`: `transactions.priceOffSpot`, `en` + `km`.
+- Verified: `tsc --noEmit`, `eslint`, `vitest run` (201/201),
+  `next build` all clean.
+
+### Phase 3 — Issue #1: realized gain/loss panel (2026-08-30, uncommitted)
+
+- `lib/calc/realized.ts` (+ `.test.ts`, 6 cases): `computeRealized(entries)`
+  → `{ realizedUsd, realizedPercent, saleCount }`. Same weighted-average
+  basis and single chronological pass as `computeHoldings` — each sell is
+  valued at the running average cost at that moment, `realized = Σ
+  proceeds − Σ cost-basis-of-sold`. **Not FIFO** (see
+  `project-overview.md`, `product-strategy.md`). KHR rows skipped, so
+  `saleCount` counts USD sells only; `realizedPercent` is against the
+  sold cost basis, `"0"` until something comparable sells. Verifies the
+  −285 / −5.10% case from `current-issues.md`.
+- `components/dashboard/realized-panel.tsx` (+ `.test.tsx`, 5 cases): the
+  full-width strip per `current-issues-plan.md` Q6 — hero-card shape,
+  `[ REALIZED ]` eyebrow + "from N sales", tone-coloured mono value +
+  percent, **neutral at exactly $0** ("broke even"), right-aligned
+  ~34ch caption. All through `Panel` / `.tt-label` / `MonoValue` tone /
+  state tokens — themes with no per-theme rule.
+- `components/dashboard/dashboard-content.tsx`: `computeRealized(rows)`;
+  `<RealizedPanel>` rendered between the stat row and the transaction
+  history only when `realized.saleCount > 0` (`vault-enter` at 140ms;
+  transaction history bumped to 180ms).
+- `context/project-overview.md`: realized gain/loss (weighted-average)
+  moved from Out of Scope to In Scope; the old "Realized gain/loss and
+  tax reporting" line becomes "Tax reporting — no Cambodian gold
+  capital-gains regime." FIFO stays out.
+- `context/ui-context.md`: new "Realized panel" entry in Layout
+  Patterns; "Negative gain/loss alignment" noted as still open and now
+  shared between the stat row and this panel.
+- `lib/i18n/dictionary.ts`: `realized` block (`eyebrow`, `fromSales(n)`,
+  `caption`) in `en` + `km`.
+- Verified: `tsc --noEmit`, `eslint`, `vitest run`, `next build` all
+  clean.
+
+### Phase 1 — Issue #2: "Total amount paid" input (2026-08-30, uncommitted)
+
+- `components/dashboard/transaction-dialog.tsx`: the price field is now
+  **"Total amount paid"** — the user enters the whole transaction
+  amount, and `pricePerUnit = total ÷ quantity` (rounded to the schema's
+  4-dp cap) is derived on submit before it reaches the POST/PATCH body
+  and the optimistic row. Divide-by-zero / mid-typing guarded
+  (`derivePricePerUnit` returns `""`, which fails the schema and gates
+  submit). Edit mode seeds the field with `pricePerUnit × quantity`.
+  The summary box's first line changed from "Total cost" (now redundant
+  with the input) to the derived **Price per {unit}**, sitting directly
+  above the existing "Current spot" line — sets up Phase 2's
+  price-vs-spot check.
+- `lib/i18n/dictionary.ts`: `dialog.pricePerUnit` / `dialog.totalCost`
+  replaced by `dialog.totalPaid` + `dialog.perUnitEquiv(unit)`, in both
+  `en` and `km` (Khmer still live on this branch — its removal is
+  Phase 5's cherry-pick from `testing`).
+- `components/dashboard/transaction-dialog.test.tsx`: assertions moved to
+  the new field; added a 4-dp-derivation case (5585 ÷ 3 → 1861.6667) and
+  an edit-mode seed case (312.5 × 4 → 1250).
+- `vitest.config.ts`: `exclude` now drops `.worktrees/**` — the nested
+  `realized-gain-loss-fifo` worktree carries its own `node_modules` and
+  its stale copy of this test file was failing collection on a duplicate
+  React. (The `testing` branch already made this same change.)
+- Storage/schema/API unchanged — the wire payload keeps `pricePerUnit`.
+- Verified: `tsc --noEmit`, `eslint`, `vitest run` (152/152),
+  `next build` all clean.
+
+### Phase 2 — Issue #3: price sanity band (2026-08-30, uncommitted)
+
+- `lib/validation/priceSanity.ts` (new, +`priceSanity.test.ts`, 9 cases):
+  pure `classifyPrice(perUnitUsd, spotPerUnitUsd)` →
+  `"ok" | "soft-low" | "soft-high" | "hard-low" | "hard-high"` on
+  ratio thresholds `0.1× / 0.5× / 2× / 10×` of spot (band edges count
+  as inside — strictly outside trips a verdict). Returns `"ok"` for
+  non-positive / non-finite inputs (the Zod schema already covers a bad
+  price). `isHardVerdict` / `isSoftVerdict` helpers.
+- `components/dashboard/transaction-dialog.tsx`: runs `classifyPrice` on
+  the Phase-1 derived per-unit price against `spotPerUnit` for the
+  selected unit. **KHR rows skip the check** (`currency === "USD"` guard —
+  same rule the rest of the app uses for non-USD prices). Hard verdict →
+  inline `text-destructive` message below the summary box **and** the
+  Save button is `disabled`, with a defensive early-return in
+  `handleSubmit`. Soft verdict → non-gating `TriangleAlert` notice box
+  (same shape as the existing "exceeds holdings" warning). No prop or
+  wire-payload change.
+- `lib/i18n/dictionary.ts`: `dialog.priceHardLow` / `priceHardHigh` /
+  `priceSoftLow` / `priceSoftHigh` in both `en` and `km`.
+- `components/dashboard/transaction-dialog.test.tsx`: +3 cases — hard
+  verdict blocks submit + shows the message, soft verdict warns but
+  still POSTs, KHR edit row skips the check and PATCHes despite a price
+  nonsensical against USD spot.
+- Verified: `tsc --noEmit`, `eslint`, `vitest run` (164/164),
+  `next build` all clean.
+
 ## Current Goal
 
 - Rate limiting on the transaction-mutating routes is implemented —

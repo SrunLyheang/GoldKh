@@ -5,6 +5,7 @@ import { listTransactionsForUser } from "@/lib/db/queries/transactions";
 import { listRecentPriceSnapshots } from "@/lib/db/queries/priceSnapshots";
 import { getPrice } from "@/lib/price/getPrice";
 import { priceFreshness } from "@/lib/price/freshness";
+import { isMarketOpen } from "@/lib/price/marketHours";
 import { AutoRefresh } from "@/components/dashboard/auto-refresh";
 import { DashboardContent } from "@/components/dashboard/dashboard-content";
 
@@ -33,6 +34,9 @@ export default async function DashboardPage() {
   // a manual refresh or from getPrice()'s own fetch on this page load.
   const { isStale, cooldownEndsAt: refreshCooldownEndsAt } = priceFreshness(price);
   const chartPoints = buildDamlungPriceSeries(recentSnapshots);
+  // Weekends: goldapi.io only echoes Friday's close, so getPrice() above
+  // already skipped it. The UI switches to a "market closed" treatment.
+  const marketOpen = isMarketOpen();
 
   return (
     <>
@@ -46,6 +50,7 @@ export default async function DashboardPage() {
         isStale={isStale}
         chartPoints={chartPoints}
         refreshCooldownEndsAt={refreshCooldownEndsAt}
+        marketOpen={marketOpen}
       />
     </>
   );
