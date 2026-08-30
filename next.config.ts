@@ -4,8 +4,10 @@ import { withSentryConfig } from "@sentry/nextjs";
 // Origins the browser is allowed to load code/data from, kept as named
 // groups so each directive below reads as a list, not a wall of URLs.
 //   - Clerk serves its Frontend API + hosted UI from *.clerk.accounts.dev
-//     (dev/preview) and *.clerk.com. The production custom-domain origin
-//     (clerk.<prod-domain>) must be added here once it exists.
+//     (dev/preview) and *.clerk.com. A production instance on a custom
+//     domain serves clerk-js + the Frontend API from clerk.<prod-domain>
+//     instead; that host is encoded in the publishable key, so we decode
+//     it (see clerkFrontendApiOrigin) rather than hardcoding it.
 //   - Cloudflare Turnstile (challenges.cloudflare.com) backs Clerk's bot
 //     protection and renders in an iframe.
 //   - Sentry posts events straight to one ingest host encoded in the DSN
@@ -14,7 +16,28 @@ import { withSentryConfig } from "@sentry/nextjs";
 //     is a no-op anyway).
 //   - Clerk also serves user / OAuth avatar images from img.clerk.com;
 //     that is the only remote image host the app loads.
-const clerkOrigins = "https://*.clerk.accounts.dev https://*.clerk.com";
+
+// The Frontend API host is base64url-encoded in the publishable key:
+// `pk_(test|live)_<base64url("<host>$")>`. Clerk's own SDK derives its
+// script/API origin this way, so a production custom domain
+// (clerk.goldkh.xyz) needs no extra env var — decode the same value the
+// browser will call and add it to the allowlist.
+function clerkFrontendApiOrigin(): string {
+  const key = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+  if (!key) return "";
+  const encoded = key.replace(/^pk_(test|live)_/, "");
+  try {
+    const decoded = Buffer.from(encoded, "base64").toString("utf8");
+    const host = decoded.replace(/\$$/, "");
+    return /^[a-z0-9.-]+$/i.test(host) ? `https://${host}` : "";
+  } catch {
+    return "";
+  }
+}
+const clerkFrontendApi = clerkFrontendApiOrigin();
+
+const clerkOrigins =
+  `https://*.clerk.accounts.dev https://*.clerk.com ${clerkFrontendApi}`.trim();
 const clerkImageOrigin = "https://img.clerk.com";
 const turnstileOrigin = "https://challenges.cloudflare.com";
 

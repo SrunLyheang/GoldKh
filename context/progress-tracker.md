@@ -12,6 +12,25 @@ Update this file after every meaningful implementation change.
   the remaining work toward hardening (rate limiting, the
   `user.deleted` webhook, UI test coverage) over new features.
 
+## Done: CSP allowlist for Clerk production custom domain (2026-08-30, uncommitted)
+
+- Deployment surfaced a CSP block: `script-src` only listed
+  `*.clerk.accounts.dev` / `*.clerk.com`, but a production Clerk instance
+  loads `clerk-js` + the Frontend API from its custom domain
+  (`clerk.goldkh.xyz`). Browser blocked the script → `failed_to_load_clerk_js`
+  → hydration diverged → React #418. This closes the gap the old
+  `next.config.ts` comment flagged ("must be added here once it exists").
+- `next.config.ts`: new `clerkFrontendApiOrigin()` decodes the Frontend
+  API host from the base64url payload of `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`
+  (`pk_(test|live)_<base64("<host>$")>`) — same derivation Clerk's SDK
+  uses, so no new env var and preview/prod each get the right host. The
+  decoded origin is folded into `clerkOrigins`, which already feeds
+  `script-src` / `connect-src` / `frame-src`. `img-src` unchanged (avatars
+  still come from `img.clerk.com`).
+- `next.config.test.ts`: regression test stubs a synthetic `pk_live_` key
+  and asserts the decoded host reaches all three directives;
+  `afterEach` unstubs + resets modules. All 6 tests pass; `tsc --noEmit` clean.
+
 ## Done: weekend market-closed handling (2026-08-30, on `fix/current-issues`, uncommitted)
 
 - Separate from the current-issues plan below — a fifth issue the user
