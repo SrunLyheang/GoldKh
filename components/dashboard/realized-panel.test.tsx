@@ -12,10 +12,22 @@ describe("RealizedPanel", () => {
         saleCount={1}
       />
     );
-    const value = screen.getByText("-$285.00");
+    const value = screen.getByText(
+      (_, el) =>
+        el?.tagName === "SPAN" &&
+        el.classList.contains("font-mono") &&
+        el.textContent === "-$285.00"
+    );
     expect(value).toBeInTheDocument();
     expect(value.className).toContain("text-destructive");
-    expect(screen.getByText("-5.10%")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        (_, el) =>
+          el?.tagName === "SPAN" &&
+          el.classList.contains("font-mono") &&
+          el.textContent === "-5.10%"
+      )
+    ).toBeInTheDocument();
   });
 
   it("uses a gain tone when positive", () => {
@@ -53,5 +65,12 @@ describe("RealizedPanel", () => {
     expect(
       screen.getByText(/Gold you still hold isn't counted here/)
     ).toBeInTheDocument();
+  });
+
+  it("renders the value with a reserved sign cell", () => {
+    const { container } = render(
+      <RealizedPanel realizedUsd="-285" realizedPercent="-5.1" saleCount={1} />
+    );
+    expect(container.querySelector("[data-sign-cell]")).not.toBeNull();
   });
 });

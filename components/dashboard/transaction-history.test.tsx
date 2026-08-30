@@ -31,7 +31,6 @@ describe("TransactionHistory", () => {
         rows={[row({ type: "buy", quantity: "10", unit: "chi" })]}
         currentPricePerTroyOz="2000"
         error={null}
-        successMessage={null}
         onDelete={noop}
         onAddClick={noop}
         onEditSuccess={noop}
@@ -46,7 +45,6 @@ describe("TransactionHistory", () => {
         rows={[row({ id: "row-sell", type: "sell", quantity: "3" })]}
         currentPricePerTroyOz="2000"
         error={null}
-        successMessage={null}
         onDelete={noop}
         onAddClick={noop}
         onEditSuccess={noop}
@@ -65,7 +63,6 @@ describe("TransactionHistory", () => {
         rows={[row({ id: "row-khr", currency: "KHR", pricePerUnit: "1200000" })]}
         currentPricePerTroyOz="2000"
         error={null}
-        successMessage={null}
         onDelete={noop}
         onAddClick={noop}
         onEditSuccess={noop}
@@ -81,7 +78,6 @@ describe("TransactionHistory", () => {
         rows={[row({ id: "temp-abc123" })]}
         currentPricePerTroyOz="2000"
         error={null}
-        successMessage={null}
         onDelete={noop}
         onAddClick={noop}
         onEditSuccess={noop}
@@ -91,20 +87,33 @@ describe("TransactionHistory", () => {
     expect(screen.queryByRole("button", { name: /actions for/i })).not.toBeInTheDocument();
   });
 
-  it("renders the error and success banners when passed", () => {
+  it("renders the error banner when passed", () => {
     render(
       <TransactionHistory
         rows={[]}
         currentPricePerTroyOz="2000"
         error="Something broke"
-        successMessage="Saved"
         onDelete={noop}
         onAddClick={noop}
         onEditSuccess={noop}
       />
     );
     expect(screen.getByText("Something broke")).toBeInTheDocument();
-    expect(screen.getByText("Saved")).toBeInTheDocument();
+  });
+
+  it("shows the sync bar while syncing", () => {
+    render(
+      <TransactionHistory
+        rows={[row()]}
+        currentPricePerTroyOz="2000"
+        error={null}
+        syncing
+        onDelete={noop}
+        onAddClick={noop}
+        onEditSuccess={noop}
+      />
+    );
+    expect(screen.getByRole("progressbar")).toBeInTheDocument();
   });
 
   it("requires a second click (Delete after the confirm prompt) before calling onDelete", async () => {
@@ -115,7 +124,6 @@ describe("TransactionHistory", () => {
         rows={[row()]}
         currentPricePerTroyOz="2000"
         error={null}
-        successMessage={null}
         onDelete={onDelete}
         onAddClick={noop}
         onEditSuccess={noop}

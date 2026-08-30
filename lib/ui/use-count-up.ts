@@ -29,16 +29,25 @@ interface CountUpOptions {
   from?: number;
 }
 
-// Rolls the displayed number to `target`:
-//  - on mount, from `from` (if given) to `target`;
-//  - whenever `target` changes, from wherever the roll is now to the new
-//    `target`, re-aiming mid-flight.
+// Rolls the displayed number to `target`. Behaviour depends on `from`:
+//
+//  - `from` unset: no mount animation (starts at `target`); every later
+//    `target` change tweens from wherever the roll is now to the new
+//    value, re-aiming mid-flight.
+//  - `from` given: one entrance tween `from` -> `target` on mount, then
+//    every later `target` change SNAPS. This is what a unit toggle
+//    (chi <-> damlung) needs — re-labelling the same figure must not
+//    replay a 2.2s roll across the headline and every stat card at once.
+//
 // Under `prefers-reduced-motion` nothing tweens — the value snaps, which
 // is the required behaviour for financial figures.
 //
 // No "animate once" guard on purpose: React StrictMode (on by default in
 // `next dev`) mounts effects twice, and any first-run latch would make
 // the second mount snap — i.e. no visible animation on a real refresh.
+// `aimedAtRef` tracks the value we last *started a tween toward*, so the
+// StrictMode replay (same `target`) still animates while a genuine change
+// (different `target`) is recognised as an update.
 // (context/design-specs/03-dashboard-animation-and-input-feedback.md)
 export function useCountUp(
   target: number,
@@ -47,6 +56,7 @@ export function useCountUp(
   const reduceMotion = useReducedMotion();
   const motionValue = useMotionValue(from ?? target);
   const formatRef = useRef(format);
+  const aimedAtRef = useRef<number | undefined>(undefined);
 
   const [display, setDisplay] = useState(() => format(from ?? target));
 
@@ -58,7 +68,17 @@ export function useCountUp(
   useEffect(() => {
     const fmt = formatRef.current;
 
-    if (reduceMotion || !Number.isFinite(target)) {
+    // A genuine post-entrance `target` change while in `from` mode: snap,
+    // don't tween. `aimedAtRef` is undefined on the first run and unchanged
+    // across a StrictMode replay, so the entrance tween is unaffected.
+    const isPostEntranceChange =
+      from !== undefined &&
+      aimedAtRef.current !== undefined &&
+      aimedAtRef.current !== target;
+
+    aimedAtRef.current = target;
+
+    if (reduceMotion || !Number.isFinite(target) || isPostEntranceChange) {
       motionValue.set(target);
       setDisplay(fmt(target));
       return;
@@ -70,7 +90,7 @@ export function useCountUp(
       onUpdate: (value) => setDisplay(fmt(value)),
     });
     return () => controls.stop();
-  }, [target, durationMs, reduceMotion, motionValue]);
+  }, [target, durationMs, reduceMotion, motionValue, from]);
 
   return display;
 }

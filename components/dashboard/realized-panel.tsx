@@ -49,12 +49,14 @@ export function RealizedPanel({
           </p>
           <MonoValue
             tone={tone}
+            signed
             className="mt-1.5 block text-[34px] font-semibold tracking-tight leading-tight sm:text-[40px]"
           >
             {valueDisplay}
           </MonoValue>
           <MonoValue
             tone={isBreakEven ? "muted" : tone}
+            signed
             className="mt-1 block text-[12.5px]"
           >
             {formatPercent(realizedPercent)}

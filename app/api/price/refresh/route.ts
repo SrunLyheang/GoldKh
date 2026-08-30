@@ -1,5 +1,7 @@
+import * as Sentry from "@sentry/nextjs";
 import { apiError, apiOk } from "@/lib/api/response";
-import { withAuth } from "@/lib/api/withAuthAndRateLimit";
+import { assertSameOrigin } from "@/lib/api/sameOrigin";
+import { withAuthAndRateLimit } from "@/lib/api/withAuthAndRateLimit";
 import {
   getLatestSnapshot,
   insertSnapshot,
@@ -9,9 +11,19 @@ import { isMarketOpen } from "@/lib/price/marketHours";
 import { fetchGoldapiPrice } from "@/lib/price/providers/goldapi";
 
 // Deliberately bypasses getPrice()'s staleness cache — this route exists for
-// a user who wants a current price now. The manual-refresh cooldown below,
-// not the per-user request limiter, is what protects the provider quota.
-export const POST = withAuth(async () => {
+// a user who wants a current price now.
+//
+// Two layers protect goldapi.io's 100/month quota:
+//   - the global manual-refresh cooldown below (one shared price feed);
+//   - `withAuthAndRateLimit`'s per-user window, which caps how many
+//     requests a single user can fire while the cooldown check and the
+//     insert are still racing. Without it, N concurrent requests from one
+//     tab all observe `cooldownEndsAt === null` at the boundary and all
+//     hit the provider.
+export const POST = withAuthAndRateLimit(async (request) => {
+  const crossOrigin = assertSameOrigin(request);
+  if (crossOrigin) return crossOrigin;
+
   // The spot market is closed on weekends — goldapi.io would only echo
   // Friday's close, so don't spend a request on it. The dashboard already
   // disables the button in this state; this guards a tab left open across
@@ -48,7 +60,11 @@ export const POST = withAuth(async () => {
       ...inserted,
       cooldownEndsAt: priceFreshness(inserted).cooldownEndsAt,
     });
-  } catch {
+  } catch (error) {
+    // The provider failing is the one path here that is worth an alert —
+    // it means the quota is exhausted or goldapi.io is down. Swallowing it
+    // silently (as before) hid both.
+    Sentry.captureException(error);
     return apiError(
       "PROVIDER_ERROR",
       "Couldn't reach the price provider — try again shortly",

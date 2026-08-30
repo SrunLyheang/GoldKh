@@ -192,7 +192,10 @@ decided — a UI copy detail, not a blocked decision.
 **Stat row** — Four equal columns, 16px gap. Each card is a
 muted 11.5px label, over a 19px mono value at weight 600, over a
 12px mono muted sub-line. The gain/loss card colors both its
-value and sub-line green or red.
+value and sub-line green or red. The row carries a section header
+— an `<h2>` styled as `.tt-heading .tt-bracket text-[15px]
+text-foreground`, reading "Position" — above the four-card grid,
+matching the Transaction History and Price History section headers.
 
 **Realized panel** — Full-width `Panel size="lg"` between the stat
 row and the transaction history, in the same 32px block rhythm.
@@ -244,6 +247,14 @@ heavy shadows, per the minimalist-ui skill's principles applied
 within the existing Vault tokens (not its literal light palette,
 which would clash with this dark theme).
 
+**Mutation feedback** — After add/edit/delete transactions, the
+dashboard reconciles via a React `useTransition` so the route-level
+`loading.tsx` never flashes. A 2px `--primary` indeterminate bar
+under the Transaction History header signals the in-flight sync
+(static dimmed bar under `prefers-reduced-motion`). Success is
+a single Sonner toast; the inline success banner was removed, and
+`InlineBanner` is now error-only.
+
 **Spacing rhythm** — 32px (28px on mobile) vertical gap between
 major blocks (hero → stats → transactions → chart). 20–28px padding
 inside cards (`md`/`lg` `Panel` sizes respectively). 12px between
@@ -252,7 +263,8 @@ list rows. Widened from the original 26px/16–18px/10px figures in a
 "Spacing pass" entry.
 
 **Empty states** — Every list has one. A new user's first screen
-is an empty dashboard, and it must tell them what to do.
+is an empty dashboard, and it must tell them what to do. The empty
+dashboard now lists the three-step how-it-works flow above the CTA.
 
 ## Stale Price
 
@@ -267,13 +279,6 @@ gain/loss meaning.
 
 These need a visual treatment before the dashboard is complete:
 
-- **Negative gain/loss alignment.** The minus sign occupies a
-  character cell. Right-aligned mono columns need a consistent
-  approach so positive and negative values line up. Still open —
-  the realized panel (added 2026-08-30) uses the same raw
-  `formatUsd` treatment as the stat row's gain/loss card, so
-  aligning the sign is one shared change across both, not a
-  per-component fix.
 - **Long transaction lists.** The scroll container is defined,
   but not what a user with 200 rows sees — pagination, or
   scroll alone.
@@ -337,7 +342,10 @@ and mobile variants of the same data:
   (`foreground`/`muted`/`gain`/`loss`) instead of each call site
   hand-rolling the same three-way ternary. Includes `break-all` as
   a safety net so an unusually large figure wraps inside its card
-  instead of overflowing it.
+  instead of overflowing it. A `signed` prop reserves a fixed-width
+  sign cell so `-$285.00` and `$285.00` align on the first digit.
+  The P&L card and Realized panel also pass `signed` to the percent
+  sub-line, so the value and percent stay flush.
 - `toneFromAmount` (`lib/format/tone.ts`) — `Number(amount) >= 0 ?
   "gain" : "loss"`, replacing the duplicated ternary in `StatRow`
   and `TransactionHistory`.

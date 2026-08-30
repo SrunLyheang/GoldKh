@@ -28,6 +28,7 @@ const en = {
     marketClosed: "Market's closed — prices resume Monday",
   },
   stat: {
+    sectionLabel: "Position",
     totalHoldings: "Total Holdings",
     averageCost: "Average Cost",
     marketValue: "Market Value",
@@ -46,6 +47,7 @@ const en = {
     buy: "Buy",
     sell: "Sell",
     saving: "Saving…",
+    syncing: "Syncing…",
     edit: "Edit",
     delete: "Delete",
     cancel: "Cancel",
@@ -102,6 +104,11 @@ const en = {
     title: "No holdings yet",
     description:
       "Record your first buy to start tracking your gold against the live spot price.",
+    steps: [
+      "Add a buy — enter what you paid and how much gold.",
+      "We value it against the live spot price, updated through the day.",
+      "See your holdings, average cost, and unrealized gain or loss.",
+    ],
   },
   chart: {
     notEnoughHistory:
