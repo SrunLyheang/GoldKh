@@ -5,8 +5,7 @@ import { withSentryConfig } from "@sentry/nextjs";
 // groups so each directive below reads as a list, not a wall of URLs.
 //   - Clerk serves its Frontend API + hosted UI from *.clerk.accounts.dev
 //     (dev/preview) and *.clerk.com. The production custom-domain origin
-//     (clerk.<prod-domain>) must be added here once it exists — see
-//     context/security-review-2026-08-29.md, Finding 1 follow-up 2.
+//     (clerk.<prod-domain>) must be added here once it exists.
 //   - Cloudflare Turnstile (challenges.cloudflare.com) backs Clerk's bot
 //     protection and renders in an iframe.
 //   - Sentry posts events straight to one ingest host encoded in the DSN
@@ -40,8 +39,7 @@ const devScriptSrc =
 // bootstrap/hydration scripts and there is no per-request nonce plumbed
 // through yet. Everything else is locked to 'self' + the allowlist above,
 // so an injected external <script src> is already blocked. Removing
-// 'unsafe-inline' is tracked as Finding 1 follow-up 1 in
-// context/security-review-2026-08-29.md.
+// 'unsafe-inline' (via a per-request nonce) is still open.
 const contentSecurityPolicy = [
   "default-src 'self'",
   "base-uri 'self'",

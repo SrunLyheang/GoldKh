@@ -123,6 +123,18 @@ Update this file after every meaningful implementation change.
 - Verified: `tsc --noEmit`, `eslint`, `vitest run` (229/229),
   `next build` all clean.
 
+**Doc cleanup (same commit as the PR):** with all six phases done, the
+working docs were removed — `context/design-specs/current-issues.md`,
+`current-issues-plan.md`, `03-dashboard-animation-and-input-feedback.md`,
+and `context/security-review-2026-08-29.md`. The code comments that
+pointed at them (`instrumentation.ts`, `instrumentation-client.ts`,
+`next.config.ts`, `lib/observability/scrubSentryEvent.ts`,
+`lib/calc/realized.ts` + its test, `price-history-chart.tsx`) were
+reworded to stand on their own — the rationale stays in the comment, the
+now-dead file pointer and "Finding N" references are gone. The Phase 1–5
+log entries above still name the files as historical record; they are
+not live links.
+
 ### Phase 5 — Cherry-pick error handling from `testing` (2026-08-30, `809d3ea`)
 
 - **Toast infra** — `sonner@^2.0.8` added; `components/ui/sonner.tsx`

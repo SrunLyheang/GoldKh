@@ -29,7 +29,7 @@ describe("computeRealized", () => {
     });
   });
 
-  it("reports the loss on the current-issues.md worked example", () => {
+  it("reports the loss on the buy-1-@5585 / sell-1-@5300 worked example", () => {
     // Buy 1 damlung for 5585, sell 1 damlung for 5300.
     const result = computeRealized([buy("1", "5585"), sell("1", "5300")]);
     expect(Number(result.realizedUsd)).toBeCloseTo(-285, 6);

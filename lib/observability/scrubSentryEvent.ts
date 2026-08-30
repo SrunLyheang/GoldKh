@@ -9,9 +9,7 @@ const REDACTED = "[redacted]";
 //     free text a user may fill with names, account numbers, or amounts.
 //   - `request.cookies` / `request.headers` — the Clerk session cookie and
 //     any auth headers, which identify the user.
-// Method and URL are kept: useful for triage and low-risk (see
-// context/security-review-2026-08-29.md, Finding 3, and its note that
-// logging URLs is treated as safe).
+// Method and URL are kept: useful for triage and treated as low-risk.
 export function scrubSentryEvent<T extends Event>(event: T): T {
   if (event.request) {
     if ("data" in event.request) {

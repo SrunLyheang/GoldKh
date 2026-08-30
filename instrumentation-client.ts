@@ -13,8 +13,7 @@ if (dsn) {
     // Do not attach IP address or user identifiers by default.
     sendDefaultPii: false,
     // Strip request body / cookies / headers from every event — the
-    // transaction `notes` field can carry PII. See
-    // context/security-review-2026-08-29.md, Finding 3.
+    // transaction `notes` field can carry PII.
     beforeSend: scrubSentryEvent,
     beforeSendTransaction: scrubSentryEvent,
   });

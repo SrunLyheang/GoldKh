@@ -9,7 +9,7 @@ export interface Realized {
 }
 
 // Realized gain/loss on gold the user has already sold — the "what I paid
-// minus what I sold it for" figure from current-issues.md issue #1.
+// minus what I sold it for" figure.
 //
 // Same weighted-average basis as computeHoldings (NOT FIFO — see
 // project-overview.md and context/product-strategy.md): each sell is

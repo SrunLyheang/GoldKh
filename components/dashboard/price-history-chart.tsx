@@ -41,8 +41,8 @@ function niceStep(range: number): number {
 // is deliberately excluded. A single fat-fingered transaction can push a
 // user's average cost orders of magnitude off the real price; folding
 // that into the domain flattened the actual line into an unreadable
-// sliver (current-issues.md issue #4). The break-even marker is instead
-// clamped to whichever edge it sits past (see placeBreakEven).
+// sliver. The break-even marker is instead clamped to whichever edge it
+// sits past (see placeBreakEven).
 export function computeYAxis(points: ChartPoint[]): {
   domain: [number, number];
   ticks: number[];
