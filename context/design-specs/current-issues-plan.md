@@ -155,13 +155,21 @@ FIFO / per-lot cost basis — weighted average only." Realized G/L moves
 - Confirm Khmer stays out (Q3).
 - Verify as phase 1.
 
-### Phase 6 — Cherry-pick animation from `testing`
+### Phase 6 — Cherry-pick animation from `testing` — DONE 2026-08-30 (`fix/current-issues`)
 - From `git show testing:<path>`: `lib/ui/use-count-up.ts` (+ test),
   `components/dashboard/animated-pnl-card.tsx` (+ test), the `motion`
-  dependency.
-- Apply the roll-up to the P&L stat card and the phase-3 realized
-  value. `prefers-reduced-motion` snaps to final.
-- Verify as phase 1.
+  dependency (`^13.1.1`).
+- Roll-up mechanic (numbers roll from zero on every page entry, later
+  changes snap; `SMOOTH_EASE = [0.37, 0, 0.63, 1]`, `COUNT_UP_MS = 2200`;
+  no latch) applied to the hero price per damlung/chi and all four stat
+  cards; Unrealized Gain/Loss rolls from the last-seen value via
+  `AnimatedPnlCard`. Also wired into the Phase-3
+  `realized-panel.tsx`. `prefers-reduced-motion` snaps everywhere.
+- `dashboard-content.tsx` / `price-history-chart.tsx` unchanged; chart
+  stays un-animated. `vitest.setup.ts` gained the `motion/react` mock.
+- Verified: `tsc --noEmit`, `eslint`, `vitest run` (229/229),
+  `next build` all clean. See `progress-tracker.md` "Phase 6" for the
+  full writeup.
 
 ---
 

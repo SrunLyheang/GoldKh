@@ -2,6 +2,7 @@ import type { GoldUnit } from "@/lib/calc/units";
 import { formatUsd } from "@/lib/format/money";
 import { useLocale } from "@/lib/i18n/locale-context";
 import { unitLabels } from "@/lib/i18n/unit-labels";
+import { COUNT_UP_MS, useCountUp } from "@/lib/ui/use-count-up";
 import { MonoValue } from "./mono-value";
 import { Panel } from "./panel";
 import { RefreshButton } from "./refresh-button";
@@ -43,6 +44,14 @@ export function HeroPriceCard({
   const { primary: primaryUnitLabel, secondaryLower: secondaryUnitLabel } =
     unitLabels(t, displayUnit);
 
+  // Rolls from zero to the live price on every page entry. A unit toggle
+  // afterwards snaps (see useCountUp's `from` mode).
+  const headlineDisplay = useCountUp(Number(headlinePrice), {
+    from: 0,
+    durationMs: COUNT_UP_MS,
+    format: (value) => formatUsd(String(value)),
+  });
+
   return (
     <Panel size="lg" className="relative overflow-hidden">
       <div className="absolute inset-x-0 top-0 h-1 bg-primary" />
@@ -57,7 +66,7 @@ export function HeroPriceCard({
             )}
           </div>
           <MonoValue className="tt-display mt-1.5 block text-[34px] font-semibold tracking-tight leading-tight sm:text-[46px]">
-            {formatUsd(headlinePrice)}
+            {headlineDisplay}
           </MonoValue>
           <MonoValue tone="muted" className="mt-1.5 block text-[12.5px]">
             {formatUsd(pricePerTroyOz)}/oz · {formatUsd(secondaryPrice)}/

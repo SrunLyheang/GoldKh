@@ -1,9 +1,11 @@
+"use client";
+
 import type { GoldUnit } from "@/lib/calc/units";
-import { formatPercent, formatQuantity, formatUsd } from "@/lib/format/money";
-import { toneFromAmount } from "@/lib/format/tone";
+import { formatQuantity, formatUsd } from "@/lib/format/money";
 import { useLocale } from "@/lib/i18n/locale-context";
 import { unitLabels } from "@/lib/i18n/unit-labels";
-import { cn } from "@/lib/utils";
+import { COUNT_UP_MS, useCountUp } from "@/lib/ui/use-count-up";
+import { AnimatedPnlCard } from "./animated-pnl-card";
 import { MonoValue } from "./mono-value";
 import { Panel } from "./panel";
 
@@ -18,34 +20,32 @@ interface StatRowProps {
   displayUnit?: GoldUnit;
 }
 
+// Total Holdings / Average Cost / Market Value all roll up from zero on
+// every page entry. A unit toggle afterwards snaps (see useCountUp's
+// `from` mode). The Unrealized Gain/Loss card rolls from its last-seen
+// value instead — that one is AnimatedPnlCard.
 function StatCard({
   label,
-  value,
+  amount,
+  format,
   subLine,
-  tone,
 }: {
   label: string;
-  value: string;
+  amount: number;
+  format: (value: number) => string;
   subLine: string;
-  tone?: "gain" | "loss";
 }) {
+  const value = useCountUp(amount, { from: 0, durationMs: COUNT_UP_MS, format });
   return (
-    <Panel
-      className={cn(
-        tone === "gain" && "bg-state-gain/6",
-        tone === "loss" && "bg-destructive/6"
-      )}
-    >
-      <p className="tt-label text-[11px] text-muted-foreground">
-        {label}
-      </p>
+    <Panel>
+      <p className="tt-label text-[11px] text-muted-foreground">{label}</p>
       <MonoValue
-        tone={tone ?? "foreground"}
+        tone="foreground"
         className="mt-1.5 block text-[19px] font-semibold"
       >
         {value}
       </MonoValue>
-      <MonoValue tone={tone ?? "muted"} className="mt-1 block text-[12px]">
+      <MonoValue tone="muted" className="mt-1 block text-[12px]">
         {subLine}
       </MonoValue>
     </Panel>
@@ -72,24 +72,26 @@ export function StatRow({
     <div className="grid grid-cols-2 gap-4 sm:gap-5 lg:grid-cols-4">
       <StatCard
         label={t.stat.totalHoldings}
-        value={`${formatQuantity(isChi ? totalChi : totalDamlung)} ${primaryUnit}`}
+        amount={Number(isChi ? totalChi : totalDamlung)}
+        format={(n) => `${formatQuantity(String(n))} ${primaryUnit}`}
         subLine={`${formatQuantity(isChi ? totalDamlung : totalChi)} ${secondaryUnit}`}
       />
       <StatCard
         label={t.stat.averageCost}
-        value={formatUsd(isChi ? averageCostPerChi : averageCostPerDamlung)}
+        amount={Number(isChi ? averageCostPerChi : averageCostPerDamlung)}
+        format={(n) => formatUsd(String(n))}
         subLine={t.stat.per(primaryUnit)}
       />
       <StatCard
         label={t.stat.marketValue}
-        value={formatUsd(marketValueUsd)}
+        amount={Number(marketValueUsd)}
+        format={(n) => formatUsd(String(n))}
         subLine={t.stat.atCurrentSpot}
       />
-      <StatCard
+      <AnimatedPnlCard
         label={t.stat.gainLoss}
-        value={formatUsd(gainLossUsd)}
-        subLine={formatPercent(gainLossPercent)}
-        tone={toneFromAmount(gainLossUsd)}
+        gainLossUsd={gainLossUsd}
+        gainLossPercent={gainLossPercent}
       />
     </div>
   );

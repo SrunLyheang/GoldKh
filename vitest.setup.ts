@@ -1,4 +1,5 @@
 import "@testing-library/jest-dom/vitest";
+import { createElement } from "react";
 import { cleanup } from "@testing-library/react";
 import { afterEach, vi } from "vitest";
 import { dictionary } from "@/lib/i18n/dictionary";
@@ -28,4 +29,57 @@ vi.mock("@/lib/i18n/locale-context", () => ({
 vi.mock("sonner", () => ({
   toast: { success: vi.fn(), error: vi.fn() },
   Toaster: () => null,
+}));
+
+// motion/react's animate loop needs rAF and real timers. Component tests
+// only care about the settled value, so force the reduced-motion (snap)
+// path, stub the primitives useCountUp builds on, and render `motion.*`
+// elements as their plain DOM tag with the animation props stripped.
+const MOTION_ONLY_PROPS = new Set([
+  "initial",
+  "animate",
+  "exit",
+  "transition",
+  "variants",
+  "whileHover",
+  "whileTap",
+  "whileFocus",
+  "whileDrag",
+  "whileInView",
+  "layout",
+  "layoutId",
+  "drag",
+  "viewport",
+  "custom",
+  "onUpdate",
+]);
+
+vi.mock("motion/react", () => ({
+  useReducedMotion: () => true,
+  useMotionValue: (initial: number) => ({
+    get: () => initial,
+    set: () => {},
+    jump: () => {},
+  }),
+  animate: (
+    _value: unknown,
+    target: number,
+    opts?: { onUpdate?: (v: number) => void }
+  ) => {
+    opts?.onUpdate?.(target);
+    return { stop: () => {} };
+  },
+  motion: new Proxy({} as Record<string, unknown>, {
+    get: (_target, tag: string) => {
+      const Component = (props: Record<string, unknown>) => {
+        const domProps: Record<string, unknown> = {};
+        for (const key in props) {
+          if (!MOTION_ONLY_PROPS.has(key)) domProps[key] = props[key];
+        }
+        return createElement(tag, domProps, props.children as never);
+      };
+      Component.displayName = `motion.${tag}`;
+      return Component;
+    },
+  }),
 }));

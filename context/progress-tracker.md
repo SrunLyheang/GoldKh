@@ -65,10 +65,63 @@ Update this file after every meaningful implementation change.
   doesn't need it). Error-handling/toast/animation pieces from the
   `testing` branch are cherry-picked in phases 5–6. Neither branch
   merges as a unit.
-- Phase status: **Phases 1–4 committed and green (`9b19610`, 201 tests).
-  Phase 5 committed (`809d3ea`). Awaiting go-ahead for
-  Phase 6 (animation).** (The market-closed work in the section above
-  landed alongside, out of band — `767fad6` + `c56e394`.)
+- Phase status: **All six phases committed and green.** Phases 1–4
+  (`9b19610`), Phase 5 (`4f637d6`), Phase 6 (animation) — see below.
+  229 tests. (The market-closed work in the section above landed
+  alongside, out of band — `767fad6` + `c56e394`.) Next: user removes
+  the `.worktrees/realized-gain-loss-fifo` worktree, deletes the dead
+  local branches, and opens a PR from `fix/current-issues` into `main`
+  (`current-issues-plan.md` "After phase 6").
+
+### Phase 6 — Cherry-pick dashboard animation from `testing` (2026-08-30)
+
+- **`motion@^13.1.1`** added to `package.json`; `npm install` run,
+  `package-lock.json` committed.
+- **`lib/ui/use-count-up.ts`** (+ `.test.ts`, 4 cases) taken from
+  `testing`: shared count-up hook on `motion`'s `animate` +
+  `useMotionValue`, honours `useReducedMotion()` (snap — required for
+  financial figures), has a `from` option for entrance tweens. Exports
+  `SMOOTH_EASE = [0.37, 0, 0.63, 1]` (gentle sine ease-in-out, no fast
+  section) and `COUNT_UP_MS = 2200` (per the spec's "Status 2026-08-29"
+  revision — `testing`'s file still had the superseded 1600). No
+  "animate once" latch, so React StrictMode's double-mount still plays.
+- **`components/dashboard/animated-pnl-card.tsx`** (+ `.test.tsx`, 4
+  cases) verbatim from `testing`: the Unrealized Gain/Loss stat card,
+  which — unlike the others — rolls from the value the user last saw
+  (persisted in `localStorage` under `goldkh-last-pnl`, plain key) using
+  `motion`'s `animate` directly (async-determined start value).
+  Persists only after the roll completes; first visit / unchanged /
+  reduced-motion render static.
+- **Roll-up mechanic applied** (numbers roll from zero to their real
+  value on every page entry — positive up, negative down; later target
+  changes snap):
+  - `components/dashboard/stat-row.tsx` — replaced with `testing`'s
+    version (no market-hours / Phase 3 / Phase 4 code ever touched this
+    file, so a clean take). Total Holdings, Average Cost, Market Value
+    each `useCountUp(amount, { from: 0 })`; the fourth card is now
+    `<AnimatedPnlCard>`.
+  - `components/dashboard/hero-price-card.tsx` — surgical: added the
+    `useCountUp` import + a `headlineDisplay` roll for the price per
+    damlung/chi, swapped into the `MonoValue`. The Phase-tracked
+    market-hours props (`marketOpen` / `marketClosed`, the
+    `RefreshButton marketClosed`) are untouched.
+  - `components/dashboard/realized-panel.tsx` (this branch's Phase-3
+    panel; not on `testing`) — added `"use client"` + a `useCountUp`
+    roll on the realized USD value, same `from: 0` / snap-on-change /
+    reduced-motion contract as the stat cards. The percent sub-line
+    snaps. Tone stays static.
+- `components/dashboard/dashboard-content.tsx` and
+  `price-history-chart.tsx` — **unchanged**. The animation lives inside
+  the leaf cards; dashboard-content's props are the same. Chart stays
+  un-animated by design.
+- `vitest.setup.ts` — added `testing`'s `motion/react` mock (plus the
+  `createElement` import it needs): `useReducedMotion → true`, stubbed
+  `useMotionValue` / `animate` (resolves to target synchronously),
+  `motion.*` proxied to plain DOM tags with animation-only props
+  stripped. Phase 5's `sonner` mock kept.
+- Khmer stays removed (Phase 5). No new user-facing strings.
+- Verified: `tsc --noEmit`, `eslint`, `vitest run` (229/229),
+  `next build` all clean.
 
 ### Phase 5 — Cherry-pick error handling from `testing` (2026-08-30, `809d3ea`)
 
