@@ -52,7 +52,7 @@ function post(init?: RequestInit) {
     new Request("http://localhost/api/price/refresh", {
       method: "POST",
       ...init,
-    })
+    }),
   );
 }
 
@@ -134,6 +134,40 @@ describe("POST /api/price/refresh", () => {
     expect(fetchGoldapiPriceMock).not.toHaveBeenCalled();
   });
 
+  it("serializes overlapping refreshes across different users so only one provider request proceeds", async () => {
+    getLatestSnapshotMock.mockResolvedValue(undefined);
+    fetchGoldapiPriceMock.mockImplementation(
+      async () =>
+        await new Promise((resolve) =>
+          setTimeout(() => {
+            resolve({
+              pricePerTroyOz: "2500.0000",
+              source: "goldapi.io",
+            });
+          }, 25),
+        ),
+    );
+    insertSnapshotMock.mockResolvedValue({
+      id: "snap_1",
+      pricePerTroyOz: "2500.0000",
+      source: "goldapi.io",
+      capturedAt: new Date(),
+    });
+
+    authMock.mockResolvedValueOnce({ userId: "user_001" });
+    authMock.mockResolvedValueOnce({ userId: "user_002" });
+
+    const [first, second] = await Promise.all([
+      post({ headers: { origin: "http://localhost" } }),
+      post({ headers: { origin: "http://localhost" } }),
+    ]);
+
+    expect(fetchGoldapiPriceMock).toHaveBeenCalledTimes(1);
+    expect(insertSnapshotMock).toHaveBeenCalledTimes(1);
+    expect([first.status, second.status]).toContain(200);
+    expect([first.status, second.status]).toContain(429);
+  });
+
   it("fetches, inserts a manual snapshot, and returns it with cooldownEndsAt when the cooldown has passed", async () => {
     getLatestSnapshotMock.mockResolvedValue(undefined);
     fetchGoldapiPriceMock.mockResolvedValue({
@@ -153,7 +187,7 @@ describe("POST /api/price/refresh", () => {
     expect(res.status).toBe(200);
     expect(insertSnapshotMock).toHaveBeenCalledWith(
       { pricePerTroyOz: "2500.0000", source: "goldapi.io" },
-      { manual: true }
+      { manual: true },
     );
     expect(body.data.id).toBe("snap_1");
     expect(typeof body.data.cooldownEndsAt).toBe("number");

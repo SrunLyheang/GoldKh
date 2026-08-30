@@ -14,6 +14,10 @@ import * as Sentry from "@sentry/nextjs";
 // Sentry as a warning (a no-op when no DSN is configured).
 
 const MAX_BODY_BYTES = 16 * 1024;
+const MAX_CSP_REPORTS_PER_REQUEST = 50;
+const CSP_REPORT_WINDOW_MS = 60_000;
+const CSP_REPORTS_PER_IP = 20;
+const recentCspEvents = new Map<string, number[]>();
 
 export async function POST(request: Request): Promise<Response> {
   const raw = await request.text();
@@ -28,7 +32,12 @@ export async function POST(request: Request): Promise<Response> {
     return new Response(null, { status: 400 });
   }
 
-  for (const violation of normalizeReports(parsed)) {
+  const violations = normalizeReports(parsed);
+  if (violations.length > 0 && isRateLimitedForCspReport(request)) {
+    return new Response(null, { status: 429 });
+  }
+
+  for (const violation of violations) {
     Sentry.captureMessage("CSP violation", {
       level: "warning",
       extra: { violation },
@@ -40,18 +49,48 @@ export async function POST(request: Request): Promise<Response> {
 }
 
 function normalizeReports(payload: unknown): unknown[] {
-  if (Array.isArray(payload)) {
-    // Reporting API batch — keep only CSP entries' bodies.
-    return payload
-      .filter(
-        (entry): entry is { type?: string; body?: unknown } =>
-          typeof entry === "object" && entry !== null
-      )
-      .filter((entry) => entry.type == null || entry.type.includes("csp"))
-      .map((entry) => entry.body ?? entry);
+  const reports = Array.isArray(payload)
+    ? payload
+        .filter(
+          (entry): entry is { type?: string; body?: unknown } =>
+            typeof entry === "object" && entry !== null,
+        )
+        .filter(
+          (entry) =>
+            entry.type == null ||
+            (typeof entry.type === "string" && entry.type.includes("csp")),
+        )
+        .map((entry) => entry.body ?? entry)
+    : payload && typeof payload === "object" && "csp-report" in payload
+      ? [(payload as Record<string, unknown>)["csp-report"]]
+      : payload == null
+        ? []
+        : [payload];
+
+  return reports.slice(0, MAX_CSP_REPORTS_PER_REQUEST);
+}
+
+function isRateLimitedForCspReport(request: Request): boolean {
+  const forwarded = request.headers.get("x-forwarded-for");
+  const realIp = request.headers.get("x-real-ip");
+  const cloudflareIp = request.headers.get("cf-connecting-ip");
+  const key = forwarded?.split(",", 1)[0]?.trim() || realIp || cloudflareIp;
+
+  if (!key) {
+    return false;
   }
-  if (payload && typeof payload === "object" && "csp-report" in payload) {
-    return [(payload as Record<string, unknown>)["csp-report"]];
+
+  const now = Date.now();
+  const timestamps = recentCspEvents.get(key) ?? [];
+  const recent = timestamps.filter(
+    (timestamp) => now - timestamp < CSP_REPORT_WINDOW_MS,
+  );
+
+  if (recent.length >= CSP_REPORTS_PER_IP) {
+    return true;
   }
-  return payload == null ? [] : [payload];
+
+  recent.push(now);
+  recentCspEvents.set(key, recent);
+  return false;
 }

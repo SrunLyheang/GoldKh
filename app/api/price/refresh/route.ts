@@ -10,6 +10,34 @@ import { priceFreshness } from "@/lib/price/freshness";
 import { isMarketOpen } from "@/lib/price/marketHours";
 import { fetchGoldapiPrice } from "@/lib/price/providers/goldapi";
 
+let globalRefreshLeaseOwner: string | null = null;
+
+function getCooldownResponse(cooldownEndsAt: number): Response {
+  const res = apiError(
+    "COOLDOWN",
+    "Price was just refreshed — try again in a few minutes",
+    429,
+  );
+  const retryAfter = Math.max(
+    1,
+    Math.ceil((cooldownEndsAt - Date.now()) / 1000),
+  );
+  res.headers.set("Retry-After", String(retryAfter));
+  return res;
+}
+
+function tryAcquireGlobalRefreshLease(userId: string): boolean {
+  if (globalRefreshLeaseOwner !== null) {
+    return false;
+  }
+  globalRefreshLeaseOwner = userId;
+  return true;
+}
+
+function releaseGlobalRefreshLease(): void {
+  globalRefreshLeaseOwner = null;
+}
+
 // Deliberately bypasses getPrice()'s staleness cache — this route exists for
 // a user who wants a current price now.
 //
@@ -20,7 +48,7 @@ import { fetchGoldapiPrice } from "@/lib/price/providers/goldapi";
 //     insert are still racing. Without it, N concurrent requests from one
 //     tab all observe `cooldownEndsAt === null` at the boundary and all
 //     hit the provider.
-export const POST = withAuthAndRateLimit(async (request) => {
+export const POST = withAuthAndRateLimit(async (request, { userId }) => {
   const crossOrigin = assertSameOrigin(request);
   if (crossOrigin) return crossOrigin;
 
@@ -32,7 +60,7 @@ export const POST = withAuthAndRateLimit(async (request) => {
     return apiError(
       "MARKET_CLOSED",
       "Market's closed — prices resume Monday",
-      409
+      409,
     );
   }
 
@@ -40,17 +68,11 @@ export const POST = withAuthAndRateLimit(async (request) => {
   // a page load that already pulled a fresh price is a no-op.
   const { cooldownEndsAt } = priceFreshness(await getLatestSnapshot());
   if (cooldownEndsAt !== null) {
-    const res = apiError(
-      "COOLDOWN",
-      "Price was just refreshed — try again in a few minutes",
-      429
-    );
-    const retryAfter = Math.max(
-      1,
-      Math.ceil((cooldownEndsAt - Date.now()) / 1000)
-    );
-    res.headers.set("Retry-After", String(retryAfter));
-    return res;
+    return getCooldownResponse(cooldownEndsAt);
+  }
+
+  if (!tryAcquireGlobalRefreshLease(userId)) {
+    return getCooldownResponse(Date.now() + 60_000);
   }
 
   try {
@@ -68,7 +90,9 @@ export const POST = withAuthAndRateLimit(async (request) => {
     return apiError(
       "PROVIDER_ERROR",
       "Couldn't reach the price provider — try again shortly",
-      502
+      502,
     );
+  } finally {
+    releaseGlobalRefreshLease();
   }
 });

@@ -16,7 +16,7 @@ function report(body: string, init?: RequestInit) {
       method: "POST",
       body,
       ...init,
-    })
+    }),
   );
 }
 
@@ -32,7 +32,7 @@ describe("POST /api/csp-report", () => {
           "violated-directive": "script-src",
           "blocked-uri": "https://evil.example/x.js",
         },
-      })
+      }),
     );
 
     expect(res.status).toBe(204);
@@ -46,7 +46,7 @@ describe("POST /api/csp-report", () => {
             "violated-directive": "script-src",
           }),
         },
-      })
+      }),
     );
   });
 
@@ -56,11 +56,31 @@ describe("POST /api/csp-report", () => {
         { type: "csp-violation", body: { "blocked-uri": "inline" } },
         { type: "csp-violation", body: { "blocked-uri": "eval" } },
         { type: "deprecation", body: { id: "ignored" } },
-      ])
+      ]),
     );
 
     expect(res.status).toBe(204);
     expect(captureMessageMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("ignores numeric entry types without crashing", async () => {
+    const res = await report(
+      JSON.stringify([
+        { type: 123, body: { "blocked-uri": "inline" } },
+        { type: null, body: { "blocked-uri": "eval" } },
+      ]),
+    );
+
+    expect(res.status).toBe(204);
+    expect(captureMessageMock).toHaveBeenCalledTimes(1);
+    expect(captureMessageMock).toHaveBeenCalledWith(
+      "CSP violation",
+      expect.objectContaining({
+        extra: {
+          violation: expect.objectContaining({ "blocked-uri": "eval" }),
+        },
+      }),
+    );
   });
 
   it("returns 400 on a non-JSON body without calling Sentry", async () => {
