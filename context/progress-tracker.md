@@ -65,8 +65,43 @@ Update this file after every meaningful implementation change.
   doesn't need it). Error-handling/toast/animation pieces from the
   `testing` branch are cherry-picked in phases 5–6. Neither branch
   merges as a unit.
-- Phase status: **Phase 1 committed (`0d581c2`). Phase 2 complete &
-  verified (uncommitted). Awaiting go-ahead for Phase 3.**
+- Phase status: **Phases 1 (`0d581c2`) and 2 (`e134860`) committed.
+  Phase 3 complete & verified (uncommitted). Awaiting go-ahead for
+  Phase 4.** (The market-closed work in the section above landed
+  alongside, out of band — `767fad6` + `c56e394`.)
+
+### Phase 3 — Issue #1: realized gain/loss panel (2026-08-30, uncommitted)
+
+- `lib/calc/realized.ts` (+ `.test.ts`, 6 cases): `computeRealized(entries)`
+  → `{ realizedUsd, realizedPercent, saleCount }`. Same weighted-average
+  basis and single chronological pass as `computeHoldings` — each sell is
+  valued at the running average cost at that moment, `realized = Σ
+  proceeds − Σ cost-basis-of-sold`. **Not FIFO** (see
+  `project-overview.md`, `product-strategy.md`). KHR rows skipped, so
+  `saleCount` counts USD sells only; `realizedPercent` is against the
+  sold cost basis, `"0"` until something comparable sells. Verifies the
+  −285 / −5.10% case from `current-issues.md`.
+- `components/dashboard/realized-panel.tsx` (+ `.test.tsx`, 5 cases): the
+  full-width strip per `current-issues-plan.md` Q6 — hero-card shape,
+  `[ REALIZED ]` eyebrow + "from N sales", tone-coloured mono value +
+  percent, **neutral at exactly $0** ("broke even"), right-aligned
+  ~34ch caption. All through `Panel` / `.tt-label` / `MonoValue` tone /
+  state tokens — themes with no per-theme rule.
+- `components/dashboard/dashboard-content.tsx`: `computeRealized(rows)`;
+  `<RealizedPanel>` rendered between the stat row and the transaction
+  history only when `realized.saleCount > 0` (`vault-enter` at 140ms;
+  transaction history bumped to 180ms).
+- `context/project-overview.md`: realized gain/loss (weighted-average)
+  moved from Out of Scope to In Scope; the old "Realized gain/loss and
+  tax reporting" line becomes "Tax reporting — no Cambodian gold
+  capital-gains regime." FIFO stays out.
+- `context/ui-context.md`: new "Realized panel" entry in Layout
+  Patterns; "Negative gain/loss alignment" noted as still open and now
+  shared between the stat row and this panel.
+- `lib/i18n/dictionary.ts`: `realized` block (`eyebrow`, `fromSales(n)`,
+  `caption`) in `en` + `km`.
+- Verified: `tsc --noEmit`, `eslint`, `vitest run`, `next build` all
+  clean.
 
 ### Phase 1 — Issue #2: "Total amount paid" input (2026-08-30, uncommitted)
 

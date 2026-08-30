@@ -12,6 +12,7 @@ const en = {
     live: "Live",
     stale: "Stale",
     asOf: (time: string) => `as of ${time}`,
+    marketClosed: "Market closed — prices resume Monday.",
     disclaimer:
       "Cambodian gold shops price differently from the global spot rate shown here, so your local buying/selling price may not match exactly.",
   },
@@ -91,6 +92,13 @@ const en = {
     marketClosedNote:
       "Showing the last price from Friday's close. Trading resumes Monday.",
   },
+  realized: {
+    eyebrow: "Realized",
+    fromSales: (count: number) =>
+      `from ${count} ${count === 1 ? "sale" : "sales"}`,
+    caption:
+      "Money you've locked in by selling gold, measured against what you paid for it. Gold you still hold isn't counted here — that's your unrealized figure above.",
+  },
   welcome: {
     nav: {
       features: "Features",
@@ -162,6 +170,7 @@ const km: typeof en = {
     live: "ទាន់សម័យ",
     stale: "តម្លៃចាស់",
     asOf: (time: string) => `គិតត្រឹមម៉ោង ${time}`,
+    marketClosed: "ទីផ្សារបិទ — តម្លៃនឹងបន្តនៅថ្ងៃច័ន្ទ។",
     disclaimer:
       "ហាងមាសនៅស្រុកខ្មែរកំណត់តម្លៃខុសពីតម្លៃទីផ្សារពិភពលោកដែលបង្ហាញនៅទីនេះ ដូច្នេះតម្លៃទិញ ឬលក់នៅផ្សារក្នុងស្រុក អាចខុសគ្នាខ្លះ។",
   },
@@ -240,6 +249,12 @@ const km: typeof en = {
     marketClosed: "ទីផ្សារបិទ",
     marketClosedNote:
       "កំពុងបង្ហាញតម្លៃចុងក្រោយពីថ្ងៃសុក្រ។ ការជួញដូរនឹងបើកឡើងវិញនៅថ្ងៃច័ន្ទ។",
+  },
+  realized: {
+    eyebrow: "ចំណេញ/ខាតសម្រេច",
+    fromSales: (count: number) => `ពីការលក់ ${count} ដង`,
+    caption:
+      "ប្រាក់ដែលអ្នកទទួលបានច្បាស់លាស់ពីការលក់មាស ធៀបនឹងតម្លៃដើមដែលអ្នកបានបង់។ មាសដែលអ្នកនៅកាន់កាប់ មិនរាប់បញ្ចូលនៅទីនេះទេ — នោះជាតួលេខមិនទាន់សម្រេចខាងលើ។",
   },
   welcome: {
     nav: {
