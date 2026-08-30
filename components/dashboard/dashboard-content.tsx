@@ -29,6 +29,7 @@ export function DashboardContent({
   isStale,
   chartPoints,
   refreshCooldownEndsAt,
+  marketOpen = true,
 }: {
   transactions: TransactionRow[];
   pricePerTroyOz: string;
@@ -38,6 +39,7 @@ export function DashboardContent({
   isStale: boolean;
   chartPoints: ChartPoint[];
   refreshCooldownEndsAt: number | null;
+  marketOpen?: boolean;
 }) {
   const router = useRouter();
   const [addOpen, setAddOpen] = useState(false);
@@ -118,6 +120,7 @@ export function DashboardContent({
           capturedAt={capturedAt}
           isStale={isStale}
           refreshCooldownEndsAt={refreshCooldownEndsAt}
+          marketOpen={marketOpen}
           displayUnit={displayUnit}
           onDisplayUnitChange={setDisplayUnit}
         />
@@ -172,6 +175,7 @@ export function DashboardContent({
       <div className="vault-enter" style={{ "--enter-delay": "200ms" } as CSSProperties}>
         <PriceHistoryChart
           points={chartPoints}
+          marketOpen={marketOpen}
           breakEvenPerDamlung={
             hasHoldings
               ? Number(priceFromTroyOz(holdings.averageCostPerTroyOz, "damlung"))

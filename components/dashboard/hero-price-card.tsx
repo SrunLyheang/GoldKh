@@ -80,7 +80,15 @@ export function HeroPriceCard({
               {t.hero.asOf(timeLabel)}
             </MonoValue>
           </div>
-          <RefreshButton cooldownEndsAt={refreshCooldownEndsAt} />
+          {marketClosed && (
+            <MonoValue tone="muted" className="tt-label text-[11px]">
+              {t.hero.marketClosed}
+            </MonoValue>
+          )}
+          <RefreshButton
+            cooldownEndsAt={refreshCooldownEndsAt}
+            marketClosed={marketClosed}
+          />
         </div>
       </div>
       <p className="mt-5 text-[11.5px] text-muted-foreground">
