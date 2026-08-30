@@ -267,17 +267,17 @@ function Row({
           <span title={blankValueReason} className="cursor-help">—</span>
         )}
       </td>
-      <td
-        className={cn(
-          "py-3 pr-3 text-right font-mono text-[13px] tabular-nums",
-          valuation.pnlUsd === null && "text-muted-foreground",
-          valuation.pnlUsd !== null && (isGain ? "text-state-gain" : "text-destructive")
-        )}
-      >
+      <td className="py-3 pr-3 text-right font-mono text-[13px] tabular-nums">
         {valuation.pnlUsd ? (
-          formatUsd(valuation.pnlUsd)
+          <MonoValue
+            signed
+            tone={isGain ? "gain" : "loss"}
+            className="text-[13px]"
+          >
+            {formatUsd(valuation.pnlUsd)}
+          </MonoValue>
         ) : (
-          <span title={blankValueReason} className="cursor-help">—</span>
+          <span title={blankValueReason} className="cursor-help text-muted-foreground">—</span>
         )}
       </td>
       <td className="py-3 pl-1 text-right">
@@ -404,7 +404,7 @@ function TransactionCard({
         <div>
           <p className="tt-label text-[10.5px] text-muted-foreground">{t.transactions.pnl}</p>
           {valuation.pnlUsd ? (
-            <MonoValue tone={isGain ? "gain" : "loss"} className="mt-0.5 block text-[13px]">
+            <MonoValue tone={isGain ? "gain" : "loss"} signed className="mt-0.5 block text-[13px]">
               {formatUsd(valuation.pnlUsd)}
             </MonoValue>
           ) : (
@@ -426,7 +426,7 @@ export function TransactionHistory({
   rows,
   currentPricePerTroyOz,
   error,
-  successMessage,
+  syncing = false,
   displayUnit = "damlung",
   onDelete,
   onAddClick,
@@ -435,7 +435,7 @@ export function TransactionHistory({
   rows: TransactionRow[];
   currentPricePerTroyOz: string;
   error: string | null;
-  successMessage: string | null;
+  syncing?: boolean;
   displayUnit?: GoldUnit;
   onDelete: (row: TransactionRow) => void;
   onAddClick: () => void;
@@ -453,10 +453,16 @@ export function TransactionHistory({
           <span className="tt-label text-[11.5px]">{t.transactions.addTransaction}</span>
         </Button>
       </div>
-      {error && <InlineBanner variant="error">{error}</InlineBanner>}
-      {successMessage && (
-        <InlineBanner variant="success">{successMessage}</InlineBanner>
+      {syncing && (
+        <div
+          role="progressbar"
+          aria-label={t.transactions.syncing}
+          className="mb-3 h-0.5 w-full overflow-hidden bg-border"
+        >
+          <div className="h-full w-1/3 bg-primary motion-safe:animate-[vault-indeterminate_1.1s_ease-in-out_infinite] motion-reduce:w-full motion-reduce:opacity-40" />
+        </div>
       )}
+      {error && <InlineBanner variant="error">{error}</InlineBanner>}
       <AllRowsContext.Provider value={rows}>
         <div className="hidden max-h-80 overflow-auto rounded-lg border border-border bg-card md:block">
           <table className="w-full min-w-140 border-collapse">

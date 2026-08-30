@@ -2,7 +2,6 @@
 
 import Decimal from "decimal.js";
 import { TriangleAlert } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { useMemo, useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -122,7 +121,6 @@ export function TransactionDialog({
 }) {
   const isEdit = transaction !== undefined;
   const isOptimistic = !isEdit && onOptimisticAdd !== undefined;
-  const router = useRouter();
   const { t } = useLocale();
   const unitLabel = (u: "chi" | "damlung") => (u === "chi" ? t.unit.chi : t.unit.damlung);
   const typeLabel = (option: "buy" | "sell") =>
@@ -295,7 +293,6 @@ export function TransactionDialog({
       );
     }
     onOpenChange(false);
-    router.refresh();
   }
 
   return (

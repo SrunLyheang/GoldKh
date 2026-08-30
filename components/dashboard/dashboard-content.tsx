@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type CSSProperties } from "react";
+import { useEffect, useState, useTransition, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
 import { computeGainLoss } from "@/lib/calc/gainLoss";
 import { computeHoldings } from "@/lib/calc/holdings";
@@ -17,11 +17,13 @@ import { TransactionDialog, type AddSettledResult } from "./transaction-dialog";
 import { useOptimisticTransactions } from "./use-optimistic-transactions";
 
 // Owns the merged transaction list (via useOptimisticTransactions) and the
-// error/success banner state around it, so an optimistic change recomputes
+// error-banner state around it, so an optimistic change recomputes
 // holdings/gain-loss/break-even client-side and the whole dashboard updates
 // instantly, not just the transaction table row — the user-reported gap:
 // adding a transaction updated the table but the stat row and hero card's
-// numbers still waited on router.refresh().
+// numbers still waited on router.refresh(). That reconciling refresh now
+// runs inside a useTransition so it never blanks the page; success is
+// reported once, by the dialog's Sonner toast.
 export function DashboardContent({
   transactions,
   pricePerTroyOz,
@@ -47,7 +49,7 @@ export function DashboardContent({
   const [addOpen, setAddOpen] = useState(false);
   const [displayUnit, setDisplayUnit] = useState<GoldUnit>("damlung");
   const [error, setError] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [isSyncing, startSync] = useTransition();
   const { rows, addOptimistic, settleAdd, markRemoved, unmarkRemoved } =
     useOptimisticTransactions(transactions);
 
@@ -57,12 +59,6 @@ export function DashboardContent({
     return () => clearTimeout(timeout);
   }, [error]);
 
-  useEffect(() => {
-    if (!successMessage) return;
-    const timeout = setTimeout(() => setSuccessMessage(null), 5000);
-    return () => clearTimeout(timeout);
-  }, [successMessage]);
-
   function handleOptimisticAdd(row: Parameters<typeof addOptimistic>[0]) {
     setError(null);
     addOptimistic(row);
@@ -71,14 +67,14 @@ export function DashboardContent({
   function handleAddSettled(tempId: string, result: AddSettledResult) {
     settleAdd(tempId, result);
     if (result.ok) {
-      setSuccessMessage("Transaction added");
+      startSync(() => router.refresh());
     } else {
       setError(result.message);
     }
   }
 
   function handleEditSuccess() {
-    setSuccessMessage("Transaction updated");
+    startSync(() => router.refresh());
   }
 
   async function handleDelete(row: TransactionRow) {
@@ -101,7 +97,7 @@ export function DashboardContent({
       return;
     }
 
-    router.refresh();
+    startSync(() => router.refresh());
   }
 
   const holdings = computeHoldings(rows);
@@ -177,7 +173,7 @@ export function DashboardContent({
               rows={rows}
               currentPricePerTroyOz={pricePerTroyOz}
               error={error}
-              successMessage={successMessage}
+              syncing={isSyncing}
               displayUnit={displayUnit}
               onDelete={handleDelete}
               onAddClick={() => setAddOpen(true)}

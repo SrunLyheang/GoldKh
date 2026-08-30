@@ -69,30 +69,35 @@ export function StatRow({
   const { primaryLower: primaryUnit, secondaryLower: secondaryUnit } =
     unitLabels(t, displayUnit);
   return (
-    <div className="grid grid-cols-2 gap-4 sm:gap-5 lg:grid-cols-4">
-      <StatCard
-        label={t.stat.totalHoldings}
-        amount={Number(isChi ? totalChi : totalDamlung)}
-        format={(n) => `${formatQuantity(String(n))} ${primaryUnit}`}
-        subLine={`${formatQuantity(isChi ? totalDamlung : totalChi)} ${secondaryUnit}`}
-      />
-      <StatCard
-        label={t.stat.averageCost}
-        amount={Number(isChi ? averageCostPerChi : averageCostPerDamlung)}
-        format={(n) => formatUsd(String(n))}
-        subLine={t.stat.per(primaryUnit)}
-      />
-      <StatCard
-        label={t.stat.marketValue}
-        amount={Number(marketValueUsd)}
-        format={(n) => formatUsd(String(n))}
-        subLine={t.stat.atCurrentSpot}
-      />
-      <AnimatedPnlCard
-        label={t.stat.gainLoss}
-        gainLossUsd={gainLossUsd}
-        gainLossPercent={gainLossPercent}
-      />
+    <div>
+      <h2 className="tt-heading tt-bracket mb-4 text-[15px] text-foreground">
+        {t.stat.sectionLabel}
+      </h2>
+      <div className="grid grid-cols-2 gap-4 sm:gap-5 lg:grid-cols-4">
+        <StatCard
+          label={t.stat.totalHoldings}
+          amount={Number(isChi ? totalChi : totalDamlung)}
+          format={(n) => `${formatQuantity(String(n))} ${primaryUnit}`}
+          subLine={`${formatQuantity(isChi ? totalDamlung : totalChi)} ${secondaryUnit}`}
+        />
+        <StatCard
+          label={t.stat.averageCost}
+          amount={Number(isChi ? averageCostPerChi : averageCostPerDamlung)}
+          format={(n) => formatUsd(String(n))}
+          subLine={t.stat.per(primaryUnit)}
+        />
+        <StatCard
+          label={t.stat.marketValue}
+          amount={Number(marketValueUsd)}
+          format={(n) => formatUsd(String(n))}
+          subLine={t.stat.atCurrentSpot}
+        />
+        <AnimatedPnlCard
+          label={t.stat.gainLoss}
+          gainLossUsd={gainLossUsd}
+          gainLossPercent={gainLossPercent}
+        />
+      </div>
     </div>
   );
 }

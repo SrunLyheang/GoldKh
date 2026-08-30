@@ -87,15 +87,15 @@ export function AnimatedPnlCard({
   return (
     <Panel
       className={cn(
-        tone === "gain" && "bg-state-gain/6",
-        tone === "loss" && "bg-destructive/6"
+        tone === "gain" && "bg-state-gain/6 border-l-2 border-l-state-gain",
+        tone === "loss" && "bg-destructive/6 border-l-2 border-l-destructive"
       )}
     >
       <p className="tt-label text-[11px] text-muted-foreground">{label}</p>
-      <MonoValue tone={tone} className="mt-1.5 block text-[19px] font-semibold">
+      <MonoValue tone={tone} signed className="mt-1.5 block text-[19px] font-semibold">
         {display}
       </MonoValue>
-      <MonoValue tone={tone} className="mt-1 block text-[12px]">
+      <MonoValue tone={tone} signed className="mt-1 block text-[12px]">
         {formatPercent(gainLossPercent)}
       </MonoValue>
     </Panel>

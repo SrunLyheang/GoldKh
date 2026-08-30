@@ -82,6 +82,12 @@ when a first-time user should be watching their first holding land.
    column/field in `TransactionHistory` (desktop table cell + mobile
    card). Non-string children render unchanged.
 2. **Stat-row section label.** Hero, Realized, Transaction History and
+   Price History all carry section headers; the four stat cards float
+   unlabelled between them. Add an `<h2>` styled as `.tt-heading .tt-bracket
+   text-[15px] text-foreground` — reading "Position" — above the grid inside
+   `StatRow`, matching the Transaction History and Price History header
+   treatment. New dict key `stat.sectionLabel: "Position"`. Gives the page
+   a consistent five-beat structure.
    Price History all carry an eyebrow or a `[ … ]` title; the four stat
    cards float unlabelled between them. Add one `.tt-label .tt-bracket`
    eyebrow — `[ POSITION ]` — above the grid inside `StatRow`. New dict
@@ -176,6 +182,12 @@ un-localized literal `"Price History"` chart title (pre-existing).
 
 ## Doc updates on completion
 
+- `context/ui-context.md`: marked "Negative gain/loss alignment" resolved
+  (deleted bullet); noted the `<h2>` "Position" stat header, the sync bar,
+  and that success feedback is toast-only. Updated "Mutation feedback"
+  section, empty state with three-step flow, and `MonoValue` `signed` prop.
+- `context/progress-tracker.md`: "Dashboard polish — user-first pass" entry
+  added with status and deferred findings.
 - `context/ui-context.md`: mark "Negative gain/loss alignment" resolved;
   note the `[ POSITION ]` stat eyebrow, the sync bar, and that success
   feedback is toast-only.

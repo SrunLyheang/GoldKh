@@ -100,7 +100,7 @@ export function HeroPriceCard({
           />
         </div>
       </div>
-      <p className="mt-5 text-[11.5px] text-muted-foreground">
+      <p className="mt-5 border-t border-border pt-4 text-[11.5px] text-muted-foreground">
         {t.hero.disclaimer}
       </p>
     </Panel>

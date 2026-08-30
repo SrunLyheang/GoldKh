@@ -49,6 +49,80 @@ Update this file after every meaningful implementation change.
 - `.claude/settings.local.json` added: disables the GateGuard
   fact-force hooks for this workspace (was prompting before every edit).
 
+## Done: dashboard polish — user-first pass (2026-08-30, on `new-design`, uncommitted)
+
+Addresses the "dashboard-polish" spec (`context/design-specs/dashboard-
+polish.md`) with a UI polish pass focused on first-time user experience.
+All work committed in uncommitted state on the `new-design` branch (branched
+from `fix/current-issues`).
+
+- **(A) No full-screen loading flash on transaction mutate.** After add/
+  edit/delete, reconciliation runs in `useTransition` so the route-level
+  `loading.tsx` never mounts. The dashboard remains visible; a 2px
+  `--primary` indeterminate bar under the Transaction History header
+  signals the in-flight sync (static dimmed bar under
+  `prefers-reduced-motion`).
+- **(B) Single success channel — Sonner toast only.** Removed the inline
+  success banner (`successMessage` state and `InlineBanner` success render).
+  Toasts carry all add/edit/delete feedback; `InlineBanner` is error-only
+  now.
+- **(C) `MonoValue` `signed` mode.** A new `signed` prop reserves a
+  fixed-width sign cell so `-$285.00` and `$285.00` align on the first digit.
+  Applied across the Unrealized Gain/Loss stat card, Realized panel value,
+  and the P&L column in Transaction History (desktop + mobile).
+- **(D) Stat row gained a "Position" section header.** An `<h2>` styled as
+  `.tt-heading .tt-bracket text-[15px] text-foreground`, reading "Position",
+  sits above the four-card grid, matching Transaction History and Price
+  History headers.
+- **(E) Hero dealer-premium disclaimer as a footnote.** Added a hairline top
+  border + top padding (`border-t border-border pt-4`) so the disclaimer
+  reads as a footnote, not an afterthought.
+- **(F) Empty dashboard explains the three-step flow.** Added a "how-it-
+  works" list above the CTA: "Add a buy", "We value it against live spot",
+  "See your holdings, average cost, and unrealized gain or loss."
+- **Stats + P&L card tint.** The Unrealized Gain/Loss card gained a 2px
+  left border in the gain/loss tone (`border-l-state-gain` / `border-l-
+  destructive`).
+
+References: `context/design-specs/dashboard-polish.md`, `docs/superpowers/
+plans/2026-08-30-dashboard-polish.md`. Status: 5 tasks completed; 2 deferred
+minor findings (adapted loss-tone test assertions; P&L card 2px-wider-left
+vs neutral panels); pending manual smoke-test of the no-flash behaviour.
+
+## Done: code-review remediation batch (2026-08-30, on `new-design`, uncommitted)
+
+Five findings from the dashboard-polish review, fixed together:
+
+- **Sentry PII gaps** — `lib/observability/scrubSentryEvent.ts` now also
+  deletes `request.query_string`, strips the query/fragment off
+  `request.url`, and drops `event.breadcrumbs` wholesale (Sentry's auto
+  fetch/xhr/console breadcrumbs carry full URLs + logged values). Test
+  has one case per field.
+- **CSP proof + reporting** — new `next.config.test.ts` imports the real
+  `securityHeaders` / `headers()` and asserts the CSP directives and the
+  baseline headers actually ship. `report-uri /api/csp-report` added to
+  the policy; new unauthenticated `app/api/csp-report/route.ts` normalises
+  both wire formats and forwards violations to Sentry as warnings. The
+  `script-src 'unsafe-inline'` nonce gap is now called out as a KNOWN GAP
+  in the config comment (still open — needs per-request nonce plumbing).
+- **`/api/price/refresh` hardening** — switched from `withAuth` to
+  `withAuthAndRateLimit` so one tab firing N concurrent requests at the
+  cooldown boundary can't all reach the provider; the provider `catch`
+  now calls `Sentry.captureException` instead of swallowing; new
+  `lib/api/sameOrigin.ts` (`assertSameOrigin`) rejects cross-origin POSTs
+  (403 `CROSS_ORIGIN`) as a light CSRF guard. Route + new tests cover all
+  three.
+- **`useCountUp` snap-on-update** — the hero/stat/realized comments
+  claimed a unit toggle "snaps" but every `target` change ran the full
+  2.2s tween. `lib/ui/use-count-up.ts` now honours that: when `from` is
+  set, the entrance tweens once and later `target` changes snap
+  (`aimedAtRef` distinguishes a genuine change from the StrictMode mount
+  replay). `from` unset is unchanged (later changes still tween — the
+  gain/loss card relies on it). New `use-count-up.snap.test.ts` overrides
+  the reduced-motion mock to prove tween-vs-snap.
+
+`vitest run` 251/251, `tsc --noEmit`, `eslint` all clean.
+
 ## Active: current-issues fix plan (2026-08-30)
 
 - Branch `fix/current-issues` off `main`. Six phases, one at a time,

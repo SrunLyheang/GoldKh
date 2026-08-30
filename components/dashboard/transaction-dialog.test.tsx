@@ -7,11 +7,6 @@ import type { LedgerEntryWithId } from "@/lib/calc/ledgerEntry";
 import { dictionary } from "@/lib/i18n/dictionary";
 import { notify } from "@/lib/ui/toast";
 
-const refreshMock = vi.fn();
-vi.mock("next/navigation", () => ({
-  useRouter: () => ({ refresh: refreshMock }),
-}));
-
 vi.mock("@/lib/ui/toast", () => ({
   notify: { success: vi.fn(), error: vi.fn() },
 }));
@@ -43,7 +38,6 @@ async function fillValidBuy(user: ReturnType<typeof userEvent.setup>) {
 
 describe("TransactionDialog", () => {
   beforeEach(() => {
-    refreshMock.mockClear();
     toastError.mockClear();
     toastSuccess.mockClear();
   });
@@ -127,7 +121,8 @@ describe("TransactionDialog", () => {
     );
     expect(sentBody.pricePerUnit).toBe("300");
     expect(onAddSettled).toHaveBeenCalledWith(optimisticRow.id, { ok: true });
-    expect(refreshMock).toHaveBeenCalled();
+    await waitFor(() => expect(onOpenChange).toHaveBeenCalledWith(false));
+    expect(toastSuccess).toHaveBeenCalled();
   });
 
   it("derives price per unit from the total, rounding to 4 decimal places", async () => {

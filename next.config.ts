@@ -35,11 +35,15 @@ const sentryOrigins = sentryIngestOrigin();
 const devScriptSrc =
   process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : "";
 
-// 'unsafe-inline' is still permitted on script-src: Next.js injects inline
-// bootstrap/hydration scripts and there is no per-request nonce plumbed
-// through yet. Everything else is locked to 'self' + the allowlist above,
-// so an injected external <script src> is already blocked. Removing
-// 'unsafe-inline' (via a per-request nonce) is still open.
+// KNOWN GAP — script-src still allows 'unsafe-inline'. Next.js injects
+// inline bootstrap/hydration scripts and no per-request nonce is plumbed
+// through the app yet, so with 'unsafe-inline' present an injected inline
+// <script> is NOT blocked and most of this policy's XSS value is lost.
+// Tracked in context/progress-tracker.md ("CSP nonce"). Until it is
+// closed, `report-uri` below routes every violation to /api/csp-report so
+// the blind spot is at least observable. Everything except inline script
+// is locked to 'self' + the allowlist above.
+const cspReportUri = "/api/csp-report";
 const contentSecurityPolicy = [
   "default-src 'self'",
   "base-uri 'self'",
@@ -53,9 +57,10 @@ const contentSecurityPolicy = [
   `connect-src 'self' ${clerkOrigins} ${sentryOrigins}`,
   `frame-src 'self' ${clerkOrigins} ${turnstileOrigin}`,
   "worker-src 'self' blob:",
+  `report-uri ${cspReportUri}`,
 ].join("; ");
 
-const securityHeaders = [
+export const securityHeaders = [
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
   { key: "Content-Security-Policy", value: contentSecurityPolicy },

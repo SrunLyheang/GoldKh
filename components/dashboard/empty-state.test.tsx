@@ -2,6 +2,7 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
+import { dictionary } from "@/lib/i18n/dictionary";
 import { EmptyState } from "./empty-state";
 
 describe("EmptyState", () => {
@@ -18,5 +19,12 @@ describe("EmptyState", () => {
     await user.click(screen.getByRole("button", { name: /add transaction/i }));
 
     expect(onAddClick).toHaveBeenCalledOnce();
+  });
+
+  it("lists the three how-it-works steps", () => {
+    render(<EmptyState onAddClick={() => {}} />);
+    for (const step of dictionary.en.empty.steps) {
+      expect(screen.getByText(step)).toBeInTheDocument();
+    }
   });
 });
