@@ -25,6 +25,7 @@ import { DateField } from "@/components/ui/date-field";
 import { toDateKey } from "@/components/ui/calendar";
 import { LoadingScreen } from "@/components/ui/loading";
 import { useLocale } from "@/lib/i18n/locale-context";
+import { notify } from "@/lib/ui/toast";
 import { cn } from "@/lib/utils";
 import { formatQuantity, formatUsd } from "@/lib/format/money";
 import { transactionInputSchema } from "@/lib/validation/transaction";
@@ -145,7 +146,6 @@ export function TransactionDialog({
   );
   const [notes, setNotes] = useState(transaction?.notes ?? "");
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [attemptedSubmit, setAttemptedSubmit] = useState(false);
 
@@ -209,9 +209,9 @@ export function TransactionDialog({
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setAttemptedSubmit(true);
-    setError(null);
 
     if (!parsed.success) {
+      notify.error(t.dialog.toast.checkFields);
       return;
     }
 
@@ -253,22 +253,30 @@ export function TransactionDialog({
       body = await res.json();
     } catch {
       setSubmitting(false);
-      const message = t.dialog.couldntSave;
+      const message = t.dialog.toast.network;
       if (isOptimistic) {
         onAddSettled!(tempId!, { ok: false, message });
       }
-      setError(message);
+      notify.error(message);
       return;
     }
 
     setSubmitting(false);
 
     if (!res.ok || "error" in body) {
-      const message = body.error?.message ?? t.dialog.somethingWrong;
+      const code: string | undefined = body?.error?.code;
+      const message =
+        code === "RATE_LIMITED"
+          ? t.dialog.toast.rateLimited
+          : code === "UNAUTHORIZED"
+            ? t.dialog.toast.sessionExpired
+            : code === "INVALID_INPUT"
+              ? t.dialog.toast.invalidInput
+              : t.dialog.toast.serverError;
       if (isOptimistic) {
         onAddSettled!(tempId!, { ok: false, message });
       }
-      setError(message);
+      notify.error(message);
       return;
     }
 
@@ -276,7 +284,15 @@ export function TransactionDialog({
       onAddSettled!(tempId!, { ok: true });
     }
     if (isEdit) {
+      notify.success(t.dialog.toast.updated);
       onEditSuccess?.();
+    } else {
+      const qty = formatQuantity(quantity);
+      notify.success(
+        type === "buy"
+          ? t.dialog.toast.buyAdded(qty, unitLabel(unit))
+          : t.dialog.toast.sellRecorded(qty, unitLabel(unit))
+      );
     }
     onOpenChange(false);
     router.refresh();
@@ -458,8 +474,6 @@ export function TransactionDialog({
                   <p className="text-[11.5px] text-destructive">{fieldError("notes")}</p>
                 )}
               </div>
-
-              {error && <p className="text-[12.5px] text-destructive">{error}</p>}
 
               <Button
                 type="submit"

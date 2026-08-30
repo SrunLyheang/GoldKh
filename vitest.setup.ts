@@ -20,3 +20,12 @@ vi.mock("@/lib/i18n/locale-context", () => ({
   useLocale: () => ({ locale: "en", setLocale: () => {}, t: dictionary.en }),
   LocaleProvider: ({ children }: { children: React.ReactNode }) => children,
 }));
+
+// sonner needs a mounted <Toaster> and real timers to do anything useful;
+// component tests only care that the right toast was requested. Mock the
+// surface: `toast.success` / `toast.error` become spies, `<Toaster>`
+// renders nothing. Assert against `vi.mocked(toast.error)` in a test.
+vi.mock("sonner", () => ({
+  toast: { success: vi.fn(), error: vi.fn() },
+  Toaster: () => null,
+}));

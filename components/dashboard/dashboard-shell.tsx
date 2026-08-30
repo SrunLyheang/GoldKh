@@ -6,7 +6,7 @@ import Image from "next/image";
 import { useState, type ReactNode } from "react";
 import { LocaleProvider } from "@/lib/i18n/locale-context";
 import { ThemeProvider } from "@/lib/theme/theme-context";
-import { LanguageToggle } from "./language-toggle";
+import { Toaster } from "@/components/ui/sonner";
 import { Sidebar } from "./sidebar";
 import { ThemeToggle } from "./theme-toggle";
 
@@ -47,7 +47,6 @@ export function DashboardShell({ children }: { children: ReactNode }) {
               </span>
               <div className="flex shrink-0 items-center gap-2.5">
                 <ThemeToggle />
-                <LanguageToggle />
                 <UserButton
                   appearance={{ elements: { userButtonBox: "flex-row-reverse" } }}
                 />
@@ -58,6 +57,7 @@ export function DashboardShell({ children }: { children: ReactNode }) {
             </main>
           </div>
         </div>
+        <Toaster />
       </ThemeProvider>
     </LocaleProvider>
   );

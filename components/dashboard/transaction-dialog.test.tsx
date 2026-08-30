@@ -4,11 +4,20 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { TransactionDialog, type EditableTransaction } from "./transaction-dialog";
 import type { LedgerEntryWithId } from "@/lib/calc/ledgerEntry";
+import { dictionary } from "@/lib/i18n/dictionary";
+import { notify } from "@/lib/ui/toast";
 
 const refreshMock = vi.fn();
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ refresh: refreshMock }),
 }));
+
+vi.mock("@/lib/ui/toast", () => ({
+  notify: { success: vi.fn(), error: vi.fn() },
+}));
+const toastError = vi.mocked(notify.error);
+const toastSuccess = vi.mocked(notify.success);
+const td = dictionary.en.dialog.toast;
 
 function renderDialog(
   overrides: Partial<Parameters<typeof TransactionDialog>[0]> = {}
@@ -35,6 +44,8 @@ async function fillValidBuy(user: ReturnType<typeof userEvent.setup>) {
 describe("TransactionDialog", () => {
   beforeEach(() => {
     refreshMock.mockClear();
+    toastError.mockClear();
+    toastSuccess.mockClear();
   });
 
   afterEach(() => {
@@ -75,7 +86,10 @@ describe("TransactionDialog", () => {
     await user.click(screen.getByRole("button", { name: /save transaction/i }));
 
     expect(fetchMock).not.toHaveBeenCalled();
-    expect(await screen.findByText("Invalid quantity")).toBeInTheDocument();
+    expect(
+      await screen.findByText("Use at most 4 decimal places.")
+    ).toBeInTheDocument();
+    expect(toastError).toHaveBeenCalledWith(td.checkFields);
   });
 
   it("submits a valid add as a POST with the typed values, fires optimistic add, and closes on success", async () => {
@@ -238,12 +252,12 @@ describe("TransactionDialog", () => {
     });
   });
 
-  it("rolls back the optimistic add and shows the server error on failure", async () => {
+  it("rolls back the optimistic add and toasts a mapped message on a server rejection", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn().mockResolvedValue(
         new Response(
-          JSON.stringify({ error: { code: "bad", message: "Could not save" } }),
+          JSON.stringify({ error: { code: "INVALID_INPUT", message: "nope" } }),
           { status: 400 }
         )
       )
@@ -256,16 +270,39 @@ describe("TransactionDialog", () => {
     await fillValidBuy(user);
     await user.click(screen.getByRole("button", { name: /save transaction/i }));
 
-    expect(await screen.findByText("Could not save")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(toastError).toHaveBeenCalledWith(td.invalidInput);
+    });
     const tempId = onOptimisticAdd.mock.calls[0][0].id;
     expect(onAddSettled).toHaveBeenCalledWith(tempId, {
       ok: false,
-      message: "Could not save",
+      message: td.invalidInput,
     });
     expect(onOpenChange).not.toHaveBeenCalledWith(false);
   });
 
-  it("shows a network-failure message when fetch itself rejects", async () => {
+  it("maps a 429 to the rate-limit toast", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response(
+          JSON.stringify({ error: { code: "RATE_LIMITED", message: "slow" } }),
+          { status: 429 }
+        )
+      )
+    );
+    const user = userEvent.setup();
+    renderDialog();
+
+    await fillValidBuy(user);
+    await user.click(screen.getByRole("button", { name: /save transaction/i }));
+
+    await waitFor(() => {
+      expect(toastError).toHaveBeenCalledWith(td.rateLimited);
+    });
+  });
+
+  it("toasts a network-failure message when fetch itself rejects", async () => {
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("offline")));
     const user = userEvent.setup();
     renderDialog();
@@ -273,9 +310,27 @@ describe("TransactionDialog", () => {
     await fillValidBuy(user);
     await user.click(screen.getByRole("button", { name: /save transaction/i }));
 
-    expect(
-      await screen.findByText("Couldn't reach the server — the transaction was not saved.")
-    ).toBeInTheDocument();
+    await waitFor(() => {
+      expect(toastError).toHaveBeenCalledWith(td.network);
+    });
+  });
+
+  it("toasts a success message naming the amount on a completed buy", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response(JSON.stringify({ data: { id: "real-x" } }), { status: 200 })
+      )
+    );
+    const user = userEvent.setup();
+    renderDialog({ onOptimisticAdd: vi.fn(), onAddSettled: vi.fn() });
+
+    await fillValidBuy(user);
+    await user.click(screen.getByRole("button", { name: /save transaction/i }));
+
+    await waitFor(() => {
+      expect(toastSuccess).toHaveBeenCalledWith(td.buyAdded("10", "Chi"));
+    });
   });
 
   it("warns when a sell quantity exceeds current holdings", async () => {

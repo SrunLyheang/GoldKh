@@ -144,7 +144,9 @@ FIFO / per-lot cost basis — weighted average only." Realized G/L moves
 - `dictionary.ts`: the flag's tooltip/label.
 - Verify as phase 1; chart stays stable with a bad legacy row present.
 
-### Phase 5 — Cherry-pick error handling from `testing`
+### Phase 5 — Cherry-pick error handling from `testing` — DONE 2026-08-30 (uncommitted)
+- Khmer removal (Q3) was run now, not deferred — user confirmed this
+  session. See `progress-tracker.md` "Phase 5" for the full writeup.
 - From `git show testing:<path>`: `components/ui/sonner.tsx`,
   `lib/ui/toast.ts`, `lib/observability/scrubSentryEvent.ts` (+ test),
   the richer `lib/validation/transaction.ts` messages, the

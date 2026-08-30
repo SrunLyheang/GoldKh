@@ -65,10 +65,72 @@ Update this file after every meaningful implementation change.
   doesn't need it). Error-handling/toast/animation pieces from the
   `testing` branch are cherry-picked in phases 5–6. Neither branch
   merges as a unit.
-- Phase status: **Phases 1 (`0d581c2`), 2 (`e134860`), 3 (`8ac6528`)
-  committed. Phase 4 complete & verified (uncommitted). Awaiting
-  go-ahead for Phase 5.** (The market-closed work in the section above
+- Phase status: **Phases 1–4 committed and green (`9b19610`, 201 tests).
+  Phase 5 committed (`809d3ea`). Awaiting go-ahead for
+  Phase 6 (animation).** (The market-closed work in the section above
   landed alongside, out of band — `767fad6` + `c56e394`.)
+
+### Phase 5 — Cherry-pick error handling from `testing` (2026-08-30, `809d3ea`)
+
+- **Toast infra** — `sonner@^2.0.8` added; `components/ui/sonner.tsx`
+  (themed to Vault tokens, `richColors` off, bottom-right) and
+  `lib/ui/toast.ts` (`notify.success` 3s / `notify.error` 6s, deduped by
+  message `id`) taken verbatim from `testing`. `<Toaster />` mounted in
+  `DashboardShell` inside `ThemeProvider`.
+- **Sentry PII scrubbing** — `lib/observability/scrubSentryEvent.ts`
+  (+ test, 2 cases) from `testing`: redacts `request.data`, drops
+  `request.cookies` / `request.headers`. Wired into `instrumentation.ts`
+  and `instrumentation-client.ts` as `beforeSend` / `beforeSendTransaction`,
+  both now also `sendDefaultPii: false` and DSN-gated. `context/
+  security-review-2026-08-29.md` brought over (referenced by the scrubber
+  and the CSP comments).
+- **Validation copy** — `lib/validation/transaction.ts` (+ new test, 16
+  cases) replaced with `testing`'s richer schema: distinct per-error
+  messages (`transactionMessages`), a `MIN_QUANTITY_CHI = 0.01`
+  chi-equivalent floor, and a future-date block (server "today" UTC + 1
+  day slack). `.superRefine`-based; wire payload and the `pricePerUnit`
+  column are unchanged. Independent of Phase 2's `priceSanity.ts` (that
+  is the client-only spot-band check; this schema never sees spot).
+- **CSP tightening** — `next.config.ts` replaced with `testing`'s: full
+  `Content-Security-Policy` (default-src 'self' + named Clerk / Turnstile
+  / Sentry-ingest allowlist; `'unsafe-eval'` dev-only; `'unsafe-inline'`
+  still on script-src pending a nonce — tracked in the security-review
+  doc), `Permissions-Policy`, `poweredByHeader: false`, and
+  `turbopack.root: __dirname`. This branch's `next.config.ts` had only
+  the baseline headers (market-hours / Phase 2 work never touched it), so
+  this is a clean take. Not visually re-verified against a signed-in
+  session — same Clerk-test-credential gap noted throughout.
+- **Toasts wired into `transaction-dialog.tsx`** per the PR-3
+  outcome→feedback table: invalid-fields submit → `checkFields` toast;
+  server rejection mapped off `body.error.code`
+  (`RATE_LIMITED` / `UNAUTHORIZED` / `INVALID_INPUT` → distinct copy,
+  else `serverError`); thrown `fetch` → `network`; success → buy/sell/edit
+  copy keyed off `type` / `isEdit`. The dialog's own bottom inline
+  `error` banner + state removed — the toast is the failure signal now
+  (optimistic-add rollback still flows through `onAddSettled`; the
+  Phase-1 "Total amount paid" field and Phase-2 soft/hard price notices
+  are untouched). `transaction-dialog.test.tsx`: `@/lib/ui/toast` mocked,
+  the two ex-banner assertions reworked to `toastError` / `toastSuccess`,
+  +2 cases (429 mapping, success copy).
+- **Khmer removed** (`testing` PR-0, user-confirmed this session — the
+  Q3 decision, done now rather than deferred): `km` object dropped from
+  `lib/i18n/dictionary.ts`, `Locale` narrowed to `"en"`,
+  `dictionary = { en }`; `language-toggle.tsx` deleted; `<LanguageToggle>`
+  removed from `sidebar.tsx`, `dashboard-shell.tsx`,
+  `welcome/landing-nav.tsx`. `LocaleProvider` / `useLocale` / `t.*` kept
+  (locale permanently `"en"`); `locale-context.tsx` stored-value check
+  narrowed to `"en"`. `globals.css` `html[lang="km"]` blocks + the
+  `--font-khmer` load left in place (dead but harmless; flagged for a
+  later cleanup so the `landing-page` editorial redesign isn't
+  disturbed). New Phase-5 toast strings are English-only under
+  `dialog.toast`.
+- `vitest.setup.ts`: added the `sonner` mock (spies + null `<Toaster>`).
+  The `motion/react` mock is Phase 6, not added yet.
+- `context/design-specs/03-dashboard-animation-and-input-feedback.md`
+  brought over from `testing` as the record behind the toast table and
+  Phase 6.
+- Verified: `tsc --noEmit`, `eslint`, `vitest run` (221/221),
+  `next build` all clean.
 
 ### Phase 4 — Issue #4: chart robustness + off-spot row flag (2026-08-30, uncommitted)
 

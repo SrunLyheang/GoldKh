@@ -1,13 +1,21 @@
 import * as Sentry from "@sentry/nextjs";
+import { scrubSentryEvent } from "@/lib/observability/scrubSentryEvent";
 
-// Sentry.init with an undefined dsn is a documented no-op — safe in every
-// environment before NEXT_PUBLIC_SENTRY_DSN is configured.
-//
-// No onRouterTransitionStart export here — @sentry/nextjs (10.71.0) has
-// no captureRouterTransitionStart yet for this Next.js 16.3
-// instrumentation-client.ts hook. Optional per Next's docs; revisit when
-// the SDK catches up.
-Sentry.init({
-  dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
-  tracesSampleRate: 0.1,
-});
+// Explicitly gate on the DSN rather than leaning on "Sentry.init with an
+// undefined dsn is a no-op" — nothing initialises unless error tracking is
+// actually configured for this environment.
+const dsn = process.env.NEXT_PUBLIC_SENTRY_DSN;
+
+if (dsn) {
+  Sentry.init({
+    dsn,
+    tracesSampleRate: 0.1,
+    // Do not attach IP address or user identifiers by default.
+    sendDefaultPii: false,
+    // Strip request body / cookies / headers from every event — the
+    // transaction `notes` field can carry PII. See
+    // context/security-review-2026-08-29.md, Finding 3.
+    beforeSend: scrubSentryEvent,
+    beforeSendTransaction: scrubSentryEvent,
+  });
+}

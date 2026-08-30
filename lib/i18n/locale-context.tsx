@@ -23,13 +23,18 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const stored = window.localStorage.getItem(STORAGE_KEY);
-    if (stored === "en" || stored === "km") {
+    if (stored === "en") {
       // Deliberately synchronous: reading localStorage can't happen during
       // the initial render (no `window` on the server, and reading it in a
       // lazy useState initializer would make the client's first paint
       // disagree with the server-rendered "en" markup — a hydration
       // mismatch). Deferring to this effect is the standard fix, at the
       // cost of one extra render when a non-default locale was stored.
+      //
+      // Only "en" ships right now — the Khmer locale and its toggle were
+      // removed 2026-08-29 pending a translation review, so this branch is
+      // effectively a no-op. Kept so a second locale can be reinstated
+      // without reworking the provider.
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setLocaleState(stored);
     }
