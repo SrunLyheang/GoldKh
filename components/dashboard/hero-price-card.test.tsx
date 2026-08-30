@@ -38,6 +38,22 @@ describe("HeroPriceCard", () => {
     expect(screen.getByText(/as of/)).toBeInTheDocument();
   });
 
+  // Regression (React #418): the "as of" clock is rendered on the server
+  // (host zone) and again on the client (visitor's zone). If the zone is
+  // not pinned the two strings differ and hydration aborts. The fixture
+  // is 12:00Z, which is 19:00 in Phnom Penh — assert that regardless of
+  // the process/runtime zone.
+  it("renders the capture time in Phnom Penh time, not the host zone", () => {
+    const original = process.env.TZ;
+    process.env.TZ = "UTC";
+    try {
+      renderCard({ capturedAt: new Date("2026-08-26T12:00:00Z") });
+      expect(screen.getByText(/as of 7:00\s?PM/i)).toBeInTheDocument();
+    } finally {
+      process.env.TZ = original;
+    }
+  });
+
   it('labels a stale price "Stale", not "Live"', () => {
     renderCard({ isStale: true });
     expect(screen.getByText("Stale")).toBeInTheDocument();

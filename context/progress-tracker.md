@@ -12,6 +12,26 @@ Update this file after every meaningful implementation change.
   the remaining work toward hardening (rate limiting, the
   `user.deleted` webhook, UI test coverage) over new features.
 
+## Done: timezone-pinned display clock — React #418 fix (2026-08-30, uncommitted)
+
+- Hydration mismatch (React error #418) on the dashboard. Root cause:
+  `HeroPriceCard`'s "as of {time}" label used
+  `new Intl.DateTimeFormat("en-US", { hour, minute })` with **no
+  `timeZone`**. It is server-rendered in the host zone (UTC in prod) and
+  re-rendered on the client in the visitor's zone, so the text node
+  differs (e.g. "12:00 PM" vs "7:00 PM") and hydration aborts.
+  `PriceHistoryChart`'s axis/tooltip date formatters (`makeDateLabel`,
+  `tooltipDateLabel`) had the same latent bug.
+- New `lib/format/datetime.ts`: `DISPLAY_TIME_ZONE = "Asia/Phnom_Penh"`
+  (single-market app — every shown clock time is Phnom Penh time,
+  deterministic across server/client) + `formatClockTime(Date)`.
+- `hero-price-card.tsx` uses `formatClockTime`; `price-history-chart.tsx`
+  passes `timeZone: DISPLAY_TIME_ZONE` to all four `Intl.DateTimeFormat`
+  call sites.
+- Regression test in `hero-price-card.test.tsx`: with `process.env.TZ`
+  forced to `UTC`, the 12:00Z fixture must still render "7:00 PM".
+  Full suite 256/256, `tsc --noEmit` clean, eslint clean.
+
 ## Done: CSP allowlist for Clerk production custom domain (2026-08-30, uncommitted)
 
 - Deployment surfaced a CSP block: `script-src` only listed

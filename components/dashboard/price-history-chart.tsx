@@ -10,6 +10,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { DISPLAY_TIME_ZONE } from "@/lib/format/datetime";
 import { formatUsd } from "@/lib/format/money";
 import type { ChartPoint } from "@/lib/calc/priceHistory";
 import { useLocale } from "@/lib/i18n/locale-context";
@@ -105,6 +106,7 @@ function makeDateLabel(points: ChartPoint[]): (iso: string) => string {
       new Intl.DateTimeFormat("en-US", {
         hour: "numeric",
         minute: "2-digit",
+        timeZone: DISPLAY_TIME_ZONE,
       }).format(new Date(iso));
   }
   if (spanMs < 3 * oneDay) {
@@ -113,12 +115,14 @@ function makeDateLabel(points: ChartPoint[]): (iso: string) => string {
         month: "short",
         day: "numeric",
         hour: "numeric",
+        timeZone: DISPLAY_TIME_ZONE,
       }).format(new Date(iso));
   }
   return (iso: string) =>
     new Intl.DateTimeFormat("en-US", {
       month: "short",
       day: "numeric",
+      timeZone: DISPLAY_TIME_ZONE,
     }).format(new Date(iso));
 }
 
@@ -128,6 +132,7 @@ function tooltipDateLabel(iso: string): string {
     day: "numeric",
     hour: "numeric",
     minute: "2-digit",
+    timeZone: DISPLAY_TIME_ZONE,
   }).format(new Date(iso));
 }
 

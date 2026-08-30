@@ -1,4 +1,5 @@
 import type { GoldUnit } from "@/lib/calc/units";
+import { formatClockTime } from "@/lib/format/datetime";
 import { formatUsd } from "@/lib/format/money";
 import { useLocale } from "@/lib/i18n/locale-context";
 import { unitLabels } from "@/lib/i18n/unit-labels";
@@ -33,10 +34,7 @@ export function HeroPriceCard({
 }: HeroPriceCardProps) {
   const { t } = useLocale();
   const marketClosed = marketOpen === false;
-  const timeLabel = new Intl.DateTimeFormat("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
-  }).format(capturedAt);
+  const timeLabel = formatClockTime(capturedAt);
 
   const isChi = displayUnit === "chi";
   const headlinePrice = isChi ? pricePerChi : pricePerDamlung;
