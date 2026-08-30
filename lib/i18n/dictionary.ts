@@ -52,6 +52,8 @@ const en = {
       `Actions for ${type} of ${quantity} ${unit}`,
     khrNote: "KHR entries aren't converted to USD yet",
     sellNote: "Sell rows show proceeds, not an ongoing position",
+    priceOffSpot:
+      "This price is far from the current spot rate — it may be a typo. Edit the transaction to fix it.",
   },
   dialog: {
     editTitle: "Edit transaction",
@@ -210,6 +212,8 @@ const km: typeof en = {
       `សកម្មភាពសម្រាប់ការ${type} ${quantity} ${unit}`,
     khrNote: "ប្រតិបត្តិការជាប្រាក់រៀល មិនទាន់បម្លែងទៅជាដុល្លារនៅឡើយទេ",
     sellNote: "ជួរលក់បង្ហាញប្រាក់ដែលទទួលបាន មិនមែនបរិមាណមាសដែលនៅកាន់កាប់ទេ",
+    priceOffSpot:
+      "តម្លៃនេះឆ្ងាយពីតម្លៃទីផ្សារបច្ចុប្បន្ន — វាអាចជាការវាយខុស។ សូមកែប្រតិបត្តិការនេះ។",
   },
   dialog: {
     editTitle: "កែប្រតិបត្តិការ",

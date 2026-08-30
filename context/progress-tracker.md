@@ -65,10 +65,35 @@ Update this file after every meaningful implementation change.
   doesn't need it). Error-handling/toast/animation pieces from the
   `testing` branch are cherry-picked in phases 5–6. Neither branch
   merges as a unit.
-- Phase status: **Phases 1 (`0d581c2`) and 2 (`e134860`) committed.
-  Phase 3 complete & verified (uncommitted). Awaiting go-ahead for
-  Phase 4.** (The market-closed work in the section above landed
-  alongside, out of band — `767fad6` + `c56e394`.)
+- Phase status: **Phases 1 (`0d581c2`), 2 (`e134860`), 3 (`8ac6528`)
+  committed. Phase 4 complete & verified (uncommitted). Awaiting
+  go-ahead for Phase 5.** (The market-closed work in the section above
+  landed alongside, out of band — `767fad6` + `c56e394`.)
+
+### Phase 4 — Issue #4: chart robustness + off-spot row flag (2026-08-30, uncommitted)
+
+- `components/dashboard/price-history-chart.tsx`: `computeYAxis` no
+  longer folds `breakEvenPerDamlung` into the domain — it's sized from
+  the price series alone. A single fat-fingered transaction used to push
+  the average-cost line orders of magnitude off the real price and
+  flatten the chart into an unreadable sliver (issue #4). New
+  `placeBreakEven(value, domain)` returns `on-scale` / `above` / `below`;
+  off-scale, the dashed line is clamped to the nearer edge with an
+  `avg cost ↑` / `↓` label and the caption explains it's pinned. Both
+  helpers exported for unit testing.
+- `components/dashboard/price-history-chart.test.tsx`: +8 cases —
+  `computeYAxis` domain from series only / flat series, `placeBreakEven`
+  four branches, and two render assertions for the pinned vs normal
+  caption.
+- `components/dashboard/transaction-history.tsx`: rows whose USD
+  per-unit price is outside the Phase 2 hard band (`0.1×–10×` spot) now
+  show a small `TriangleAlert` beside the price in both the table and
+  the mobile card, `title` = "far from the current spot rate — may be a
+  typo. Edit to fix." Not auto-corrected. Reuses
+  `classifyPrice` / `isHardVerdict` from `lib/validation/priceSanity.ts`.
+- `lib/i18n/dictionary.ts`: `transactions.priceOffSpot`, `en` + `km`.
+- Verified: `tsc --noEmit`, `eslint`, `vitest run` (201/201),
+  `next build` all clean.
 
 ### Phase 3 — Issue #1: realized gain/loss panel (2026-08-30, uncommitted)
 

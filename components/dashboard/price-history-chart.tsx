@@ -37,17 +37,17 @@ function niceStep(range: number): number {
   );
 }
 
-function computeYAxis(
-  points: ChartPoint[],
-  breakEvenPerDamlung?: number,
-): {
+// The y-axis is sized from the price series ALONE — the break-even line
+// is deliberately excluded. A single fat-fingered transaction can push a
+// user's average cost orders of magnitude off the real price; folding
+// that into the domain flattened the actual line into an unreadable
+// sliver (current-issues.md issue #4). The break-even marker is instead
+// clamped to whichever edge it sits past (see placeBreakEven).
+export function computeYAxis(points: ChartPoint[]): {
   domain: [number, number];
   ticks: number[];
 } {
   const values = points.map((p) => p.pricePerDamlung);
-  if (breakEvenPerDamlung !== undefined) {
-    values.push(breakEvenPerDamlung);
-  }
   const dataMin = Math.min(...values);
   const dataMax = Math.max(...values);
   const range = dataMax - dataMin;
@@ -64,6 +64,35 @@ function computeYAxis(
   }
 
   return { domain: [domainMin, domainMax], ticks };
+}
+
+export interface BreakEvenMarker {
+  // The user's real average cost per damlung.
+  actual: number;
+  // Where the line is actually drawn — the real value when on scale,
+  // otherwise pinned to the nearer domain edge.
+  y: number;
+  placement: "on-scale" | "above" | "below";
+}
+
+export function placeBreakEven(
+  breakEvenPerDamlung: number | undefined,
+  [domainMin, domainMax]: [number, number],
+): BreakEvenMarker | null {
+  if (breakEvenPerDamlung === undefined) {
+    return null;
+  }
+  if (breakEvenPerDamlung > domainMax) {
+    return { actual: breakEvenPerDamlung, y: domainMax, placement: "above" };
+  }
+  if (breakEvenPerDamlung < domainMin) {
+    return { actual: breakEvenPerDamlung, y: domainMin, placement: "below" };
+  }
+  return {
+    actual: breakEvenPerDamlung,
+    y: breakEvenPerDamlung,
+    placement: "on-scale",
+  };
 }
 
 function makeDateLabel(points: ChartPoint[]): (iso: string) => string {
@@ -164,7 +193,8 @@ export function PriceHistoryChart({
     );
   }
 
-  const { domain, ticks } = computeYAxis(points, breakEvenPerDamlung);
+  const { domain, ticks } = computeYAxis(points);
+  const breakEven = placeBreakEven(breakEvenPerDamlung, domain);
   const xAxisDateLabel = makeDateLabel(points);
 
   return (
@@ -207,12 +237,29 @@ export function PriceHistoryChart({
               content={<TooltipContent />}
               cursor={{ stroke: "var(--border)" }}
             />
-            {breakEvenPerDamlung !== undefined && (
+            {breakEven && (
               <ReferenceLine
-                y={breakEvenPerDamlung}
+                y={breakEven.y}
                 stroke="var(--muted-foreground)"
-                strokeDasharray="6 5"
+                strokeDasharray={breakEven.placement === "on-scale" ? "6 5" : "2 3"}
                 strokeWidth={1.5}
+                label={
+                  breakEven.placement === "on-scale"
+                    ? undefined
+                    : {
+                        value:
+                          breakEven.placement === "above"
+                            ? "avg cost ↑"
+                            : "avg cost ↓",
+                        position:
+                          breakEven.placement === "above"
+                            ? "insideTopLeft"
+                            : "insideBottomLeft",
+                        fill: "var(--muted-foreground)",
+                        fontSize: 10,
+                        fontFamily: "var(--font-mono)",
+                      }
+                }
               />
             )}
             <Line
@@ -226,10 +273,17 @@ export function PriceHistoryChart({
           </LineChart>
         </ResponsiveContainer>
       </div>
-      {breakEvenPerDamlung !== undefined && (
+      {breakEven && (
         <p className="mt-2 text-[11.5px] text-muted-foreground">
-          Dashed line = your average cost (
-          {formatUsd(String(breakEvenPerDamlung))}/damlung).
+          {breakEven.placement === "on-scale"
+            ? `Dashed line = your average cost (${formatUsd(
+                String(breakEven.actual),
+              )}/damlung).`
+            : `Your average cost (${formatUsd(
+                String(breakEven.actual),
+              )}/damlung) is ${
+                breakEven.placement === "above" ? "above" : "below"
+              } this range — the dashed line is pinned to the edge.`}
         </p>
       )}
       {marketClosedNote}
