@@ -360,8 +360,17 @@ islands: **Account** (Clerk `<UserProfile routing="hash" />` in a
 no save button), **Data** (export, delete all transactions, delete
 account — the two destructive rows gate behind typing `DELETE`). Reached
 from the sidebar footer gear on the user/profile row (Lucide `Settings`,
-right-aligned opposite the `UserButton`; the `ThemeToggle` sits on its
-own line above).
+right-aligned opposite the `UserButton`, beside the `SignOutButton`; the
+`ThemeToggle` sits on its own line above).
+
+**Sign out** — `components/dashboard/sign-out-button.tsx`: a Lucide
+`LogOut` icon button (sidebar footer row + mobile top bar) that calls
+Clerk `signOut()` then hard-navigates to `/`, showing a full-screen
+`backdrop-blur` overlay (`Spinner` + "Signing you out…") for the gap.
+Clerk's built-in `<UserButton>` sign-out is hidden via appearance
+(`userButtonPopoverActionButton__signOut`) because its soft client-side
+navigation left the dashboard frozen until a manual refresh — the same
+reason `data-actions.tsx` hard-navigates after account deletion.
 
 **PrefsProvider** — `lib/prefs/prefs-context.tsx`, provided in
 `DashboardShell` inside `ThemeProvider`. Same hydration-safe pattern as

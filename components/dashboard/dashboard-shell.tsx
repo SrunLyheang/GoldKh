@@ -9,6 +9,7 @@ import { PrefsProvider } from "@/lib/prefs/prefs-context";
 import { ThemeProvider } from "@/lib/theme/theme-context";
 import { Toaster } from "@/components/ui/sonner";
 import { Sidebar } from "./sidebar";
+import { SignOutButton } from "./sign-out-button";
 import { ThemeToggle } from "./theme-toggle";
 
 // Wraps the dashboard route so mobile can have a hamburger-triggered
@@ -50,8 +51,18 @@ export function DashboardShell({ children }: { children: ReactNode }) {
               <div className="flex shrink-0 items-center gap-2.5">
                 <ThemeToggle />
                 <UserButton
-                  appearance={{ elements: { userButtonBox: "flex-row-reverse" } }}
+                  appearance={{
+                    elements: {
+                      userButtonBox: "flex-row-reverse",
+                      // See sign-out-button.tsx — the built-in sign out is
+                      // hidden in favour of <SignOutButton>.
+                      userButtonPopoverActionButton__signOut: {
+                        display: "none",
+                      },
+                    },
+                  }}
                 />
+                <SignOutButton />
               </div>
             </header>
             <main className="flex-1 px-4 py-7 md:px-10 md:py-9">
