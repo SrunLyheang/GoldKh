@@ -908,3 +908,96 @@ html:has(.liquid-glass-landing-root) {
     animation: none;
   }
 }
+
+/* ─── Interactive landing widgets ───────────────────────────────────────────── */
+
+/* Gold range sliders in the "Try it" simulator and the unit playground.
+   Native range inputs can't be styled through Tailwind alone, so the
+   track and thumb are set here once for both. */
+.sim-spot-range {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  border-radius: 9999px;
+  background: linear-gradient(
+    90deg,
+    rgba(232, 184, 75, 0.25),
+    rgba(232, 184, 75, 0.7)
+  );
+  outline: none;
+  cursor: pointer;
+}
+.sim-spot-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 9999px;
+  background: #e8b84b;
+  border: 3px solid #1a1207;
+  box-shadow: 0 0 12px rgba(232, 184, 75, 0.6);
+}
+.sim-spot-range::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 9999px;
+  background: #e8b84b;
+  border: 3px solid #1a1207;
+  box-shadow: 0 0 12px rgba(232, 184, 75, 0.6);
+}
+.sim-spot-range:focus-visible {
+  box-shadow: 0 0 0 3px rgba(232, 184, 75, 0.4);
+}
+
+/* Illustrative price sparkline: draw the line on a loop, pulse the dot.
+   CSS-only so it costs nothing per scroll frame. */
+@keyframes sparkDraw {
+  0% {
+    stroke-dashoffset: 900;
+  }
+  70%,
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes sparkPulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.25;
+  }
+}
+.spark-line {
+  animation: sparkDraw 4.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+.spark-dot {
+  animation: sparkPulse 1.8s ease-in-out infinite;
+}
+
+/* New ledger rows fade + rise in as the visitor adds buys. */
+@keyframes simRowIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.sim-row {
+  animation: simRowIn 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sim-row,
+  .spark-line,
+  .spark-dot {
+    animation: none;
+  }
+  .spark-line {
+    stroke-dashoffset: 0;
+  }
+}

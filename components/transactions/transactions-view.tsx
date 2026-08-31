@@ -91,6 +91,7 @@ function ViewRow({
   currentPricePerTroyOz,
   displayUnit,
   priceHistory,
+  selectMode,
   expanded,
   selected,
   onToggleSelect,
@@ -102,6 +103,7 @@ function ViewRow({
   currentPricePerTroyOz: string;
   displayUnit: GoldUnit;
   priceHistory: ChartPoint[];
+  selectMode: boolean;
   expanded: boolean;
   selected: boolean;
   onToggleSelect: () => void;
@@ -131,15 +133,17 @@ function ViewRow({
           (expanded || selected) && "bg-accent/40"
         )}
       >
-        <td className="py-3 pr-1 pl-4">
-          {d.isPending ? null : (
-            <RowCheckbox
-              checked={selected}
-              onCheckedChange={onToggleSelect}
-              label={`Select ${row.type} ${row.quantity} ${row.unit}`}
-            />
-          )}
-        </td>
+        {selectMode && (
+          <td className="py-3 pr-1 pl-4">
+            {d.isPending ? null : (
+              <RowCheckbox
+                checked={selected}
+                onCheckedChange={onToggleSelect}
+                label={`Select ${row.type} ${row.quantity} ${row.unit}`}
+              />
+            )}
+          </td>
+        )}
         <td className="py-3 pr-3 pl-2">
           <div className="flex items-center gap-2">
             <ChevronDown
@@ -210,7 +214,7 @@ function ViewRow({
       </tr>
       {expanded && (
         <tr className="border-b border-border last:border-0">
-          <td colSpan={8} className="p-0">
+          <td colSpan={selectMode ? 8 : 7} className="p-0">
             <TransactionDetail
               row={row}
               currentPricePerTroyOz={currentPricePerTroyOz}
@@ -229,6 +233,7 @@ function ViewCard({
   currentPricePerTroyOz,
   displayUnit,
   priceHistory,
+  selectMode,
   expanded,
   selected,
   onToggleSelect,
@@ -240,6 +245,7 @@ function ViewCard({
   currentPricePerTroyOz: string;
   displayUnit: GoldUnit;
   priceHistory: ChartPoint[];
+  selectMode: boolean;
   expanded: boolean;
   selected: boolean;
   onToggleSelect: () => void;
@@ -272,7 +278,7 @@ function ViewCard({
         className="flex min-h-11 cursor-pointer items-center justify-between gap-2 px-4 py-3.5 focus:outline-none focus-visible:bg-accent/40"
       >
         <div className="flex min-w-0 items-center gap-2.5">
-          {!d.isPending && (
+          {selectMode && !d.isPending && (
             <RowCheckbox
               checked={selected}
               onCheckedChange={onToggleSelect}
@@ -366,7 +372,20 @@ export function TransactionsView({
   const [csvOpen, setCsvOpen] = useState(false);
   const [bulkOpen, setBulkOpen] = useState(false);
   const [bulkPending, startBulk] = useTransition();
+  // Selection is opt-in: the tick-boxes, select-all, and the bulk bar only
+  // render once the user presses "Select". Leaving select mode clears any
+  // ticks so a stale selection can't linger invisibly.
+  const [selectMode, setSelectMode] = useState(false);
   const selection = useRowSelection();
+
+  const enterSelectMode = () => {
+    setExpandedId(null);
+    setSelectMode(true);
+  };
+  const exitSelectMode = () => {
+    setSelectMode(false);
+    selection.clear();
+  };
   const { sortBy, sortDir, onHeaderClick } = useSort();
 
   const criteria: FilterCriteria = useMemo(
@@ -453,13 +472,32 @@ export function TransactionsView({
         >
           ← {t.chart.backToDashboard}
         </Link>
-        <button
-          type="button"
-          onClick={() => setCsvOpen(true)}
-          className="tt-label border border-border px-2.5 py-1.5 text-[10.5px] text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-        >
-          {t.csv.importExport}
-        </button>
+        <div className="flex items-center gap-2">
+          {visible.length > 0 && (
+            // Inline copy: locale is en-only and dictionary.ts is frozen
+            // this phase (plan §11 Phase 0).
+            <button
+              type="button"
+              onClick={selectMode ? exitSelectMode : enterSelectMode}
+              aria-pressed={selectMode}
+              className={cn(
+                "tt-label border px-2.5 py-1.5 text-[10.5px] transition-colors",
+                selectMode
+                  ? "border-foreground bg-foreground text-background"
+                  : "border-border text-muted-foreground hover:bg-accent hover:text-foreground"
+              )}
+            >
+              {selectMode ? "Cancel" : "Select"}
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => setCsvOpen(true)}
+            className="tt-label border border-border px-2.5 py-1.5 text-[10.5px] text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+          >
+            {t.csv.importExport}
+          </button>
+        </div>
       </div>
 
       <h1 className="tt-heading tt-bracket text-[17px] text-foreground">
@@ -484,15 +522,17 @@ export function TransactionsView({
                 <table className="w-full min-w-140 border-collapse">
                   <thead className="bg-card">
                     <tr className="border-b border-border">
-                      <th className="py-3 pr-1 pl-4">
-                        <RowCheckbox
-                          checked={selection.allSelected(visibleIds)}
-                          onCheckedChange={() =>
-                            selection.toggleAll(visibleIds)
-                          }
-                          label="Select all transactions"
-                        />
-                      </th>
+                      {selectMode && (
+                        <th className="py-3 pr-1 pl-4">
+                          <RowCheckbox
+                            checked={selection.allSelected(visibleIds)}
+                            onCheckedChange={() =>
+                              selection.toggleAll(visibleIds)
+                            }
+                            label="Select all transactions"
+                          />
+                        </th>
+                      )}
                       <SortHeader
                         className="py-3 pr-3 pl-2 text-left"
                         label={t.filters.sortDate}
@@ -530,6 +570,7 @@ export function TransactionsView({
                         currentPricePerTroyOz={currentPricePerTroyOz}
                         displayUnit={displayUnit}
                         priceHistory={priceHistory}
+                        selectMode={selectMode}
                         expanded={expandedId === row.id}
                         selected={selection.selectedIds.has(row.id)}
                         onToggleSelect={() => selection.toggle(row.id)}
@@ -549,6 +590,7 @@ export function TransactionsView({
                     currentPricePerTroyOz={currentPricePerTroyOz}
                     displayUnit={displayUnit}
                     priceHistory={priceHistory}
+                    selectMode={selectMode}
                     expanded={expandedId === row.id}
                     selected={selection.selectedIds.has(row.id)}
                     onToggleSelect={() => selection.toggle(row.id)}

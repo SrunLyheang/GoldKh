@@ -19,7 +19,20 @@ import {
 } from "lucide-react";
 
 import { AnimatedHeroImage } from "./animated-hero-image";
+import { HeroToDashboard } from "./hero-to-dashboard";
+import { Magnetic } from "./magnetic";
+import { SectionProgressNav } from "./section-progress-nav";
+import { SpotSparkline } from "./spot-sparkline";
+import { TryItSimulator } from "./try-it-simulator";
 import { useSignedIn } from "./use-signed-in";
+
+const SECTION_NAV = [
+  { id: "try-it", label: "Try It" },
+  { id: "features", label: "Features" },
+  { id: "how-it-works", label: "How It Works" },
+  { id: "units", label: "Units" },
+  { id: "about", label: "About" },
+];
 
 // Pinned once when the JS module first evaluates rather than on every
 // render, and the copyright year is allowed to differ between the
@@ -30,37 +43,9 @@ const CURRENT_YEAR = new Date().getFullYear();
 export function LiquidGlassLanding() {
   const signedIn = useSignedIn();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [converterQty, setConverterQty] = useState<string>("1");
-  const [converterUnit, setConverterUnit] = useState<"damlung" | "chi">(
-    "damlung",
-  );
-
-  // Indicative gold price for this marketing converter only — NOT a live
-  // feed. The signed-in dashboard pulls the real spot from goldapi.io.
-  // Bump INDICATIVE_SPOT_PER_OZ when it drifts from the market.
-  const GRAMS_PER_TROY_OZ = 31.1034768;
-  const GRAMS_PER_DAMLUNG = 37.5;
-  const TROY_OZ_PER_DAMLUNG = GRAMS_PER_DAMLUNG / GRAMS_PER_TROY_OZ; // ≈ 1.205658
-  const INDICATIVE_SPOT_PER_OZ = 4100;
-
-  const spotPerDamlung = INDICATIVE_SPOT_PER_OZ * TROY_OZ_PER_DAMLUNG;
-
-  // Converter calculations
-  const parsedConverterQty = Number.parseFloat(converterQty);
-  const sanitizedConverterQty = Number.isFinite(parsedConverterQty)
-    ? Math.max(0, parsedConverterQty)
-    : 0;
-
-  const totalDamlung =
-    converterUnit === "damlung"
-      ? sanitizedConverterQty
-      : sanitizedConverterQty / 10;
-  const totalChi = totalDamlung * 10;
-  const totalGrams = totalDamlung * GRAMS_PER_DAMLUNG;
-  const totalOz = totalDamlung * TROY_OZ_PER_DAMLUNG;
-  const totalValueUsd = totalDamlung * spotPerDamlung;
 
   const navLinks = [
+    { label: "Try It", href: "#try-it" },
     { label: "Features", href: "#features" },
     { label: "How It Works", href: "#how-it-works" },
     { label: "Cambodian Units", href: "#units" },
@@ -197,24 +182,60 @@ export function LiquidGlassLanding() {
           </p>
 
           <div className="flex flex-wrap items-center gap-3">
-            <Link
-              href={signedIn ? "/dashboard" : "/sign-up"}
-              className="bg-white text-black text-sm sm:text-base font-medium px-6 sm:px-7 py-3 rounded-full hover:bg-white/90 transition-colors shadow-xl"
-            >
-              {signedIn ? "Go to Dashboard" : "Get Started"}
-            </Link>
-            <a
-              href="#features"
-              className="liquid-glass text-white text-sm sm:text-base font-medium px-6 sm:px-7 py-3 rounded-full hover:bg-white/5 transition-colors"
-            >
-              See How It Works
-            </a>
+            <Magnetic>
+              <Link
+                href={signedIn ? "/dashboard" : "/sign-up"}
+                className="bg-white text-black text-sm sm:text-base font-medium px-6 sm:px-7 py-3 rounded-full hover:bg-white/90 transition-colors shadow-xl inline-block"
+              >
+                {signedIn ? "Go to Dashboard" : "Get Started"}
+              </Link>
+            </Magnetic>
+            <Magnetic>
+              <a
+                href="#try-it"
+                className="liquid-glass text-white text-sm sm:text-base font-medium px-6 sm:px-7 py-3 rounded-full hover:bg-white/5 transition-colors inline-block"
+              >
+                See How It Works
+              </a>
+            </Magnetic>
+          </div>
+
+          <div className="mt-8 hidden items-center gap-2 font-mono text-[11px] uppercase tracking-widest text-white/30 sm:flex">
+            Scroll
+            <span className="h-8 w-px animate-pulse bg-white/30" />
           </div>
         </div>
       </section>
 
+      <SectionProgressNav sections={SECTION_NAV} />
+
+      {/* ── Scroll-pinned bridge: buys → one position ──────────────────────── */}
+      <HeroToDashboard />
+
       {/* ── Scrollable Body Content ────────────────────────────────────────── */}
       <main className="relative z-10 bg-black">
+        {/* ── Try It: live position simulator (#try-it) ─────────────────────── */}
+        <section
+          id="try-it"
+          className="scroll-mt-24 border-t border-white/10 px-5 py-28 sm:px-8 max-w-7xl mx-auto"
+        >
+          <div className="mx-auto mb-12 max-w-3xl text-center">
+            <span className="mb-3 inline-block font-mono text-xs font-semibold uppercase tracking-widest text-amber-400">
+              ✦ Try it right here
+            </span>
+            <h2 className="mb-4 text-3xl font-bold tracking-tight text-white sm:text-4xl">
+              Build a ledger. Drag the price. Watch it move.
+            </h2>
+            <p className="text-sm leading-relaxed text-white/65 sm:text-base">
+              No sign-up needed. Add a few pretend buys, then drag today&apos;s
+              price and see your average cost, holdings, and gain or loss
+              recompute live.
+            </p>
+          </div>
+
+          <TryItSimulator signedIn={signedIn} />
+        </section>
+
         {/* ── 2. Features Section (#features) ─────────────────────────────────── */}
         <section
           id="features"
@@ -424,7 +445,7 @@ export function LiquidGlassLanding() {
           </div>
         </section>
 
-        {/* ── 4. Cambodian Units & Live Interactive Converter (#units) ────────── */}
+        {/* ── 4. Cambodian Units (#units) ────────────────────────────────────── */}
         <section
           id="units"
           className="scroll-mt-24 py-28 px-5 sm:px-8 max-w-7xl mx-auto border-t border-white/10"
@@ -442,7 +463,12 @@ export function LiquidGlassLanding() {
                 <p className="text-white/70 text-sm leading-relaxed mb-6">
                   Gold here is bought and sold in <strong>Chi (ជី)</strong> and{" "}
                   <strong>Damlung (ដំឡឹង)</strong>. GoldKh converts them to
-                  grams and troy ounces exactly, with no rounding along the way.
+                  grams and troy ounces exactly, with no rounding along the way —
+                  and you can feel it in the{" "}
+                  <a href="#try-it" className="text-amber-300 underline-offset-4 hover:underline">
+                    simulator above
+                  </a>
+                  .
                 </p>
 
                 <div className="space-y-3 font-mono text-xs">
@@ -471,95 +497,23 @@ export function LiquidGlassLanding() {
                 </div>
               </div>
 
-              {/* Right: Live Interactive Converter Widget */}
+              {/* Right: an illustrative price line — every real price the
+                  dashboard shows carries the moment it was captured. */}
               <div className="lg:col-span-6">
-                <div className="liquid-glass-gold rounded-3xl p-6 sm:p-8 border border-amber-400/30 shadow-2xl">
-                  <div className="flex items-center justify-between mb-6 pb-4 border-b border-amber-400/20">
-                    <span className="text-xs font-mono uppercase text-amber-300 font-bold flex items-center gap-2">
-                      <Calculator className="w-4 h-4" />
-                      Unit Value Calculator
+                <div className="liquid-glass-gold rounded-3xl border border-amber-400/25 p-6 sm:p-8">
+                  <div className="mb-4 flex items-baseline justify-between">
+                    <span className="font-mono text-xs font-bold uppercase tracking-widest text-amber-300">
+                      Spot, over a day
                     </span>
-                    <span className="text-[11px] font-mono text-white/50">
-                      Indicative: $
-                      {spotPerDamlung.toLocaleString(undefined, {
-                        maximumFractionDigits: 0,
-                      })}
-                      /damlung
+                    <span className="font-mono text-[11px] text-white/50">
+                      illustrative
                     </span>
                   </div>
-
-                  {/* Input Controls */}
-                  <div className="space-y-4 mb-6">
-                    <label className="block text-xs font-mono text-white/70">
-                      Enter Quantity &amp; Unit:
-                    </label>
-                    <div className="grid grid-cols-3 gap-3">
-                      <input
-                        type="number"
-                        min="0"
-                        step="0.5"
-                        value={converterQty}
-                        onChange={(e) => setConverterQty(e.target.value)}
-                        className="col-span-2 bg-black/60 border border-amber-400/30 rounded-2xl px-4 py-3 text-white font-mono text-lg font-bold focus:outline-none focus:border-amber-400"
-                        placeholder="1.0"
-                      />
-                      <select
-                        value={converterUnit}
-                        onChange={(e) =>
-                          setConverterUnit(e.target.value as "damlung" | "chi")
-                        }
-                        className="bg-black/60 border border-amber-400/30 rounded-2xl px-3 py-3 text-amber-300 font-mono text-xs font-semibold focus:outline-none focus:border-amber-400 cursor-pointer"
-                      >
-                        <option value="damlung">Damlung (ដំឡឹង)</option>
-                        <option value="chi">Chi (ជី)</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  {/* Conversion Output Grid */}
-                  <div className="grid grid-cols-2 gap-3 font-mono text-xs">
-                    <div className="bg-black/40 p-3.5 rounded-2xl border border-white/10">
-                      <span className="text-white/50 text-[10px] block">
-                        ESTIMATED VALUE
-                      </span>
-                      <span className="text-lg font-bold text-amber-300 mt-1 block">
-                        $
-                        {totalValueUsd.toLocaleString(undefined, {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        })}
-                      </span>
-                    </div>
-                    <div className="bg-black/40 p-3.5 rounded-2xl border border-white/10">
-                      <span className="text-white/50 text-[10px] block">
-                        TOTAL WEIGHT
-                      </span>
-                      <span className="text-lg font-bold text-white mt-1 block">
-                        {totalGrams.toFixed(2)}g
-                      </span>
-                    </div>
-                    <div className="bg-black/40 p-3.5 rounded-2xl border border-white/10">
-                      <span className="text-white/50 text-[10px] block">
-                        CAMBODIAN CHI
-                      </span>
-                      <span className="text-base font-semibold text-white mt-1 block">
-                        {totalChi.toFixed(2)} Chi
-                      </span>
-                    </div>
-                    <div className="bg-black/40 p-3.5 rounded-2xl border border-white/10">
-                      <span className="text-white/50 text-[10px] block">
-                        TROY OUNCES
-                      </span>
-                      <span className="text-base font-semibold text-white mt-1 block">
-                        {totalOz.toFixed(3)} oz
-                      </span>
-                    </div>
-                  </div>
-
-                  <p className="mt-5 text-[10px] leading-relaxed font-mono text-white/40">
-                    Indicative price for illustration only — not a live feed.
-                    Sign in to see your holdings valued at the current spot
-                    rate.
+                  <SpotSparkline className="h-28 w-full" />
+                  <p className="mt-4 font-mono text-[10px] leading-relaxed text-white/40">
+                    The world price moves all day. On your dashboard every price
+                    is stamped with the exact time it was pulled — no guessing
+                    how old a number is.
                   </p>
                 </div>
               </div>

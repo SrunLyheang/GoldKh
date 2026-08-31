@@ -257,12 +257,29 @@ tone. Sortable by date or `vs spot`. Pure helper
 
 ### 5.4 What-if calculator
 
-`components/insights/what-if.tsx` (`"use client"`). Stateless. Inputs:
-hypothetical buy quantity + unit + total price. Outputs via existing
-`lib/calc` + a thin `lib/calc/whatIf.ts`:
-- new blended average cost per damlung
-- new total holdings (chi + damlung)
-- break-even spot price per damlung for the new blended position
+`components/insights/what-if.tsx` (`"use client"`). Stateless. A
+`role="tablist"` **Buy / Sell** toggle drives the inputs and outputs.
+Inputs: hypothetical quantity + unit + total price (money out for a
+buy, proceeds in for a sell). The total-price field is spot-assisted —
+placeholder shows `spot × qty`, a **Use spot** button fills it, and a
+`N% vs spot` line renders with gain/loss tone. Takes the live
+`pricePerTroyOz` as a prop (from `insights-content.tsx`).
+
+Outputs via existing `lib/calc` + `lib/calc/whatIf.ts`, each as a
+**now → after → change** triple (`WhatIfMetric`):
+- total / remaining holdings (chi + damlung)
+- unrealized P&L at today's spot ($ and %)
+- break-even spot price per damlung (buy mode only) — equals the blended
+  average cost with no fees modelled
+
+(`computeWhatIf` also returns `averageCostPerDamlung`, but the UI drops
+that row as redundant with break-even.)
+
+Sell mode additionally shows single-value **Proceeds** and **Realized
+gain / loss** rows (realized against the current weighted-average cost,
+matching `lib/calc/realized.ts`) and drops the break-even row. A
+hypothetical sell larger than the position replaces the results with a
+guard line (`overSell`).
 
 No persistence, no API.
 

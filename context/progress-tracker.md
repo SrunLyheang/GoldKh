@@ -12,6 +12,143 @@ Update this file after every meaningful implementation change.
   the remaining work toward hardening (rate limiting, the
   `user.deleted` webhook, UI test coverage) over new features.
 
+## Done: What-if calculator — buy/sell + before→after (2026-08-31, `Ui-fix`, uncommitted)
+
+User feedback: the what-if calculator "is very limited." Brainstormed
+scope (b): the "Keep" tier plus a Buy/Sell toggle. Extends
+`dashboard-expansion-plan.md` §5.4 (was buy-only, single-column output).
+
+- `lib/calc/whatIf.ts`: `WhatIfInput` gains `mode: "buy" | "sell"` and
+  `currentPricePerTroyOz`. `WhatIfResult` is now `{before, after, delta}`
+  triples (`WhatIfMetric`) for average cost, break-even, holdings
+  (chi + damlung), and unrealized P&L at spot ($ + %), plus `overSell`
+  and buy-only-zero `proceedsUsd` / `realizedUsd` / `realizedPercent`.
+  Sell math mirrors `lib/calc/realized.ts` — realized against the
+  current weighted-average cost, position drawn down at an unchanged
+  average. New `spotImpliedTotal(qty, unit, spotPerOz)` helper for the
+  price-field placeholder / "Use spot" button.
+- `components/insights/what-if.tsx`: `role="tablist"` Buy/Sell segmented
+  control; `pricePerTroyOz` prop (passed from `insights-content.tsx`);
+  total-price field gets a spot placeholder, a "Use spot" fill button,
+  and a "N% vs spot" line with gain/loss tone; output is a
+  now / after / change grid (rows stack on mobile with inline
+  headers). Sell mode swaps in Proceeds + Realized single rows and
+  drops break-even; over-sell replaces the results with a guard line.
+  The "Average cost / damlung" output row was cut per user feedback
+  (redundant with break-even, which equals the blended average with no
+  fees modelled); `computeWhatIf` still returns `averageCostPerDamlung`.
+- `lib/i18n/dictionary.ts`: new `insights.*` keys (`whatIfModeBuy/Sell`,
+  `whatIfUseSpot`, `whatIfSpotHint`, `whatIfVsSpot`, `whatIfNow/After/
+  Change`, `whatIfProceeds`, `whatIfRealized`, `whatIfPnlAtSpot`,
+  `whatIfOverSell`, `remainingHoldings`); `newAvgCost` reworded
+  "Average cost", `whatIfDescription` now "buy or sell".
+- TDD: `lib/calc/whatIf.test.ts` (13) + `components/insights/
+  what-if.test.tsx` (6) rewritten to the new contract. `tsc --noEmit`,
+  `eslint`, full `vitest run` (416) green.
+
+## Done: landing scroll-nav no longer blocks scrolling (2026-08-31, `Ui-fix`, uncommitted)
+
+User feedback: the landing page's section scroll feature "limits user
+from scrolling." Two real causes fixed, keeping the right-edge dot rail:
+
+- `section-progress-nav.tsx`: the fixed `<nav>` had default
+  `pointer-events`, so its centred box plus each link's invisible
+  (opacity-0) hover label formed a tall transparent strip down the
+  right edge that swallowed clicks and drag-scrolls. `<nav>` is now
+  `pointer-events-none`; each dot link takes pointer events back
+  (`pointer-events-auto`) and the label is absolutely positioned
+  (`right-full`) so a hidden label no longer widens the hit target.
+- Removed the `j` / `k` keyboard section-jump (`useSectionKeys` call
+  in `liquid-glass-landing.tsx`); deleted `use-section-keys.ts`.
+  Anchor nav links + the dot rail already cover section navigation,
+  and hijacking letter keys surprised users mid-scroll.
+- Left `html:has(.liquid-glass-landing-root){scroll-behavior:smooth}`
+  as-is — it only affects anchor/programmatic scrolls, never
+  wheel/trackpad.
+
+tsc clean; `components/welcome/` tests 22 pass.
+
+## Done: bulk-select behind a "Select" button (2026-08-31, uncommitted)
+
+User feedback on the transaction surfaces: the always-visible checkbox
+column / select-all box read as clutter. Multi-select is now opt-in.
+
+- `components/transactions/transactions-view.tsx` and
+  `components/dashboard/transaction-history.tsx` each gained a local
+  `selectMode` boolean and a `Select` / `Cancel` toggle button (next to
+  Import / Export; shown only when there are rows). `selectMode` gates
+  the leading checkbox `<th>`/`<td>`, the mobile-card checkbox, and the
+  select-all box; the expanded-detail `colSpan` is `selectMode ? 8 : 7`.
+  Entering select mode collapses any open row; `Cancel` (or `Clear` in
+  the bar) exits and `selection.clear()`s so no hidden selection lingers.
+  The `BulkActionsBar` / `BulkDeleteDialog` wiring is unchanged — the bar
+  still only appears once something is ticked.
+- Inline English for the button label (locale en-only, `dictionary.ts`
+  frozen — same precedent as "View all →").
+- Tests updated to click `Select` before the select-all box
+  (`transactions-view.test.tsx`, `transaction-history.test.tsx`).
+  `tsc --noEmit`, `eslint`, `vitest run` (391) all green.
+
+## Done: Landing page — interactive "playground" pass (2026-08-31, uncommitted)
+
+Layered heavy interactivity onto the liquid-glass landing per an approved
+bounded brainstorm ("make it very interactive"). No new dependencies —
+`motion@13` (already present) supplies `useReducedMotion`; a hand-rolled
+scroll hook does the rest so `motion/react`'s vitest mock is untouched.
+All four gates green (`tsc --noEmit`, `eslint`, `vitest run` 404,
+`next build`); the 9 existing `welcome-landing.test.tsx` cases still pass
+(checked copy/affordances preserved verbatim).
+
+- **`components/welcome/marketing-calc.ts`** (+ `.test.ts`, 9 cases) —
+  pure weighted-average / unit math for the landing widgets only.
+  Deliberately NOT `lib/calc/` (that's the real ledger's Decimal.js money
+  math); plain numbers on an indicative price, clearly labelled. Exports
+  `computeMarketingPosition`, `toDamlung`, unit constants, and signed
+  USD/percent formatters.
+- **`try-it-simulator.tsx`** (+ `.test.tsx`, 4 cases) — the centrepiece.
+  A visitor builds a pretend ledger (qty + chi/damlung segmented toggle +
+  total paid), rows animate in, then drags a spot-price slider and
+  watches average cost / holdings / market value / P&L recompute live
+  with short (320ms) re-aiming `useCountUp` rolls and a gain/loss colour
+  flip + centre-anchored P&L bar. Nothing saved, no real price call. CTA
+  → `/sign-up` (or `/dashboard` when signed in).
+- **`unit-playground.tsx`** — replaces the old inline `#units` converter.
+  Number field (keeps `placeholder="1.0"` + the single `role=combobox`
+  select the calc test asserts on) plus a 0–12 damlung slider and an SVG
+  gold-bar stack that grows with the amount; output tiles roll via
+  `useCountUp`. `INDICATIVE_SPOT_PER_OZ = 4100` unchanged so 2 chi still
+  reads `$988.64`.
+- **`hero-to-dashboard.tsx`** — a scroll-pinned bridge after the hero: a
+  `useScrollProgress`-driven orb shrinks into the corner of a dashboard
+  card that assembles itself, figures counting up from zero. Pins at the
+  finished state under reduced motion / SSR / jsdom.
+- **`use-scroll-progress.ts`** — element-through-viewport progress (0→1),
+  one rAF per frame, passive listeners; returns a static 1 under
+  `useReducedMotion` or with no layout.
+- **`section-progress-nav.tsx`** — fixed right-edge dot rail (xl only),
+  IntersectionObserver-tracked active section, real `<a>` buttons with
+  `aria-current`.
+- **`use-section-keys.ts`** — `j`/`k` + arrows/PageUp-Down jump between
+  sections; ignores field focus and modifiers; off under reduced motion.
+- **`magnetic.tsx`** — hover-toward-cursor wrapper for the hero CTAs;
+  no-op on coarse pointers and under reduced motion, never intercepts
+  clicks.
+- **`spot-sparkline.tsx`** — deterministic synthetic price line that
+  redraws on a loop (stroke-dashoffset) with a pulsing "now" dot; static
+  under reduced motion. Sits in the `#units` section.
+- **`liquid-glass-landing.tsx`** — composes the above: new `#try-it`
+  section, `HeroToDashboard` after the hero, `SECTION_NAV` (adds a "Try
+  It" nav link), `SectionProgressNav`, `useSectionKeys`, magnetic hero
+  CTAs, a "Scroll" cue. The hero's secondary CTA now points at `#try-it`.
+- **`app/globals.css`** — `.sim-spot-range` slider skin (both engines),
+  `simRowIn` keyframe for ledger rows, `scroll-snap-type: y proximity` on
+  the landing root with per-section `scroll-snap-align`; every addition
+  has a `prefers-reduced-motion` off-switch.
+- Verified in a real browser (dev server): hero, scroll-pinned transform,
+  and the simulator all render and interact correctly; settled figures
+  check out (seed ledger → avg $4,693.33, +5.32% at the indicative
+  price); no console errors.
+
 ## Done: Landing copy — casual rewrite + fact-check pass (2026-08-31, uncommitted)
 
 - Reviewed all user-facing copy in `components/welcome/liquid-glass-landing.tsx`

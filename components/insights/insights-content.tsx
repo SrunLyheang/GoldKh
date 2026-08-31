@@ -110,7 +110,7 @@ export function InsightsContent({
         <h2 className="tt-heading tt-bracket mb-4 text-[15px] text-foreground">
           {t.insights.whatIfTitle}
         </h2>
-        <WhatIf holdings={holdings} />
+        <WhatIf holdings={holdings} pricePerTroyOz={pricePerTroyOz} />
       </Panel>
     </div>
   );
