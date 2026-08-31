@@ -42,8 +42,11 @@ export function computeBuyQuality(
   return transactions
     .filter((tx) => tx.type === "buy" && tx.currency === "USD")
     .map((tx) => {
-      const paidUsd = new Decimal(tx.quantity).times(tx.pricePerUnit).toString();
-      const buyTime = new Date(tx.transactionDate).getTime();
+      const paidUsd = new Decimal(tx.quantity)
+        .times(tx.pricePerUnit)
+        .toString();
+      // End of the buy day, matching spotPerDamlungOnDate's cutoff.
+      const buyTime = new Date(`${tx.transactionDate}T23:59:59.999Z`).getTime();
 
       let nearest: PriceSnapshotPoint | undefined;
       for (const snapshot of ordered) {

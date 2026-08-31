@@ -16,7 +16,9 @@ function Field({
 }) {
   return (
     <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border py-3.5 last:border-0">
-      <span className="tt-label text-[11px] text-muted-foreground">{label}</span>
+      <span className="tt-label text-[11px] text-muted-foreground">
+        {label}
+      </span>
       {children}
     </div>
   );
@@ -52,10 +54,7 @@ export function PreferencesSettings() {
             ariaLabel={t.settings.defaultCurrency}
             value={prefs.currency}
             onChange={(v) => setPrefs({ currency: v as "USD" | "KHR" })}
-            options={[
-              { value: "USD", label: t.settings.currencyUsd },
-              { value: "KHR", label: t.settings.currencyKhr },
-            ]}
+            options={[{ value: "USD", label: t.settings.currencyUsd }]}
           />
         </Field>
         <Field label={t.settings.theme}>
