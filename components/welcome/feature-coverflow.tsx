@@ -87,7 +87,10 @@ export function FeatureCoverflow() {
 
   // Tighter card spread on narrow screens — the side cards only peek.
   useEffect(() => {
-    if (typeof window === "undefined" || typeof window.matchMedia !== "function")
+    if (
+      typeof window === "undefined" ||
+      typeof window.matchMedia !== "function"
+    )
       return;
     const mq = window.matchMedia("(max-width: 640px)");
     const sync = () => setCompact(mq.matches);
@@ -102,8 +105,7 @@ export function FeatureCoverflow() {
     const host = cardsHostRef.current;
     if (!host) return;
     const measure = () => {
-      const cards =
-        host.querySelectorAll<HTMLElement>("article.liquid-glass");
+      const cards = host.querySelectorAll<HTMLElement>("article.liquid-glass");
       let tallest = 0;
       cards.forEach((card) => {
         const prev = card.style.height;
@@ -121,10 +123,7 @@ export function FeatureCoverflow() {
   // Auto-advance until the reader takes over, then never again.
   useEffect(() => {
     if (reduceMotion || !auto || paused || !visible) return;
-    const id = window.setInterval(
-      () => setActive((a) => (a + 1) % N),
-      AUTO_MS
-    );
+    const id = window.setInterval(() => setActive((a) => (a + 1) % N), AUTO_MS);
     return () => window.clearInterval(id);
   }, [reduceMotion, auto, paused, visible]);
 
@@ -174,171 +173,176 @@ export function FeatureCoverflow() {
       </p>
 
       <div
-        ref={cardsHostRef}
-        role="group"
-        aria-roledescription="carousel"
-        aria-label="Product features"
-        tabIndex={0}
-        onKeyDown={onKeyDown}
         onPointerEnter={() => setPaused(true)}
         onPointerLeave={() => setPaused(false)}
         onFocusCapture={() => setPaused(true)}
         onBlurCapture={() => setPaused(false)}
-        style={{ height: stageH ?? (compact ? 440 : 360) }}
-        className="relative mx-auto w-full max-w-4xl overflow-hidden rounded-[2rem] outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60"
+        className="mx-auto w-full max-w-4xl"
       >
-        <motion.div
-          className="absolute inset-0"
-          drag={compact ? "x" : false}
-          dragConstraints={{ left: 0, right: 0 }}
-          dragElastic={0.14}
-          onDragEnd={(_, info) => {
-            if (info.offset.x < -44 || info.velocity.x < -320) step(1);
-            else if (info.offset.x > 44 || info.velocity.x > 320) step(-1);
-          }}
+        <div
+          ref={cardsHostRef}
+          role="group"
+          aria-roledescription="carousel"
+          aria-label="Product features"
+          tabIndex={0}
+          onKeyDown={onKeyDown}
+          style={{ height: stageH ?? (compact ? 440 : 360) }}
+          className="relative mx-auto w-full overflow-hidden rounded-[2rem] outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60"
         >
-          {FEATURES.map((f, i) => {
-            const d = delta(i, active);
-            const hidden = Math.abs(d) > 1;
-            const isActive = d === 0;
-            return (
-              <motion.article
-                key={f.title}
-                aria-hidden={!isActive}
-                aria-roledescription="slide"
-                aria-label={`${i + 1} of ${N}: ${f.title}`}
-                initial={false}
-                animate={{
-                  x: `${d * spread}%`,
-                  scale: isActive ? 1 : 0.82,
-                  rotateY: reduceMotion ? 0 : d * -20,
-                  opacity: hidden ? 0 : isActive ? 1 : 0.4,
-                  filter: isActive || reduceMotion ? "blur(0px)" : "blur(2px)",
-                }}
-                transition={
-                  reduceMotion
-                    ? { duration: 0 }
-                    : { type: "spring", stiffness: 260, damping: 32 }
-                }
-                style={{
-                  // .liquid-glass sets position:relative at plain-class
-                  // specificity, which beats Tailwind's `absolute`
-                  // utility — force it here, and centre horizontally with
-                  // auto margins so motion's `x` transform stays free.
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  marginInline: "auto",
-                  zIndex: isActive ? 30 : 10,
-                  pointerEvents: isActive ? "auto" : "none",
-                  transformPerspective: 1200,
-                  // Near-opaque fill on the front card so the stacked
-                  // cards behind it don't bleed through; the neighbours
-                  // stay glassy.
-                  background: isActive
-                    ? "rgba(11, 10, 8, 0.94)"
-                    : "rgba(11, 10, 8, 0.6)",
-                  boxShadow: isActive
-                    ? "0 28px 70px -20px rgba(0, 0, 0, 0.8)"
-                    : "0 8px 32px rgba(0, 0, 0, 0.35)",
-                }}
-                className={`liquid-glass flex h-full w-[86%] max-w-[420px] flex-col justify-between rounded-[1.75rem] border p-7 sm:p-9 ${
-                  isActive ? "border-amber-400/25" : "border-white/10"
-                }`}
-              >
-                {/* Assay-stamp hairline: fills over one auto-advance cycle. */}
-                {isActive && timerOn && (
-                  <motion.span
-                    key={active}
-                    aria-hidden="true"
-                    className="absolute inset-x-0 top-0 h-[2px] origin-left bg-gradient-to-r from-amber-400/90 to-amber-300/40"
-                    initial={{ scaleX: 0 }}
-                    animate={{ scaleX: 1 }}
-                    transition={{ duration: AUTO_MS / 1000, ease: "linear" }}
-                  />
-                )}
-                {/* Raking amber light across the active card. */}
-                {isActive && !reduceMotion && (
-                  <motion.span
-                    aria-hidden="true"
-                    className="pointer-events-none absolute inset-0 overflow-hidden rounded-[1.75rem]"
-                  >
-                    <motion.span
-                      className="absolute -inset-y-8 w-1/2 bg-[linear-gradient(115deg,transparent_0%,rgba(251,191,36,0.14)_50%,transparent_100%)]"
-                      initial={{ x: "-120%" }}
-                      animate={{ x: "260%" }}
-                      transition={{
-                        duration: 3.6,
-                        ease: "easeInOut",
-                        repeat: Infinity,
-                        repeatDelay: 2.4,
-                      }}
-                    />
-                  </motion.span>
-                )}
-
-                <div className="relative">
-                  <div className="liquid-glass-gold mb-4 flex h-12 w-12 items-center justify-center rounded-2xl text-amber-400">
-                    {f.icon}
-                  </div>
-                  <h3 className="mb-3 text-xl font-semibold text-white">
-                    {f.title}
-                  </h3>
-                  <p className="text-sm leading-relaxed text-white/65">
-                    {f.body}
-                  </p>
-                </div>
-                <div className="relative mt-6 flex items-center gap-1.5 border-t border-white/10 pt-4 font-mono text-xs text-amber-300">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-400" />
-                  {f.proof}
-                </div>
-              </motion.article>
-            );
-          })}
-        </motion.div>
-      </div>
-
-      {/* Controls */}
-      <div className="mt-8 flex items-center justify-center gap-5">
-        <Magnetic strength={10}>
-          <button
-            type="button"
-            onClick={() => step(-1)}
-            aria-label="Previous feature"
-            className="liquid-glass flex h-11 w-11 items-center justify-center rounded-full text-white/80 transition-colors hover:text-white"
+          <motion.div
+            className="absolute inset-0"
+            drag={compact ? "x" : false}
+            dragConstraints={{ left: 0, right: 0 }}
+            dragElastic={0.14}
+            onDragEnd={(_, info) => {
+              if (info.offset.x < -44 || info.velocity.x < -320) step(1);
+              else if (info.offset.x > 44 || info.velocity.x > 320) step(-1);
+            }}
           >
-            <ChevronLeft className="h-5 w-5" />
-          </button>
-        </Magnetic>
+            {FEATURES.map((f, i) => {
+              const d = delta(i, active);
+              const hidden = Math.abs(d) > 1;
+              const isActive = d === 0;
+              return (
+                <motion.article
+                  key={f.title}
+                  aria-hidden={!isActive}
+                  aria-roledescription="slide"
+                  aria-label={`${i + 1} of ${N}: ${f.title}`}
+                  initial={false}
+                  animate={{
+                    x: `${d * spread}%`,
+                    scale: isActive ? 1 : 0.82,
+                    rotateY: reduceMotion ? 0 : d * -20,
+                    opacity: hidden ? 0 : isActive ? 1 : 0.4,
+                    filter:
+                      isActive || reduceMotion ? "blur(0px)" : "blur(2px)",
+                  }}
+                  transition={
+                    reduceMotion
+                      ? { duration: 0 }
+                      : { type: "spring", stiffness: 260, damping: 32 }
+                  }
+                  style={{
+                    // .liquid-glass sets position:relative at plain-class
+                    // specificity, which beats Tailwind's `absolute`
+                    // utility — force it here, and centre horizontally with
+                    // auto margins so motion's `x` transform stays free.
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    marginInline: "auto",
+                    zIndex: isActive ? 30 : 10,
+                    pointerEvents: isActive ? "auto" : "none",
+                    transformPerspective: 1200,
+                    // Near-opaque fill on the front card so the stacked
+                    // cards behind it don't bleed through; the neighbours
+                    // stay glassy.
+                    background: isActive
+                      ? "rgba(11, 10, 8, 0.94)"
+                      : "rgba(11, 10, 8, 0.6)",
+                    boxShadow: isActive
+                      ? "0 28px 70px -20px rgba(0, 0, 0, 0.8)"
+                      : "0 8px 32px rgba(0, 0, 0, 0.35)",
+                  }}
+                  className={`liquid-glass flex h-full w-[86%] max-w-[420px] flex-col justify-between rounded-[1.75rem] border p-7 sm:p-9 ${
+                    isActive ? "border-amber-400/25" : "border-white/10"
+                  }`}
+                >
+                  {/* Assay-stamp hairline: fills over one auto-advance cycle. */}
+                  {isActive && timerOn && (
+                    <motion.span
+                      key={active}
+                      aria-hidden="true"
+                      className="absolute inset-x-0 top-0 h-[2px] origin-left bg-gradient-to-r from-amber-400/90 to-amber-300/40"
+                      initial={{ scaleX: 0 }}
+                      animate={{ scaleX: 1 }}
+                      transition={{ duration: AUTO_MS / 1000, ease: "linear" }}
+                    />
+                  )}
+                  {/* Raking amber light across the active card. */}
+                  {isActive && !reduceMotion && (
+                    <motion.span
+                      aria-hidden="true"
+                      className="pointer-events-none absolute inset-0 overflow-hidden rounded-[1.75rem]"
+                    >
+                      <motion.span
+                        className="absolute -inset-y-8 w-1/2 bg-[linear-gradient(115deg,transparent_0%,rgba(251,191,36,0.14)_50%,transparent_100%)]"
+                        initial={{ x: "-120%" }}
+                        animate={{ x: "260%" }}
+                        transition={{
+                          duration: 3.6,
+                          ease: "easeInOut",
+                          repeat: Infinity,
+                          repeatDelay: 2.4,
+                        }}
+                      />
+                    </motion.span>
+                  )}
 
-        <div className="flex items-center gap-2">
-          {FEATURES.map((f, i) => (
-            <button
-              key={f.title}
-              type="button"
-              onClick={() => jump(i)}
-              aria-label={`Go to feature ${i + 1}: ${f.title}`}
-              aria-current={i === active}
-              className={`h-1.5 rounded-full transition-all duration-300 ${
-                i === active
-                  ? "w-8 bg-amber-400"
-                  : "w-1.5 bg-white/20 hover:bg-white/40"
-              }`}
-            />
-          ))}
+                  <div className="relative">
+                    <div className="liquid-glass-gold mb-4 flex h-12 w-12 items-center justify-center rounded-2xl text-amber-400">
+                      {f.icon}
+                    </div>
+                    <h3 className="mb-3 text-xl font-semibold text-white">
+                      {f.title}
+                    </h3>
+                    <p className="text-sm leading-relaxed text-white/65">
+                      {f.body}
+                    </p>
+                  </div>
+                  <div className="relative mt-6 flex items-center gap-1.5 border-t border-white/10 pt-4 font-mono text-xs text-amber-300">
+                    <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+                    {f.proof}
+                  </div>
+                </motion.article>
+              );
+            })}
+          </motion.div>
         </div>
 
-        <Magnetic strength={10}>
-          <button
-            type="button"
-            onClick={() => step(1)}
-            aria-label="Next feature"
-            className="liquid-glass flex h-11 w-11 items-center justify-center rounded-full text-white/80 transition-colors hover:text-white"
-          >
-            <ChevronRight className="h-5 w-5" />
-          </button>
-        </Magnetic>
+        {/* Controls */}
+        <div className="mt-8 flex items-center justify-center gap-5">
+          <Magnetic strength={10}>
+            <button
+              type="button"
+              onClick={() => step(-1)}
+              aria-label="Previous feature"
+              className="liquid-glass flex h-11 w-11 items-center justify-center rounded-full text-white/80 transition-colors hover:text-white"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </button>
+          </Magnetic>
+
+          <div className="flex items-center gap-2">
+            {FEATURES.map((f, i) => (
+              <button
+                key={f.title}
+                type="button"
+                onClick={() => jump(i)}
+                aria-label={`Go to feature ${i + 1}: ${f.title}`}
+                aria-current={i === active}
+                className={`h-1.5 rounded-full transition-all duration-300 ${
+                  i === active
+                    ? "w-8 bg-amber-400"
+                    : "w-1.5 bg-white/20 hover:bg-white/40"
+                }`}
+              />
+            ))}
+          </div>
+
+          <Magnetic strength={10}>
+            <button
+              type="button"
+              onClick={() => step(1)}
+              aria-label="Next feature"
+              className="liquid-glass flex h-11 w-11 items-center justify-center rounded-full text-white/80 transition-colors hover:text-white"
+            >
+              <ChevronRight className="h-5 w-5" />
+            </button>
+          </Magnetic>
+        </div>
       </div>
     </div>
   );
