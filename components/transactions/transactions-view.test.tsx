@@ -68,6 +68,7 @@ describe("TransactionsView", () => {
       />
     );
 
+    await user.click(screen.getByRole("button", { name: "Select" }));
     await user.click(screen.getByLabelText("Select all transactions"));
     expect(screen.getByText("3 selected")).toBeInTheDocument();
 

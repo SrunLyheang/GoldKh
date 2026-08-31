@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { fireEvent, render, screen } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { WelcomeLanding } from "./welcome-landing";
 
@@ -89,23 +89,21 @@ describe("WelcomeLanding / LiquidGlassLanding", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("renders the unit calculator widget", () => {
+  it("renders the interactive Try It simulator", () => {
     render(<WelcomeLanding />);
-    const heading = screen.getByText(/Unit Value Calculator/i);
-    const input = screen.getByPlaceholderText("1.0");
-    const select = screen.getByRole("combobox");
-
-    expect(heading).toBeInTheDocument();
-
-    fireEvent.change(select, { target: { value: "chi" } });
-    fireEvent.change(input, { target: { value: "2" } });
-
-    expect((input as HTMLInputElement).value).toBe("2");
-    expect(screen.getByText(/\$988\.64/)).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: /build a ledger/i }),
+    ).toBeInTheDocument();
+    expect(screen.getByLabelText(/Drag today's price/i)).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /Add to ledger/i }),
+    ).toBeInTheDocument();
   });
 
-  it("marks the calculator price as indicative, not live", () => {
+  it("marks the landing figures as indicative, not live", () => {
     render(<WelcomeLanding />);
-    expect(screen.getByText(/not a live feed/i)).toBeInTheDocument();
+    expect(
+      screen.getAllByText(/indicative price for illustration only/i).length,
+    ).toBeGreaterThan(0);
   });
 });

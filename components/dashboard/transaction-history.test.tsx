@@ -158,6 +158,7 @@ describe("TransactionHistory", () => {
       />
     );
 
+    await user.click(screen.getByRole("button", { name: "Select" }));
     await user.click(screen.getByLabelText("Select all transactions"));
     expect(screen.getByText("2 selected")).toBeInTheDocument();
 
@@ -183,6 +184,7 @@ describe("TransactionHistory", () => {
       />
     );
 
+    await user.click(screen.getByRole("button", { name: "Select" }));
     await user.click(screen.getByLabelText("Select all transactions"));
     expect(screen.getByText("1 selected")).toBeInTheDocument();
   });

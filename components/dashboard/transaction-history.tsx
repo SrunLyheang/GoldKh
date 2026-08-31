@@ -225,6 +225,7 @@ function Row({
   currentPricePerTroyOz,
   displayUnit,
   priceHistory,
+  selectMode,
   expanded,
   selected,
   onToggleSelect,
@@ -236,6 +237,7 @@ function Row({
   currentPricePerTroyOz: string;
   displayUnit: GoldUnit;
   priceHistory: ChartPoint[];
+  selectMode: boolean;
   expanded: boolean;
   selected: boolean;
   onToggleSelect: () => void;
@@ -270,15 +272,17 @@ function Row({
           (expanded || selected) && "bg-accent/40",
         )}
       >
-        <td className="py-3 pr-1 pl-4">
-          {isPending ? null : (
-            <RowCheckbox
-              checked={selected}
-              onCheckedChange={onToggleSelect}
-              label={`Select ${row.type} ${row.quantity} ${row.unit}`}
-            />
-          )}
-        </td>
+        {selectMode && (
+          <td className="py-3 pr-1 pl-4">
+            {isPending ? null : (
+              <RowCheckbox
+                checked={selected}
+                onCheckedChange={onToggleSelect}
+                label={`Select ${row.type} ${row.quantity} ${row.unit}`}
+              />
+            )}
+          </td>
+        )}
         <td className="py-3 pr-3 pl-2">
           <div className="flex items-center gap-2">
             <ChevronDown
@@ -371,7 +375,7 @@ function Row({
       </tr>
       {expanded && (
         <tr className="border-b border-border last:border-0">
-          <td colSpan={8} className="p-0">
+          <td colSpan={selectMode ? 8 : 7} className="p-0">
             <TransactionDetail
               row={row}
               currentPricePerTroyOz={currentPricePerTroyOz}
@@ -396,6 +400,7 @@ function TransactionCard({
   currentPricePerTroyOz,
   displayUnit,
   priceHistory,
+  selectMode,
   expanded,
   selected,
   onToggleSelect,
@@ -407,6 +412,7 @@ function TransactionCard({
   currentPricePerTroyOz: string;
   displayUnit: GoldUnit;
   priceHistory: ChartPoint[];
+  selectMode: boolean;
   expanded: boolean;
   selected: boolean;
   onToggleSelect: () => void;
@@ -447,7 +453,7 @@ function TransactionCard({
         )}
       >
         <div className="flex min-w-0 items-center gap-2.5">
-          {!isPending && (
+          {selectMode && !isPending && (
             <RowCheckbox
               checked={selected}
               onCheckedChange={onToggleSelect}
@@ -616,9 +622,22 @@ export function TransactionHistory({
   const [csvOpen, setCsvOpen] = useState(false);
   const [bulkOpen, setBulkOpen] = useState(false);
   const [bulkPending, setBulkPending] = useState(false);
+  // Selection is opt-in: the tick-boxes, select-all, and the bulk bar only
+  // render once the user presses "Select". Leaving select mode clears any
+  // ticks so a stale selection can't linger invisibly.
+  const [selectMode, setSelectMode] = useState(false);
   const selection = useRowSelection();
   const toggle = (id: string) =>
     setExpandedId((current) => (current === id ? null : id));
+
+  const enterSelectMode = () => {
+    setExpandedId(null);
+    setSelectMode(true);
+  };
+  const exitSelectMode = () => {
+    setSelectMode(false);
+    selection.clear();
+  };
 
   // Optimistic (temp-) rows have no server id yet — keep them out of every
   // selection path so a bulk delete never ships a "temp-…" id.
@@ -659,6 +678,25 @@ export function TransactionHistory({
           </Link>
         </div>
         <div className="flex items-center gap-2">
+          {(rows.length > 0 || selectMode) && (
+            // Inline copy: locale is en-only and dictionary.ts is frozen
+            // for this phase (see plan §11 Phase 0). Kept mounted while
+            // select mode is active so Cancel stays reachable even if the
+            // last row is deleted mid-selection.
+            <button
+              type="button"
+              onClick={selectMode ? exitSelectMode : enterSelectMode}
+              aria-pressed={selectMode}
+              className={cn(
+                "tt-label border px-2.5 py-1.5 text-[10.5px] transition-colors",
+                selectMode
+                  ? "border-foreground bg-foreground text-background"
+                  : "border-border text-muted-foreground hover:bg-accent hover:text-foreground",
+              )}
+            >
+              {selectMode ? "Cancel" : "Select"}
+            </button>
+          )}
           <button
             type="button"
             onClick={() => setCsvOpen(true)}
@@ -697,13 +735,15 @@ export function TransactionHistory({
           <table className="w-full min-w-140 border-collapse">
             <thead className="sticky top-0 z-10 bg-card">
               <tr className="tt-label border-b border-border text-[10.5px] text-muted-foreground">
-                <th className="py-3 pr-1 pl-4">
-                  <RowCheckbox
-                    checked={selection.allSelected(selectableIds)}
-                    onCheckedChange={() => selection.toggleAll(selectableIds)}
-                    label="Select all transactions"
-                  />
-                </th>
+                {selectMode && (
+                  <th className="py-3 pr-1 pl-4">
+                    <RowCheckbox
+                      checked={selection.allSelected(selectableIds)}
+                      onCheckedChange={() => selection.toggleAll(selectableIds)}
+                      label="Select all transactions"
+                    />
+                  </th>
+                )}
                 <th className="py-3 pr-3 pl-2 text-left font-medium">
                   {t.transactions.date}
                 </th>
@@ -733,6 +773,7 @@ export function TransactionHistory({
                   currentPricePerTroyOz={currentPricePerTroyOz}
                   displayUnit={displayUnit}
                   priceHistory={priceHistory}
+                  selectMode={selectMode}
                   expanded={expandedId === row.id}
                   selected={selection.selectedIds.has(row.id)}
                   onToggleSelect={() => selection.toggle(row.id)}
@@ -753,6 +794,7 @@ export function TransactionHistory({
               currentPricePerTroyOz={currentPricePerTroyOz}
               displayUnit={displayUnit}
               priceHistory={priceHistory}
+              selectMode={selectMode}
               expanded={expandedId === row.id}
               selected={selection.selectedIds.has(row.id)}
               onToggleSelect={() => selection.toggle(row.id)}

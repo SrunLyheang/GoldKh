@@ -12,6 +12,255 @@ Update this file after every meaningful implementation change.
   the remaining work toward hardening (rate limiting, the
   `user.deleted` webhook, UI test coverage) over new features.
 
+## Recent changes
+
+- **2026-08-31:** Replaced the 6-tile Features grid in
+  `LiquidGlassLanding` with a new `FeatureCoverflow` component
+  (`components/welcome/feature-coverflow.tsx`). Trimmed to 4 features
+  (privacy/non-custodial already has the `#about` section). Coverflow
+  carousel: one opaque active card centre-stage, neighbours scaled /
+  dimmed / blurred with `rotateY` perspective, far card hidden. Built on
+  `motion` springs. Auto-advances every 6s with an "assay-stamp"
+  hairline timer on the active card and a slow amber raking-light
+  sweep; pauses on hover/focus, stops permanently after any manual
+  input. Controls: liquid-glass prev/next arrows (Magnetic-wrapped) +
+  elongating dot indicators, `01 / 04` position readout, arrow-key nav,
+  `aria-roledescription="carousel"` + visually-hidden live region.
+  Mobile (`max-width:640px`): near-full-width card, tighter spread,
+  `motion` drag-to-swipe via `onDragEnd`. `useReducedMotion()` kills the
+  auto-advance, blur, rotation and reveal transform. Dropped the now
+  unused `TrendingUp/Calculator/Scale/RefreshCw/CheckCircle2` imports
+  from `liquid-glass-landing.tsx`. Added `feature-coverflow.test.tsx`
+  (7 tests). tsc, eslint, 436 tests green.
+- **2026-08-31:** `SpotSparkline` ("SPOT, OVER A DAY" card on the
+  landing page) now trends upward like a stock rallying through the
+  day instead of a flat random walk. `buildWalk` starts low (v = 0.14)
+  and adds a steady per-step upward drift (0.0165) with reduced
+  candle-to-candle jitter (±0.045) on top; clamp raised to 0.94.
+  Path/animation unchanged.
+
+## Done: auth screens — "Return to welcome page" + animated backdrop (2026-08-31, `Ui-fix`, uncommitted)
+
+User asked for a "return to welcome page" button on the sign-in / sign-up
+screens and an animated background behind them.
+
+- `components/auth/back-to-welcome.tsx` (+ `.test.tsx`) — a server
+  component `<Link href="/">` styled with `buttonVariants({ variant:
+  "ghost", size: "sm" })` + a Lucide `ArrowLeft`, muted-foreground until
+  hover. Label is inline English ("Return to welcome page") — dictionary
+  is frozen this phase, same precedent as "View all →".
+- `components/auth/auth-aurora-background.tsx` (+ `.test.tsx`) — an
+  `aria-hidden`, `pointer-events-none`, `fixed inset-0 -z-10` layer:
+  three blurred gold/green aurora blobs over `bg-background` plus a
+  radial vignette. CSS-only (no client boundary), fully stilled under
+  `prefers-reduced-motion`.
+- `app/globals.css` — `@keyframes auth-aurora-drift-1/2/3`,
+  `.auth-aurora-blob(-1/2/3)`, `.auth-aurora-vignette`, and a
+  reduced-motion off-switch. Blob fills use `color-mix(in oklch,
+  var(--primary)/var(--state-gain) …, transparent)` — no new hex.
+- `app/sign-in/[[...sign-in]]/page.tsx` and
+  `app/sign-up/[[...sign-up]]/page.tsx` — wrapper gains `relative`,
+  mounts `<AuthAuroraBackground />` first and `<BackToWelcome />` after
+  the Clerk widget. The backdrop was added to sign-up too (not just
+  sign-in) so the two screens stay consistent.
+- `tsc --noEmit`, `eslint`, `vitest run components/auth` (2), and
+  `next build` all green.
+
+## Done: CTA gold-bar diorama on the landing page (2026-08-31, `Ui-fix`, uncommitted)
+
+User asked for an interactive 3-D element at the bottom of the landing
+page, built from the existing hero photo (`public/images/
+goldkh_hero_hand_gold.jpg`, previously unused). Bounded brainstorm:
+pointer-reactive layered "diorama", placed inside the final CTA card.
+
+- `components/welcome/gold-bar-diorama.tsx` (+ `.test.tsx`) — a
+  `pointer-events-none`, `aria-hidden` layer that stacks the hero photo
+  twice (blurred nebula bed + right-anchored crop on the ingot) with
+  synthetic depth layers between (comet beam, gold dust, warm glow), a
+  cursor-tracking specular sheen on the bar, and a left scrim so the CTA
+  copy stays legible. Passive `pointermove` → one eased rAF that stops
+  when settled; ambient dust/glow is CSS-only, `motion-safe`-gated.
+  `useReducedMotion` / SSR / jsdom → static branch (no listener, no
+  tilt, layers at zero offset) — the tests pin that contract.
+- `liquid-glass-landing.tsx` — mounts `<GoldBarDiorama />` as the first
+  child of the final CTA card (`liquid-glass-gold`, already `relative
+  overflow-hidden`); the heading/buttons are wrapped in `relative z-10`.
+- The faint wireframe bar seen near cards on the landing page is the
+  separate `ScrollGoldBar` fixed background layer, not this component.
+- `tsc --noEmit`, `eslint`, `next build`, `components/welcome/` tests
+  (29) all green. Component polish (seam where the bar feather meets the
+  bed) is being handled separately.
+
+## Done: What-if calculator — buy/sell + before→after (2026-08-31, `Ui-fix`, uncommitted)
+
+User feedback: the what-if calculator "is very limited." Brainstormed
+scope (b): the "Keep" tier plus a Buy/Sell toggle. Extends
+`dashboard-expansion-plan.md` §5.4 (was buy-only, single-column output).
+
+- `lib/calc/whatIf.ts`: `WhatIfInput` gains `mode: "buy" | "sell"` and
+  `currentPricePerTroyOz`. `WhatIfResult` is now `{before, after, delta}`
+  triples (`WhatIfMetric`) for average cost, break-even, holdings
+  (chi + damlung), and unrealized P&L at spot ($ + %), plus `overSell`
+  and buy-only-zero `proceedsUsd` / `realizedUsd` / `realizedPercent`.
+  Sell math mirrors `lib/calc/realized.ts` — realized against the
+  current weighted-average cost, position drawn down at an unchanged
+  average. New `spotImpliedTotal(qty, unit, spotPerOz)` helper for the
+  price-field placeholder / "Use spot" button.
+- `components/insights/what-if.tsx`: `role="tablist"` Buy/Sell segmented
+  control; `pricePerTroyOz` prop (passed from `insights-content.tsx`);
+  total-price field gets a spot placeholder, a "Use spot" fill button,
+  and a "N% vs spot" line with gain/loss tone; output is a
+  now / after / change grid (rows stack on mobile with inline
+  headers). Sell mode swaps in Proceeds + Realized single rows and
+  drops break-even; over-sell replaces the results with a guard line.
+  The "Average cost / damlung" output row was cut per user feedback
+  (redundant with break-even, which equals the blended average with no
+  fees modelled); `computeWhatIf` still returns `averageCostPerDamlung`.
+- `lib/i18n/dictionary.ts`: new `insights.*` keys (`whatIfModeBuy/Sell`,
+  `whatIfUseSpot`, `whatIfSpotHint`, `whatIfVsSpot`, `whatIfNow/After/
+  Change`, `whatIfProceeds`, `whatIfRealized`, `whatIfPnlAtSpot`,
+  `whatIfOverSell`, `remainingHoldings`); `newAvgCost` reworded
+  "Average cost", `whatIfDescription` now "buy or sell".
+- TDD: `lib/calc/whatIf.test.ts` (13) + `components/insights/
+  what-if.test.tsx` (6) rewritten to the new contract. `tsc --noEmit`,
+  `eslint`, full `vitest run` (416) green.
+
+## Done: scroll-driven wireframe gold bar behind the landing page (2026-08-31, `Ui-fix`, uncommitted)
+
+User asked for a gold element to travel "left and right" in the
+background as you scroll (no mouse interaction). Iterated: large blurred
+orb → CSS gold bar → 3-D six-face ingot → **wireframe outline**. The
+rendered/skeuomorphic versions clashed with Vault (gold = restrained
+accent, never a glossy decorative prop), so the final form is a
+line-art graphic device.
+
+- `components/welcome/scroll-gold-bar.tsx`: a thin isometric SVG
+  *outline* of a bar (three `<path>` edges — front/top/right — `fill:
+  none`, `stroke: var(--primary)`), on a `fixed inset-0 z-0` layer,
+  `aria-hidden` + `pointer-events-none`, wrapper `opacity: 0.18`. No
+  fill, gloss, blur or perspective. Scroll progress (0→1) drives:
+  horizontal `sin(progress·2π·1.4)·32vw` (~1.4 left↔right passes),
+  vertical ease 24vh→62vh + out-of-phase bob, 2-D `rotate` ~1.2 revs.
+  Passive scroll listener + single rAF that writes straight to
+  `style.transform` and stops once settled. `useReducedMotion` / SSR /
+  jsdom → resting pose from the inline `style`, no listener/loop.
+- `liquid-glass-landing.tsx`: mounts `<ScrollGoldBar />` as the first
+  child of the root; removed `bg-black` from `<main>` (kept
+  `relative z-10`) so the fixed bar shows through between sections.
+- `hero-to-dashboard.tsx`: removed `bg-black` from its `<section>`
+  (root is already black) so the bar shows through there too. Hero
+  keeps its opaque video, so the bar emerges once you scroll past it.
+- `scroll-gold-bar.test.tsx`: layer is aria-hidden / pointer-events-
+  none / fixed; bar is an unfilled 3-path `<svg>` wireframe; parked at
+  its resting transform under reduced motion.
+- Tuning knobs at the top of the file: `AMPLITUDE_VW`, `PASSES`,
+  `TOP_START/END`, `BOB_VH`, `SPINS`, `REST_ROT`, `EASE`.
+
+tsc + eslint clean; `components/welcome/` tests 24 pass.
+
+## Done: landing scroll-nav no longer blocks scrolling (2026-08-31, `Ui-fix`, uncommitted)
+
+User feedback: the landing page's section scroll feature "limits user
+from scrolling." Two real causes fixed, keeping the right-edge dot rail:
+
+- `section-progress-nav.tsx`: the fixed `<nav>` had default
+  `pointer-events`, so its centred box plus each link's invisible
+  (opacity-0) hover label formed a tall transparent strip down the
+  right edge that swallowed clicks and drag-scrolls. `<nav>` is now
+  `pointer-events-none`; each dot link takes pointer events back
+  (`pointer-events-auto`) and the label is absolutely positioned
+  (`right-full`) so a hidden label no longer widens the hit target.
+- Removed the `j` / `k` keyboard section-jump (`useSectionKeys` call
+  in `liquid-glass-landing.tsx`); deleted `use-section-keys.ts`.
+  Anchor nav links + the dot rail already cover section navigation,
+  and hijacking letter keys surprised users mid-scroll.
+- Left `html:has(.liquid-glass-landing-root){scroll-behavior:smooth}`
+  as-is — it only affects anchor/programmatic scrolls, never
+  wheel/trackpad.
+
+tsc clean; `components/welcome/` tests 22 pass.
+
+## Done: bulk-select behind a "Select" button (2026-08-31, uncommitted)
+
+User feedback on the transaction surfaces: the always-visible checkbox
+column / select-all box read as clutter. Multi-select is now opt-in.
+
+- `components/transactions/transactions-view.tsx` and
+  `components/dashboard/transaction-history.tsx` each gained a local
+  `selectMode` boolean and a `Select` / `Cancel` toggle button (next to
+  Import / Export; shown only when there are rows). `selectMode` gates
+  the leading checkbox `<th>`/`<td>`, the mobile-card checkbox, and the
+  select-all box; the expanded-detail `colSpan` is `selectMode ? 8 : 7`.
+  Entering select mode collapses any open row; `Cancel` (or `Clear` in
+  the bar) exits and `selection.clear()`s so no hidden selection lingers.
+  The `BulkActionsBar` / `BulkDeleteDialog` wiring is unchanged — the bar
+  still only appears once something is ticked.
+- Inline English for the button label (locale en-only, `dictionary.ts`
+  frozen — same precedent as "View all →").
+- Tests updated to click `Select` before the select-all box
+  (`transactions-view.test.tsx`, `transaction-history.test.tsx`).
+  `tsc --noEmit`, `eslint`, `vitest run` (391) all green.
+
+## Done: Landing page — interactive "playground" pass (2026-08-31, uncommitted)
+
+Layered heavy interactivity onto the liquid-glass landing per an approved
+bounded brainstorm ("make it very interactive"). No new dependencies —
+`motion@13` (already present) supplies `useReducedMotion`; a hand-rolled
+scroll hook does the rest so `motion/react`'s vitest mock is untouched.
+All four gates green (`tsc --noEmit`, `eslint`, `vitest run` 404,
+`next build`); the 9 existing `welcome-landing.test.tsx` cases still pass
+(checked copy/affordances preserved verbatim).
+
+- **`components/welcome/marketing-calc.ts`** (+ `.test.ts`, 9 cases) —
+  pure weighted-average / unit math for the landing widgets only.
+  Deliberately NOT `lib/calc/` (that's the real ledger's Decimal.js money
+  math); plain numbers on an indicative price, clearly labelled. Exports
+  `computeMarketingPosition`, `toDamlung`, unit constants, and signed
+  USD/percent formatters.
+- **`try-it-simulator.tsx`** (+ `.test.tsx`, 4 cases) — the centrepiece.
+  A visitor builds a pretend ledger (qty + chi/damlung segmented toggle +
+  total paid), rows animate in, then drags a spot-price slider and
+  watches average cost / holdings / market value / P&L recompute live
+  with short (320ms) re-aiming `useCountUp` rolls and a gain/loss colour
+  flip + centre-anchored P&L bar. Nothing saved, no real price call. CTA
+  → `/sign-up` (or `/dashboard` when signed in).
+- **`unit-playground.tsx`** — replaces the old inline `#units` converter.
+  Number field (keeps `placeholder="1.0"` + the single `role=combobox`
+  select the calc test asserts on) plus a 0–12 damlung slider and an SVG
+  gold-bar stack that grows with the amount; output tiles roll via
+  `useCountUp`. `INDICATIVE_SPOT_PER_OZ = 4100` unchanged so 2 chi still
+  reads `$988.64`.
+- **`hero-to-dashboard.tsx`** — a scroll-pinned bridge after the hero: a
+  `useScrollProgress`-driven orb shrinks into the corner of a dashboard
+  card that assembles itself, figures counting up from zero. Pins at the
+  finished state under reduced motion / SSR / jsdom.
+- **`use-scroll-progress.ts`** — element-through-viewport progress (0→1),
+  one rAF per frame, passive listeners; returns a static 1 under
+  `useReducedMotion` or with no layout.
+- **`section-progress-nav.tsx`** — fixed right-edge dot rail (xl only),
+  IntersectionObserver-tracked active section, real `<a>` buttons with
+  `aria-current`.
+- **`use-section-keys.ts`** — `j`/`k` + arrows/PageUp-Down jump between
+  sections; ignores field focus and modifiers; off under reduced motion.
+- **`magnetic.tsx`** — hover-toward-cursor wrapper for the hero CTAs;
+  no-op on coarse pointers and under reduced motion, never intercepts
+  clicks.
+- **`spot-sparkline.tsx`** — deterministic synthetic price line that
+  redraws on a loop (stroke-dashoffset) with a pulsing "now" dot; static
+  under reduced motion. Sits in the `#units` section.
+- **`liquid-glass-landing.tsx`** — composes the above: new `#try-it`
+  section, `HeroToDashboard` after the hero, `SECTION_NAV` (adds a "Try
+  It" nav link), `SectionProgressNav`, `useSectionKeys`, magnetic hero
+  CTAs, a "Scroll" cue. The hero's secondary CTA now points at `#try-it`.
+- **`app/globals.css`** — `.sim-spot-range` slider skin (both engines),
+  `simRowIn` keyframe for ledger rows, `scroll-snap-type: y proximity` on
+  the landing root with per-section `scroll-snap-align`; every addition
+  has a `prefers-reduced-motion` off-switch.
+- Verified in a real browser (dev server): hero, scroll-pinned transform,
+  and the simulator all render and interact correctly; settled figures
+  check out (seed ledger → avg $4,693.33, +5.32% at the indicative
+  price); no console errors.
+
 ## Done: Landing copy — casual rewrite + fact-check pass (2026-08-31, uncommitted)
 
 - Reviewed all user-facing copy in `components/welcome/liquid-glass-landing.tsx`
@@ -2862,3 +3111,129 @@ verifiable, per `ai-workflow-rules.md`'s "When to Split Work"):
   recognizability; deleted `components/icons/settings-icon.tsx` and its
   `index.ts` export (only consumer was the sidebar). `context/ui-context.md`
   Settings section updated. Typecheck clean.
+- **2026-08-31:** Settings → Account now has an explicit sign-out
+  control. `components/settings/account.tsx` gained a session row above
+  Clerk's embedded `<UserProfile>`: shows a "Signed in as …" line (via
+  `useUser`) resolving to the primary email, then full name, then
+  username as fallbacks, and a destructive `Sign out` button that calls
+  `useClerk().signOut({ redirectUrl: "/" })` inside a `useTransition`.
+  Previously sign-out was only reachable through the `UserButton`
+  dropdown in the sidebar/top bar. New dictionary keys `settings.signOut`,
+  `settings.signOutDescription`, `settings.signedInAs`. tsc + eslint clean.
+- **2026-08-31:** `ScrollGoldBar` rebuilt as a real CSS 3-D ingot.
+  Was a single flat gradient `<div>` with `rotateY/rotateZ` on it — a
+  rotated flat plane, so it never read as 3-D. Now a `preserve-3d` box
+  of six individually-lit faces (top brightest → back/bottom darkest)
+  with real depth via CSS vars `--w/--h/--d`, bevelled edges, a stamped
+  top face ("GoldKh · 999.9 · 1 kilo"), and a specular streak sweeping
+  the front. No stock photo: CSP `img-src` blocks external images and a
+  flat billboard photo can't tumble in space anyway. Motion smoothed —
+  one persistent rAF loop writes `style.transform` directly (no
+  per-frame React state), eases the pose toward the scroll target, and
+  adds an always-on ambient Y-spin + pitch "breathing" so the bar is
+  never frozen. `opacity`/`perspective` moved onto the wrapper (opacity
+  < 1 or a filter on the `preserve-3d` node flattens the faces).
+  Files renamed scroll-orb → scroll-gold-bar (component + test). tsc,
+  eslint, 3 tests green.
+- **2026-08-31:** `HeroToDashboard` (the section directly below the
+  hero) rebuilt as an interactive 3-D stage. Previously a flat
+  radial-gradient blur orb that translated + a card doing a `translateY`
+  fade-up. Now: (1) the docking "your gold" object is a lit CSS sphere
+  with an orbiting specular highlight, an animated cast shadow, and four
+  looping ambient sparks, still docking into the card corner on reveal;
+  (2) the dashboard card sits on a `perspective: 1100px` stage — pointer
+  movement tilts the whole slab via `useSpring`ed `rotateX/rotateY`, a
+  cursor-tracking radial glare (`useMotionTemplate`) fades in on hover,
+  and hover lifts the box shadow to a gold ring; (3) the four stat tiles
+  stand up off the table (`rotateX(-60deg)` + negative `z` → flat, `z:24`)
+  staggered ~90ms, and each pops toward the viewer (`z:70`, scale 1.05,
+  gold border) `whileHover`; (4) a wireframe gold bar turns continuously
+  in 3-D beside the copy, the live dot pulses, the card idle-floats.
+  All animation gated on `useReducedMotion()` — a `StaticBridge`
+  fallback renders the finished flat state with no springs, pointer
+  listeners or loops (also the branch unit tests hit). Added
+  `hero-to-dashboard.test.tsx` (4 tests). Extended the shared
+  `vitest.setup.ts` motion/react mock with `useTransform` / `useSpring`
+  / `useMotionTemplate` stubs. tsc, eslint, 33 welcome tests green.
+- **2026-08-31:** New `GoldBarDiorama` — a pointer-reactive layered
+  "diorama" built from the existing hero photo
+  (`/images/goldkh_hero_hand_gold.jpg`), mounted inside the final CTA
+  card (`liquid-glass-landing.tsx`, behind the copy which now sits in a
+  `relative z-10` wrapper). Six stacked layers on a `perspective` stage:
+  blurred nebula bed, comet beam, deterministic gold-dust field, warm
+  glow, the photo cropped tight on the ingot and right-anchored with a
+  left-feather mask, and a left scrim so the heading stays legible. A
+  passive `pointermove` listener eases a normalised pose; one rAF tilts
+  the stack and parallax-shifts each layer, then stops when settled.
+  Ambient dust float / glow breath are CSS-only, `motion-safe`-gated.
+  Under `useReducedMotion()` it parks at a fixed three-quarter pose with
+  no listener. Decorative: `aria-hidden`, `pointer-events-none`. Plain
+  `<img>` (eslint-disabled) — oversized, transformed, not an LCP target.
+  Added `gold-bar-diorama.test.tsx` (4 tests).
+- **2026-08-31:** Fixed `ScrollGoldBar` idle shimmer. Removed the
+  permanent `will-change: transform` (a compositor layer over the
+  playing hero video shimmers at rest) and added a `DEADBAND` so scroll
+  / resize events that barely move the target (count-ups finishing, the
+  scrollbar toggling) no longer restart the easing loop while the page
+  is still; the loop now also snaps exactly onto target on settle.
+  tsc, eslint, 33 welcome tests green; production build clean.
+- **2026-08-31:** Removed `<ScrollGoldBar />` from `LiquidGlassLanding`.
+  The fixed full-viewport wireframe layer bled through every translucent
+  card and its thin stroke visibly "boiled" at rest (backdrop-filter
+  cards above it re-rasterising under the page's always-on animations).
+  Layer-promotion / deadband attempts didn't settle it. Component and
+  test are kept in the tree, just not mounted — the CTA `GoldBarDiorama`
+  now carries the gold-bar motif. tsc, eslint, all welcome tests, and
+  the production build are clean.
+- **2026-08-31:** New `SpotlightCard` wrapper — a cursor-tracking amber
+  glow for the glass cards. On a fine pointer (and `motion-safe`) an
+  `onMouseMove` handler writes `--spot-x` / `--spot-y` percentages plus
+  a `--spot-opacity` gate onto the element; `.spotlight-card::after` in
+  `globals.css` paints a `radial-gradient` amber highlight that follows
+  the cursor and fades on leave — no React re-render per move. A
+  `prefers-reduced-motion: no-preference` block adds a small hover lift
+  + soft gold shadow. Card content is raised into a `relative z-10`
+  layer so the glow stays under the text. Under `useReducedMotion()` or
+  a coarse pointer it renders the card unchanged with no listeners.
+  Applied to the 3 How It Works step cards and the 3 About cards in
+  `liquid-glass-landing.tsx` (kept their existing `liquid-glass
+  rounded-… border …` classes). Added `spotlight-card.test.tsx` (3
+  tests). tsc clean; welcome tests green.
+- **2026-08-31:** Fixed the "white border shivering" on the
+  `HeroToDashboard` POSITION card. Root cause: an infinite idle-float
+  (`y: [0,-10,0]`) was translating the `liquid-glass` (backdrop-filter)
+  slab every frame, so its blurred backdrop re-sampled continuously and
+  the 1px `border-white/10` edge crawled between sub-pixels. Removed the
+  idle-float wrapper; added `will-change: transform` + `backface-
+  visibility: hidden` to the pointer-tilt slab so it stays on a stable
+  cached layer. One-shot reveal, pointer tilt, glare and tile-hover are
+  untouched. 43 welcome tests + build green.
+- **2026-08-31:** New `GoldCursor` — a decorative gold halo that trails
+  the real mouse pointer across the landing page (native arrow/hand
+  cursor left visible). Mounted once at the top of `LiquidGlassLanding`.
+  Two `position: fixed`, `pointer-events-none`, `z-[9999]`,
+  `mix-blend-mode: plus-lighter` layers: a 6px crisp gold dot locked
+  1:1 to the pointer, and a 34px blurred gold halo that eases toward the
+  pointer each rAF frame (lerp 0.18) and scales up ~1.9× while the
+  pointer is over `a/button/[role=button]/input/label/summary`. Single
+  passive `pointermove` listener plus `pointerenter`/`pointerleave` for
+  fade; all positioning written straight to DOM style so the loop never
+  re-renders React. Renders `null` outright on coarse pointers and under
+  `useReducedMotion()`. Added `gold-cursor.test.tsx` (1 test). tsc,
+  eslint, 44 welcome tests green.
+- **2026-08-31:** Reworked `GoldCursor` into a 3-layer bloom to match
+  the hero's soft ambient gold-glow look: a wide 260px diffuse haze
+  (`rgba(232,184,75,…)`, `blur(30px)`, `mix-blend screen`, lerp 0.08),
+  a 90px warm mid halo (`blur(12px)`, `plus-lighter`, lerp 0.16), and
+  the 6px crisp core locked 1:1 to the pointer. Each outer layer eases
+  at its own rate so the glow smears into a soft comet on the move and
+  settles at rest; all three swell + brighten over interactive
+  elements. Still `null` on coarse pointers / reduced motion.
+- **2026-08-31:** Fixed the clipped `FeatureCoverflow` card. The stage
+  had a hand-picked fixed height (`h-[368px] sm:h-[300px]`) with
+  `overflow-hidden`, so the longest card ("Your real average cost") lost
+  its last line and proof row. Replaced the fixed height with a measured
+  one: an effect releases each card's `h-full`, reads `offsetHeight`,
+  takes the max, and drives the stage via inline `style.height`
+  (re-measured on resize and when `compact` flips). SSR/pre-JS fallback
+  `compact ? 440 : 360`. 7 coverflow tests green.
