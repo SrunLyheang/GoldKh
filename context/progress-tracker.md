@@ -2886,3 +2886,42 @@ verifiable, per `ai-workflow-rules.md`'s "When to Split Work"):
   4. `afterSignOutUrl="/"` set explicitly on `<ClerkProvider>`.
   New i18n keys `nav.signOut` / `nav.signingOut` / `nav.signOutError`.
   tsc + eslint clean, 391 tests pass, `npm run build` green.
+
+- **2026-08-31:** redesigned the sign-in / sign-up pages as a centered
+  split card (reference: Dribbble "web login with Rive-animated logo").
+  New `components/auth/`:
+  1. `auth-shell.tsx` — server component. Centered rounded card on a
+     warm near-black (`#0f0c08`) gold-lit page background. Left = dark
+     `#0b0b0b` brand panel with `<AuthCoin>` (hidden `<md`); right =
+     light/white form panel with a `UserRound` chip, an
+     `extrabold` heading + muted subheading rendered here, then the
+     Clerk form as children. NOTE: the right panel is intentionally
+     light — a deliberate departure from the app-wide Vault dark theme.
+     Left panel is **white** with the cursor-tilting coin; right panel
+     is **dark** and inherits Clerk's theme.
+  2. `auth-mascot.tsx` — `"use client"`. Inline-SVG robot whose eyes
+     + head track the mouse cursor anywhere on the page (window
+     `pointermove` → `useMotionValue` → `useSpring`), with an idle
+     "look around" `setInterval` when the cursor holds still. Layered
+     idle motion: float, antenna sway + one expanding signal ring +
+     tip pulse, ear twitches, face-screen shimmer sweep, blink, torso
+     breathing. **All animated props are transforms or opacity only** —
+     an earlier version animated SVG geometry attributes (`r`, `rx`,
+     `width`) and that + canvas `shadowBlur` in `SparkleField` crashed
+     the tab; both were removed. No motion under `useReducedMotion`.
+     (Iterated coin → robot → coin → this cursor-aware robot; the coin
+     component + image were removed.)
+  3. `clerk-appearance.ts` — minimal `appearance`: only strips Clerk's
+     card chrome + header so the form sits flat; all colours inherit
+     `<ClerkProvider>`'s `shadcn` dark theme (gold primary button, dark
+     inputs).
+  Also new: `components/effects/sparkle-field.tsx` — `"use client"`
+  `<canvas>` of gold sparkles drifting upward + twinkling, area-based
+  count, `prefers-reduced-motion` → single static frame. Mounted on the
+  auth pages (via `AuthShell`, `density=1.7`) and over the landing hero
+  (`liquid-glass-landing.tsx`, `absolute inset-0 z-10`, `density=1.2`).
+  `app/sign-in/[[...sign-in]]/page.tsx` + `app/sign-up/[[...sign-up]]/page.tsx`
+  now just wrap `<SignIn>` / `<SignUp>` in `<AuthShell>`. Added
+  `components/auth/auth-shell.test.tsx`. tsc + eslint clean, 392 tests
+  pass, `npm run build` green, verified in browser. Branch
+  `feat/auth-split-card`.

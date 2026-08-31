@@ -1,11 +1,14 @@
 import { SignUp } from "@clerk/nextjs";
-import Image from "next/image";
+import { AuthShell } from "@/components/auth/auth-shell";
+import { authAppearance } from "@/components/auth/clerk-appearance";
 
 export default function SignUpPage() {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-8 px-4 py-8">
-      <Image src="/logo.svg" alt="GoldKh" width={165} height={42} priority />
-      <SignUp />
-    </div>
+    <AuthShell
+      heading="Create your account"
+      subheading="Start tracking your gold in minutes"
+    >
+      <SignUp appearance={authAppearance} />
+    </AuthShell>
   );
 }
