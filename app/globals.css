@@ -788,3 +788,181 @@ html[lang="km"] .landing-root .font-mono {
     transition: none;
   }
 }
+
+/* ─── Liquid Glass Aesthetic ─────────────────────────────────────────────────── */
+.liquid-glass {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: none;
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.15), 0 8px 32px 0 rgba(0, 0, 0, 0.35);
+  position: relative;
+  overflow: hidden;
+}
+
+.liquid-glass::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.45) 0%,
+    rgba(255, 255, 255, 0.15) 20%,
+    rgba(255, 255, 255, 0.02) 40%,
+    rgba(255, 255, 255, 0.02) 60%,
+    rgba(255, 255, 255, 0.15) 80%,
+    rgba(255, 255, 255, 0.4) 100%
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+.liquid-glass-gold {
+  background: rgba(232, 184, 75, 0.04);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: none;
+  box-shadow: inset 0 1px 1px rgba(232, 184, 75, 0.25), 0 8px 32px 0 rgba(0, 0, 0, 0.45);
+  position: relative;
+  overflow: hidden;
+}
+
+.liquid-glass-gold::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    180deg,
+    rgba(232, 184, 75, 0.55) 0%,
+    rgba(232, 184, 75, 0.18) 25%,
+    rgba(232, 184, 75, 0.02) 50%,
+    rgba(232, 184, 75, 0.18) 80%,
+    rgba(232, 184, 75, 0.45) 100%
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* Smooth anchor scrolling only on pages that mount the liquid-glass
+   landing tree — never in the signed-in dashboard. */
+html:has(.liquid-glass-landing-root) {
+  scroll-behavior: smooth;
+}
+
+/* backdrop-filter is unsupported or disabled in some browsers/contexts;
+   without it the near-transparent glass surfaces vanish against the
+   black page, so raise the fill opacity as a fallback. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .liquid-glass {
+    background: rgba(38, 38, 40, 0.9);
+  }
+  .liquid-glass-gold {
+    background: rgba(48, 40, 22, 0.92);
+  }
+}
+
+/* ─── Hero Visual Animations ─────────────────────────────────────────────────── */
+@keyframes goldGlow {
+  0%, 100% {
+    opacity: 0.6;
+    transform: scale(0.95);
+  }
+  50% {
+    opacity: 0.95;
+    transform: scale(1.08);
+  }
+}
+
+@keyframes beamPulseOrange {
+  0%, 100% {
+    opacity: 0.45;
+    filter: blur(20px);
+  }
+  50% {
+    opacity: 0.85;
+    filter: blur(14px);
+  }
+}
+
+@keyframes beamPulseCyan {
+  0%, 100% {
+    opacity: 0.35;
+    filter: blur(24px);
+  }
+  50% {
+    opacity: 0.75;
+    filter: blur(16px);
+  }
+}
+
+@keyframes goldShimmerSweep {
+  0% {
+    transform: translateX(-150%) translateY(-150%) rotate(45deg);
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.8;
+  }
+  50% {
+    transform: translateX(150%) translateY(150%) rotate(45deg);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(150%) translateY(150%) rotate(45deg);
+    opacity: 0;
+  }
+}
+
+@keyframes floatGentle {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-8px) rotate(0.4deg);
+  }
+}
+
+.anim-gold-glow {
+  animation: goldGlow 4s ease-in-out infinite;
+}
+
+.anim-beam-orange {
+  animation: beamPulseOrange 3.5s ease-in-out infinite;
+}
+
+.anim-beam-cyan {
+  animation: beamPulseCyan 4.5s ease-in-out infinite;
+}
+
+.anim-gold-shimmer {
+  animation: goldShimmerSweep 5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.anim-float-gentle {
+  animation: floatGentle 6s ease-in-out infinite;
+}
+
+/* Respect the OS "reduce motion" setting for the hero visual layer,
+   matching the reduced-motion blocks maintained elsewhere in this file.
+   The autoplaying hero video and particle canvas are suppressed in the
+   component itself (animated-hero-image.tsx). */
+@media (prefers-reduced-motion: reduce) {
+  html:has(.liquid-glass-landing-root) {
+    scroll-behavior: auto;
+  }
+  .anim-gold-glow,
+  .anim-beam-orange,
+  .anim-beam-cyan,
+  .anim-gold-shimmer,
+  .anim-float-gentle {
+    animation: none;
+  }
+}

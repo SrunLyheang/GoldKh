@@ -1,52 +1,86 @@
 // @vitest-environment jsdom
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
-import { dictionary } from "@/lib/i18n/dictionary";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { WelcomeLanding } from "./welcome-landing";
 
-// Render the signed-out view. (useLocale is already mocked to English
-// globally in vitest.setup.ts.)
+// Mutable auth state so individual tests can flip to the signed-in view.
+const authState = { isLoaded: true, isSignedIn: false };
+
 vi.mock("@clerk/nextjs", () => ({
-  useAuth: () => ({ isLoaded: true, isSignedIn: false }),
+  useAuth: () => authState,
 }));
 
-const w = dictionary.en.welcome;
+afterEach(() => {
+  authState.isSignedIn = false;
+});
 
-describe("WelcomeLanding", () => {
-  it("leads with the hero headline", () => {
+describe("WelcomeLanding / LiquidGlassLanding", () => {
+  it("renders the main headline", () => {
     render(<WelcomeLanding />);
-    expect(screen.getByRole("heading", { name: w.hero.headline })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: /see what your gold/i })
+    ).toBeInTheDocument();
   });
 
-  it("points every signed-out primary CTA at /sign-up", () => {
+  it("renders the brand wordmark GoldKh", () => {
     render(<WelcomeLanding />);
-    const ctas = screen.getAllByRole("link", { name: new RegExp(w.nav.getStarted, "i") });
+    expect(screen.getAllByText(/GoldKh/i).length).toBeGreaterThan(0);
+  });
+
+  it("renders public navigation anchor links", () => {
+    render(<WelcomeLanding />);
+    expect(screen.getAllByText(/Features/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/How It Works/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Cambodian Units/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/About/i).length).toBeGreaterThan(0);
+  });
+
+  it("renders the primary sign up CTAs pointing to /sign-up", () => {
+    render(<WelcomeLanding />);
+    const ctas = screen.getAllByRole("link", { name: /Start Today|Begin Now|Create Free Account/i });
     expect(ctas.length).toBeGreaterThan(0);
     for (const cta of ctas) {
       expect(cta).toHaveAttribute("href", "/sign-up");
     }
   });
 
-  it("links Sign in to /sign-in", () => {
+  it("links Log in to /sign-in", () => {
     render(<WelcomeLanding />);
-    const [signIn] = screen.getAllByRole("link", { name: w.nav.signIn });
-    expect(signIn).toHaveAttribute("href", "/sign-in");
+    const signIns = screen.getAllByRole("link", { name: /Log in/i });
+    expect(signIns.length).toBeGreaterThan(0);
+    expect(signIns[0]).toHaveAttribute("href", "/sign-in");
   });
 
-  it("does not show the signed-in dashboard CTA when signed out", () => {
+  it("does not show a dashboard CTA when signed out", () => {
     render(<WelcomeLanding />);
     expect(
-      screen.queryByRole("link", { name: w.nav.goToDashboard })
+      screen.queryByRole("link", { name: /Go to Dashboard/i })
     ).not.toBeInTheDocument();
   });
 
-  it("shows the product sample tagged as a sample, not live data", () => {
+  it("shows a dashboard CTA and hides sign-in/sign-up when signed in", () => {
+    authState.isSignedIn = true;
     render(<WelcomeLanding />);
-    expect(screen.getByText(w.hero.sampleTag)).toBeInTheDocument();
+    const dash = screen.getAllByRole("link", { name: /Go to Dashboard/i });
+    expect(dash.length).toBeGreaterThan(0);
+    for (const link of dash) {
+      expect(link).toHaveAttribute("href", "/dashboard");
+    }
+    expect(screen.queryByRole("link", { name: /Log in/i })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("link", { name: /Begin Now|Create Free Account/i })
+    ).not.toBeInTheDocument();
   });
 
-  it("states plainly that it is not an exchange", () => {
+  it("renders the unit calculator widget", () => {
     render(<WelcomeLanding />);
-    expect(screen.getByText(w.trust.notExchange)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Unit Value Calculator/i)
+    ).toBeInTheDocument();
+  });
+
+  it("marks the calculator price as indicative, not live", () => {
+    render(<WelcomeLanding />);
+    expect(screen.getByText(/not a live feed/i)).toBeInTheDocument();
   });
 });

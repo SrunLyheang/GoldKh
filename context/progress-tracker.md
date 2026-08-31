@@ -12,6 +12,21 @@ Update this file after every meaningful implementation change.
   the remaining work toward hardening (rate limiting, the
   `user.deleted` webhook, UI test coverage) over new features.
 
+## Done: Animated Liquid Glass hero visual with glowing liquid sphere (2026-08-31, uncommitted)
+
+- Integrated the exact glowing liquid glass cosmic sphere video (`/videos/hero_bg.mp4`) into `AnimatedHeroImage` (`components/welcome/animated-hero-image.tsx`) with full animation layers:
+  - **Looping Video Centerpiece**: Realistic hand cupping the glowing swirling liquid glass sphere with cosmic orange and cyan light beams in full motion.
+  - **3D Mouse Parallax & Gyroscopic Tilt**: Dynamic 3D perspective shift on cursor movement.
+  - **Volumetric Light Beam Enhancements**: Pulsing radial glows aligned with the diagonal light trails.
+  - **Orb Core Breathing Glow**: Warm radiant aura centered on the liquid sphere.
+  - **Golden Dust & Star Particle Canvas**: 75 floating golden embers drifting through space.
+  - **Cursor-Follow Specular Highlight**: Interactive spotlight reflecting on the sphere upon hover.
+- Equilibrium-style liquid-glass layout:
+  - Top liquid-glass navbar with smooth anchor links (`#features`, `#how-it-works`, `#units`, `#about`) and auth CTAs (`Log in`, `Begin Now`).
+  - Bottom-left aligned hero headline and pill action buttons.
+  - Public scrollable sections: Features Bento Grid, How It Works, Cambodian Units Live Calculator, About / Transparency, and Final CTA.
+- Verification: `npx tsc --noEmit` clean (0 errors), `npm run test` (257/257 tests passing across 40 test files), `next build` passing cleanly.
+
 ## Done: timezone-pinned display clock — React #418 fix (2026-08-30, uncommitted)
 
 - Hydration mismatch (React error #418) on the dashboard. Root cause:
@@ -2267,3 +2282,55 @@ verifiable, per `ai-workflow-rules.md`'s "When to Split Work"):
   tighter stagger steps (60ms) so entries overlap into one flow
   instead of discrete pops. `filter` reset added to the reduced-
   motion blocks.
+
+- **2026-08-31:** landing converter spot price was a hardcoded
+  `$4,180/damlung` presented as live ("Live Unit Value Calculator",
+  "ESTIMATED LIVE VALUE"). No public read-only price endpoint exists
+  (`/api/price/refresh` is auth-gated + burns goldapi.io's 100/mo
+  quota), so a live client fetch on the signed-out landing page is
+  not viable yet. Instead, in `liquid-glass-landing.tsx`: replaced
+  the magic numbers with a single `INDICATIVE_SPOT_PER_OZ = 4100`
+  constant and canonical `TROY_OZ_PER_DAMLUNG` (37.5 / 31.1034768 ≈
+  1.205658, was 1.205653), deriving `spotPerDamlung` (~$4,943).
+  Relabelled the widget "Unit Value Calculator" / "ESTIMATED VALUE",
+  changed the header chip to "Indicative: $…/damlung" (muted, no
+  longer emerald), and added a footnote: "Indicative price for
+  illustration only — not a live feed. Sign in to see your holdings
+  valued at the current spot rate." Updated the units copy to
+  1.205658 oz. Tests updated in `welcome-landing.test.tsx` (widget
+  name + new "not a live feed" assertion); 7 pass. Follow-up option:
+  server-render the latest `getLatestSnapshot()` price into the page
+  as a prop with revalidation for a real (quota-free) live value.
+
+- **2026-08-31 (code-review fixes, `new-landing`):** addressed 7
+  findings from `/code-review` on the liquid-glass landing:
+  1. `animated-hero-image.tsx` mouse-tilt RAF loop no longer runs
+     forever — it eases to the pointer target, snaps within
+     `SETTLE_EPSILON` (0.01°) and stops scheduling frames; a
+     `mousemove` wakes it only if idle. Kills the permanent ~60fps
+     re-render of the hero subtree on a stationary pointer.
+  2. New `usePrefersReducedMotion` (via `useSyncExternalStore`, SSR
+     snapshot `false`) gates the tilt loop, the particle canvas, and
+     the hero `<video>` (pauses + `autoPlay={!reducedMotion}`).
+     Matching `@media (prefers-reduced-motion: reduce)` block in
+     `globals.css` disables the new `.anim-*` keyframes, alongside
+     the file's existing reduced-motion blocks.
+  3. `liquid-glass-landing.tsx` now reads `useSignedIn()` and shows a
+     "Go to Dashboard" CTA (→ `/dashboard`) in the header, mobile
+     menu, hero, final CTA band, and footer when signed in, hiding
+     the sign-in/sign-up CTAs. `use-signed-in.ts` is live again.
+  4. Footer copyright year moved to a module-level `CURRENT_YEAR`
+     constant + `suppressHydrationWarning` (was `new Date()` in
+     render → potential React #418 across a New Year boundary).
+  5. `html { scroll-behavior: smooth }` scoped to
+     `html:has(.liquid-glass-landing-root)` (new root class) so the
+     signed-in dashboard's programmatic scrolls are unaffected;
+     reset to `auto` under reduced-motion.
+  6. Deleted unused `components/welcome/gold-bar-canvas.tsx` (395
+     lines, never imported).
+  7. Added `@supports not (backdrop-filter: …)` fallback raising the
+     fill opacity of `.liquid-glass` / `.liquid-glass-gold` so the
+     glass surfaces stay visible where backdrop-filter is off.
+  `welcome-landing.test.tsx` gains a mutable auth mock + a signed-in
+  test (dashboard CTA shown, auth CTAs hidden); 9 pass. tsc + eslint
+  clean.
