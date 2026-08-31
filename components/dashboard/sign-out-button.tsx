@@ -3,6 +3,7 @@
 import { useClerk } from "@clerk/nextjs";
 import { LogOut } from "lucide-react";
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { Spinner } from "@/components/ui/loading";
 import { useLocale } from "@/lib/i18n/locale-context";
 import { notify } from "@/lib/ui/toast";
@@ -57,18 +58,20 @@ export function SignOutButton({ className }: { className?: string }) {
         {pending ? <Spinner size="sm" /> : <LogOut className="h-5 w-5" />}
       </button>
 
-      {pending && (
-        <div
-          className="fixed inset-0 z-60 flex flex-col items-center justify-center gap-3 bg-background/90 backdrop-blur-sm"
-          role="status"
-          aria-live="assertive"
-        >
-          <Spinner size="lg" />
-          <p className="tt-label text-[11px] text-muted-foreground">
-            {t.nav.signingOut}
-          </p>
-        </div>
-      )}
+      {pending &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-60 flex flex-col items-center justify-center gap-3 bg-background/90 backdrop-blur-sm"
+            role="status"
+            aria-live="assertive"
+          >
+            <Spinner size="lg" />
+            <p className="tt-label text-[11px] text-muted-foreground">
+              {t.nav.signingOut}
+            </p>
+          </div>,
+          document.body
+        )}
     </>
   );
 }

@@ -53,6 +53,7 @@ Update this file after every meaningful implementation change.
   - Bottom-left aligned hero headline and pill action buttons.
   - Public scrollable sections: Features Bento Grid, How It Works, Cambodian Units Live Calculator, About / Transparency, and Final CTA.
 - Verification: `npx tsc --noEmit` clean (0 errors), `npm run test` (257/257 tests passing across 40 test files), `next build` passing cleanly.
+
 ## Done: bulk-delete transactions (2026-08-31, uncommitted)
 
 Multi-select delete on both transaction surfaces (the compact dashboard
@@ -62,7 +63,7 @@ brainstorm this session. All four gates green (`tsc --noEmit`, `eslint`,
 
 - **Query.** `deleteManyOwnedTransactions(userId, ids)` in
   `lib/db/queries/transactions.ts` — one `DELETE … WHERE userId = ? AND
-  id IN (…)` via drizzle `inArray`, `.returning({ id })`. Ownership-scoped
+id IN (…)` via drizzle `inArray`, `.returning({ id })`. Ownership-scoped
   in the statement; the returned id list is the source of truth for what
   went. Empty list short-circuits without a query.
 - **Route.** New `DELETE` on `app/api/transactions/bulk/route.ts`
@@ -357,7 +358,7 @@ a component-state y-domain.
 - **`richControls` prop** — decouples "has the full toolset" (presets,
   `Showing …` caption, hover tooltip, 28px brush) from `compact` (layout
   height + drill-in). Defaults to `!compact`. `components/insights/
-  value-over-time.tsx` (Phase C) now passes `compact richControls` so the
+value-over-time.tsx` (Phase C) now passes `compact richControls` so the
   portfolio chart gets the same controls as `/dashboard/price` while
   staying inline (280px, no `onExpand`). `chart.historyShorterThanRange`
   copy neutralised ("Your history doesn't go back that far yet …") so it
@@ -383,7 +384,7 @@ and `price_snapshots` (§8).
   `buildPortfolioSeries(transactions, snapshots)`. For each snapshot
   instant `t`, replays every transaction dated `<= t`, takes
   `computeHoldings`, and values it two ways: `costBasisUsd = totalTroyOz ×
-  averageCostPerTroyOz`, `marketValueUsd = totalTroyOz × snapshotPrice`.
+averageCostPerTroyOz`, `marketValueUsd = totalTroyOz × snapshotPrice`.
   Snapshots are `{ t: number, pricePerTroyOz: string }` (epoch-ms, crosses
   the server→client boundary cleanly). KHR rows excluded via
   `computeHoldings`.
@@ -391,7 +392,7 @@ and `price_snapshots` (§8).
   `computeBuyQuality(transactions, snapshots)`. One row per USD buy:
   `paidUsd`, `pricePerUnitUsd`, spot for that row's unit on the buy date
   (nearest snapshot at/before it, else `null`), and `vsSpotPercent =
-  (spot − price) / price × 100` (positive = bought below spot; same
+(spot − price) / price × 100` (positive = bought below spot; same
   denominator convention as `computeGainLoss`). Sells and KHR buys
   dropped; input order preserved (the table sorts).
 - **`lib/calc/insights.ts`** (new, + `.test.ts`, 4 cases) — pure
@@ -411,7 +412,7 @@ and `price_snapshots` (§8).
   `listRecentPriceSnapshots()`, plus `listTransactionsForUser`). Maps rows
   to the calc-layer shapes and passes them to `InsightsContent`.
 - **`components/insights/*`** (new) — `insights-content.tsx` (`"use
-  client"` shell, runs each pure calc once via `useMemo`, four
+client"` shell, runs each pure calc once via `useMemo`, four
   `Panel size="lg"` sections in the 32px rhythm with
   `.tt-heading .tt-bracket` headers); `readouts.tsx` (3–4 plain-language
   lines, each rendered only when it has something to say);
@@ -646,7 +647,7 @@ from `fix/current-issues`).
   "See your holdings, average cost, and unrealized gain or loss."
 - **Stats + P&L card tint.** The Unrealized Gain/Loss card gained a 2px
   left border in the gain/loss tone (`border-l-state-gain` / `border-l-
-  destructive`).
+destructive`).
 
 References: `context/design-specs/dashboard-polish.md`, `docs/superpowers/
 plans/2026-08-30-dashboard-polish.md`. Status: 5 tasks completed; 2 deferred
@@ -785,7 +786,7 @@ not live links.
   `request.cookies` / `request.headers`. Wired into `instrumentation.ts`
   and `instrumentation-client.ts` as `beforeSend` / `beforeSendTransaction`,
   both now also `sendDefaultPii: false` and DSN-gated. `context/
-  security-review-2026-08-29.md` brought over (referenced by the scrubber
+security-review-2026-08-29.md` brought over (referenced by the scrubber
   and the CSP comments).
 - **Validation copy** — `lib/validation/transaction.ts` (+ new test, 16
   cases) replaced with `testing`'s richer schema: distinct per-error
@@ -866,7 +867,7 @@ not live links.
   → `{ realizedUsd, realizedPercent, saleCount }`. Same weighted-average
   basis and single chronological pass as `computeHoldings` — each sell is
   valued at the running average cost at that moment, `realized = Σ
-  proceeds − Σ cost-basis-of-sold`. **Not FIFO** (see
+proceeds − Σ cost-basis-of-sold`. **Not FIFO** (see
   `project-overview.md`, `product-strategy.md`). KHR rows skipped, so
   `saleCount` counts USD sells only; `realizedPercent` is against the
   sold cost basis, `"0"` until something comparable sells. Verifies the
@@ -978,7 +979,7 @@ not live links.
   (`components/welcome/*`) from the dark Vault/Industrial-Brutalism look
   to a warm editorial minimalism — Newsreader serif display, warm bone
   paper, hairline bento, gold used only as the brand mark + one hero
-  rule. Explicitly *not* following `redesign/direction.md` (per user).
+  rule. Explicitly _not_ following `redesign/direction.md` (per user).
   - **Self-contained light/dark theme.** New `LandingThemeProvider`
     (`components/welcome/landing-theme.tsx`) stamps `data-landing-theme`
     on the page wrapper; `goldkh-landing-theme` localStorage key; **light
@@ -1027,7 +1028,7 @@ not live links.
 
 - **2026-08-27 — Four more themes + new theme picker (uncommitted, on
   `landing-page` branch).** Added Midnight, Emerald, Terminal, Porcelain,
-  then a follow-up pass to make each a *distinct personality* (first cut
+  then a follow-up pass to make each a _distinct personality_ (first cut
   varied only palette, so the dark ones rendered near-identically) and
   to replace the picker UI. All still through the token contract — no
   dashboard component changed.
@@ -1067,7 +1068,7 @@ not live links.
 
 - **2026-08-27 — Multi-theme system + "Ledger" theme (uncommitted, on
   `landing-page` branch).** User asked to add the `/minimalist-ui` look
-  as a *selectable second theme*, not a replacement, and flagged more
+  as a _selectable second theme_, not a replacement, and flagged more
   themes coming. Chosen approach: a **CSS token contract**, not forked
   components (forking scales O(themes × components); the token contract
   is one CSS block per theme).
@@ -1145,7 +1146,7 @@ not live links.
     result (`ok` / `forbidden` / `not_found`); on a scoped-write miss a
     `classifyMiss` lookup by id decides 403 vs 404.
   - `request.json()` in `POST /api/transactions` and `PATCH
-    /api/transactions/[id]` no longer crashes to 500 on a malformed
+/api/transactions/[id]` no longer crashes to 500 on a malformed
     body — new `lib/api/parseJsonBody.ts` does JSON-parse + Zod in one
     place and returns a `400`.
   - Extracted `withAuth` from `withAuthAndRateLimit` (the latter now
@@ -1216,7 +1217,7 @@ not live links.
   mobile-header `Au` mark with the same `icon.svg` `<Image>` the
   sidebar already uses (one brand mark, not two), and adding
   `logo.svg` above the Clerk widget on both `app/sign-in/[[...sign-in]]/
-  page.tsx` and `app/sign-up/[[...sign-up]]/page.tsx` — previously
+page.tsx` and `app/sign-up/[[...sign-up]]/page.tsx` — previously
   bare, unbranded Clerk widgets on an empty background, the first
   screen any new user sees. Verified: `tsc --noEmit` and `eslint`
   clean on the three changed files; sign-in screenshotted via
@@ -1329,16 +1330,17 @@ not live links.
 Completed in this and the prior session, in order: `price_snapshots`
 table + migration, `lib/price/providers/goldapi.ts`, `getPrice()`
 with the conditional-insert concurrency guard, `transactions` table
-+ migration, `app/api/transactions/route.ts` (GET/POST,
-session-scoped), `lib/calc/` (unit conversion, weighted average
-cost, gain/loss), the full dashboard UI, a damlung-headline hero
-price, a Recharts price-history chart with a break-even reference
-line, edit-transaction (`PATCH /api/transactions/[id]`, shared
-`TransactionDialog`), a consolidated row-actions "⋯" menu
-(Edit/Delete), optimistic add (mirroring the existing optimistic
-delete), trimmed-trailing-zero quantity display, a padded
-price-chart Y-axis, and removal of the sidebar's "History" nav
-item. Remaining, not started:
+
+- migration, `app/api/transactions/route.ts` (GET/POST,
+  session-scoped), `lib/calc/` (unit conversion, weighted average
+  cost, gain/loss), the full dashboard UI, a damlung-headline hero
+  price, a Recharts price-history chart with a break-even reference
+  line, edit-transaction (`PATCH /api/transactions/[id]`, shared
+  `TransactionDialog`), a consolidated row-actions "⋯" menu
+  (Edit/Delete), optimistic add (mirroring the existing optimistic
+  delete), trimmed-trailing-zero quantity display, a padded
+  price-chart Y-axis, and removal of the sidebar's "History" nav
+  item. Remaining, not started:
 
 Priority order confirmed via a 2026-08-26 grilling session — items
 1-3 are the actual next work; 4-5 stay deferred until they cause a
@@ -1359,81 +1361,81 @@ grilling session, worked in this order (each small and independently
 verifiable, per `ai-workflow-rules.md`'s "When to Split Work"):
 
 3a. ~~Fix the KHR-poisons-`computeHoldings` bug.~~ Done — `currency`
-    added to `TransactionLike`, non-USD rows skipped in the
-    accumulation loop, two regression tests added
-    (`lib/calc/holdings.test.ts`). Verified: typecheck, full test
-    suite (64/64), lint, `next build` all clean.
+added to `TransactionLike`, non-USD rows skipped in the
+accumulation loop, two regression tests added
+(`lib/calc/holdings.test.ts`). Verified: typecheck, full test
+suite (64/64), lint, `next build` all clean.
 3b. ~~`lib/env.ts` — Zod-validated env vars, fail fast at boot.~~
-    Done. Deliberately a `validateEnv()` function called once from
-    `proxy.ts` (runs before any request, in every environment, never
-    imported by a test) rather than a parsed singleton every module
-    reads from — the latter would force `GOLDAPI_IO_API_KEY` etc. to
-    be eagerly present at import time and break `goldapi.ts`'s
-    existing per-call test coverage (it deletes the env var mid-test
-    to verify its own throw). `lib/db/client.ts`,
-    `lib/price/providers/goldapi.ts`, and `drizzle.config.ts` keep
-    their existing inline checks unchanged. 8 new tests
-    (`lib/env.test.ts`). Verified: typecheck, full test suite
-    (72/72), lint, `next build` all clean (against real `.env.local`
-    values, confirming `validateEnv()` passes under real conditions).
+Done. Deliberately a `validateEnv()` function called once from
+`proxy.ts` (runs before any request, in every environment, never
+imported by a test) rather than a parsed singleton every module
+reads from — the latter would force `GOLDAPI_IO_API_KEY` etc. to
+be eagerly present at import time and break `goldapi.ts`'s
+existing per-call test coverage (it deletes the env var mid-test
+to verify its own throw). `lib/db/client.ts`,
+`lib/price/providers/goldapi.ts`, and `drizzle.config.ts` keep
+their existing inline checks unchanged. 8 new tests
+(`lib/env.test.ts`). Verified: typecheck, full test suite
+(72/72), lint, `next build` all clean (against real `.env.local`
+values, confirming `validateEnv()` passes under real conditions).
 3c. ~~Baseline security headers in `next.config.ts`.~~ Done —
-    `X-Content-Type-Options`, `Referrer-Policy`,
-    `Content-Security-Policy: frame-ancestors 'self'`, and
-    `Strict-Transport-Security`, applied to every route via
-    `headers()`. **Discovered and fixed a real gap while verifying
-    this**: `next start` failed to boot at all, because
-    `CLERK_WEBHOOK_SIGNING_SECRET` genuinely isn't set in
-    `.env.local` (the Clerk Dashboard webhook registration is still
-    the open, not-yet-done-outside-this-repo step noted elsewhere in
-    this file) and `lib/env.ts` was hard-requiring it — blocking the
-    entire app over one non-critical route's secret. Fixed by making
-    it `.optional()` in the schema: validated for shape if present,
-    no longer required to boot. `app/api/webhooks/clerk/route.ts`'s
-    own `verifyWebhook()` already throws (caught, returned as 400)
-    if a webhook actually arrives with it unset — no behavior change
-    there. This revises architecture.md invariant 10 and the
-    Architecture Decisions entry below; recorded here since it's a
-    real adjustment to what was previously agreed, not a silent
-    one. Verified end to end: typecheck, full test suite (73/73,
-    +1 new test), lint, `next build`, and an actual `next start`
-    confirming the app boots and serves all four headers.
+`X-Content-Type-Options`, `Referrer-Policy`,
+`Content-Security-Policy: frame-ancestors 'self'`, and
+`Strict-Transport-Security`, applied to every route via
+`headers()`. **Discovered and fixed a real gap while verifying
+this**: `next start` failed to boot at all, because
+`CLERK_WEBHOOK_SIGNING_SECRET` genuinely isn't set in
+`.env.local` (the Clerk Dashboard webhook registration is still
+the open, not-yet-done-outside-this-repo step noted elsewhere in
+this file) and `lib/env.ts` was hard-requiring it — blocking the
+entire app over one non-critical route's secret. Fixed by making
+it `.optional()` in the schema: validated for shape if present,
+no longer required to boot. `app/api/webhooks/clerk/route.ts`'s
+own `verifyWebhook()` already throws (caught, returned as 400)
+if a webhook actually arrives with it unset — no behavior change
+there. This revises architecture.md invariant 10 and the
+Architecture Decisions entry below; recorded here since it's a
+real adjustment to what was previously agreed, not a silent
+one. Verified end to end: typecheck, full test suite (73/73,
++1 new test), lint, `next build`, and an actual `next start`
+confirming the app boots and serves all four headers.
 3d. ~~GitHub Actions CI — `lint` + `test` + `build`, blocking on PRs
-    into `main`.~~ Done — `.github/workflows/ci.yml`, `npm ci` then
-    `lint`/`test`/`build`, on every push/PR into `main`. Build needs
-    at least a placeholder `DATABASE_URL` (confirmed by temporarily
-    hiding `.env.local` locally — `next build` fails without one,
-    since route-handler page-data collection imports
-    `lib/db/client.ts`); CI sets well-formed placeholder values for
-    `DATABASE_URL`, `CLERK_SECRET_KEY`,
-    `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, and `GOLDAPI_IO_API_KEY` at
-    the workflow level — never real credentials.
-    `CLERK_WEBHOOK_SIGNING_SECRET` is omitted, matching its
-    optional status (see 3c). Verified by running the exact same env
-    vars locally (`.env.local` hidden) — build passes clean.
+into `main`.~~ Done — `.github/workflows/ci.yml`, `npm ci` then
+`lint`/`test`/`build`, on every push/PR into `main`. Build needs
+at least a placeholder `DATABASE_URL` (confirmed by temporarily
+hiding `.env.local` locally — `next build` fails without one,
+since route-handler page-data collection imports
+`lib/db/client.ts`); CI sets well-formed placeholder values for
+`DATABASE_URL`, `CLERK_SECRET_KEY`,
+`NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, and `GOLDAPI_IO_API_KEY` at
+the workflow level — never real credentials.
+`CLERK_WEBHOOK_SIGNING_SECRET` is omitted, matching its
+optional status (see 3c). Verified by running the exact same env
+vars locally (`.env.local` hidden) — build passes clean.
 3e. ~~Sentry (`@sentry/nextjs`), client + server.~~ Done —
-    `instrumentation.ts` (server + edge, via `register()`, plus
-    `onRequestError` wired to `Sentry.captureRequestError`) and
-    `instrumentation-client.ts` (browser), both calling `Sentry.init()`
-    with `dsn: process.env.NEXT_PUBLIC_SENTRY_DSN` — a documented
-    no-op when unset, so every environment stays safe until a real
-    Sentry project exists. `next.config.ts` wrapped with
-    `withSentryConfig` (`silent: true`, no org/project/authToken yet
-    — source-map upload is skipped until those are configured).
-    `NEXT_PUBLIC_SENTRY_DSN` added to `.env.example`. One SDK-version
-    gap found and worked around: `@sentry/nextjs` 10.71.0 has no
-    `captureRouterTransitionStart` export yet for Next 16.3's new
-    `onRouterTransitionStart` hook — that optional hook was left out
-    of `instrumentation-client.ts` rather than guessed at; revisit
-    when the SDK adds it. Verified: typecheck, full test suite
-    (73/73), lint, `next build` (both against real `.env.local` and
-    against the exact CI placeholder env with no DSN at all), and an
-    actual `next start` confirming clean boot with no Sentry errors.
+`instrumentation.ts` (server + edge, via `register()`, plus
+`onRequestError` wired to `Sentry.captureRequestError`) and
+`instrumentation-client.ts` (browser), both calling `Sentry.init()`
+with `dsn: process.env.NEXT_PUBLIC_SENTRY_DSN` — a documented
+no-op when unset, so every environment stays safe until a real
+Sentry project exists. `next.config.ts` wrapped with
+`withSentryConfig` (`silent: true`, no org/project/authToken yet
+— source-map upload is skipped until those are configured).
+`NEXT_PUBLIC_SENTRY_DSN` added to `.env.example`. One SDK-version
+gap found and worked around: `@sentry/nextjs` 10.71.0 has no
+`captureRouterTransitionStart` export yet for Next 16.3's new
+`onRouterTransitionStart` hook — that optional hook was left out
+of `instrumentation-client.ts` rather than guessed at; revisit
+when the SDK adds it. Verified: typecheck, full test suite
+(73/73), lint, `next build` (both against real `.env.local` and
+against the exact CI placeholder env with no DSN at all), and an
+actual `next start` confirming clean boot with no Sentry errors.
 3f. ~~Confirm/document the Vercel deploy + migration process.~~
-    Done — see `architecture.md`'s "First-deploy checklist," a
-    5-step list for the user to work through outside this repo
-    (connect Vercel, set prod env vars, run migrations by hand,
-    register the Clerk webhook, create the Sentry project). No code
-    change; nothing to verify with a test suite.
+Done — see `architecture.md`'s "First-deploy checklist," a
+5-step list for the user to work through outside this repo
+(connect Vercel, set prod env vars, run migrations by hand,
+register the Clerk webhook, create the Sentry project). No code
+change; nothing to verify with a test suite.
 
 5. Pagination or an alternate treatment for transaction lists
    long enough to make the `max-h-80` scroll container feel
@@ -1530,7 +1532,7 @@ verifiable, per `ai-workflow-rules.md`'s "When to Split Work"):
   branching inline. Now `lib/calc/ledgerEntry.ts` owns `LedgerEntry`
   (+ `LedgerEntryWithId`, replacing `TransactionWithId`) and
   `classifyEntry()`, which names the shared axis as `non-usd | sale |
-  open-buy`. Both `computeHoldings` and `computeRowValuation` take
+open-buy`. Both `computeHoldings` and `computeRowValuation` take
   `LedgerEntry` and switch on `classifyEntry`.
   - **Scope, honestly:** the type merge is the real win — one source of
     truth for the calc layer's transaction shape. `classifyEntry` is a
@@ -1540,7 +1542,7 @@ verifiable, per `ai-workflow-rules.md`'s "When to Split Work"):
     aggregate folds a sell into a running average, the per-row values one
     row in isolation; no shared compute path.
   - Consumers repointed: `transaction-history.tsx` (`TransactionRow
-    extends LedgerEntry`), `transaction-dialog.tsx` +
+extends LedgerEntry`), `transaction-dialog.tsx` +
     `transaction-dialog.test.tsx` (`LedgerEntryWithId`). Added
     `lib/calc/ledgerEntry.test.ts` (3 cases); import renames in
     `holdings.test.ts` / `transactionRow.test.ts`. 134/134 tests pass;
@@ -1555,7 +1557,7 @@ verifiable, per `ai-workflow-rules.md`'s "When to Split Work"):
   branching — all interleaved with `setState`. Now `requestPriceRefresh()`
   owns the whole contract with `POST /api/price/refresh` and returns a
   `RefreshOutcome` discriminated union: `refreshed | cooldown |
-  unreachable | failed`, each carrying `cooldownEndsAt` / `message` only
+unreachable | failed`, each carrying `cooldownEndsAt` / `message` only
   where real. The component `switch`es on `outcome.kind` and maps each to
   toast copy + local state.
   - **Scope, honestly:** this is a locality win, not a state reduction.
@@ -1569,7 +1571,7 @@ verifiable, per `ai-workflow-rules.md`'s "When to Split Work"):
     guard stays too (it reads `inCooldown` state). `requestPriceRefresh()`
     always performs the fetch and holds no React.
   - The 429 branch anchors `Retry-After` (seconds remaining) to
-    `Date.now()` *inside the module* and returns an absolute
+    `Date.now()` _inside the module_ and returns an absolute
     `cooldownEndsAt`, so the component never does duration math.
   - Tests: new `lib/price/requestPriceRefresh.test.ts` (node env, stubbed
     `fetch`) covers all four outcomes incl. 200-with-null-deadline,
@@ -1603,7 +1605,7 @@ verifiable, per `ai-workflow-rules.md`'s "When to Split Work"):
     ubiquitous term) and now lives in the query module; `freshness.ts`
     and `getPrice.ts` import it from there.
   - Insert input typed as a local `NewPriceSnapshot = { pricePerTroyOz,
-    source }` in the query module, not the price layer's
+source }` in the query module, not the price layer's
     `NormalizedPrice` — keeps the dependency arrow price → db, never
     back. Structurally compatible, so call sites are unchanged.
   - `lib/db/queries/priceHistory.ts` deleted; its `listRecentPriceSnapshots`
@@ -1623,11 +1625,11 @@ verifiable, per `ai-workflow-rules.md`'s "When to Split Work"):
   predicates (`isFresh`, `isSnapshotStale`, `isManualCooldownActive`,
   all in `getPrice.ts`) plus raw `Date.now() - capturedAt` arithmetic
   re-done at every consumer. Now one pure `priceFreshness(snapshot,
-  now?)` returns `{ isStale, cooldownActive, cooldownEndsAt }`, computed
+now?)` returns `{ isStale, cooldownActive, cooldownEndsAt }`, computed
   once per request.
   - `getPrice()` uses `!priceFreshness(latest).isStale`; its private
     `isFresh` is deleted. Staleness boundary unified on `age >=
-    PRICE_STALENESS_MS` (was a `<`/`>` split, a ≤1 ms shift, refetch-at-
+PRICE_STALENESS_MS` (was a `<`/`>` split, a ≤1 ms shift, refetch-at-
     boundary is the safe direction).
   - `app/dashboard/page.tsx` drops the `MANUAL_REFRESH_COOLDOWN_MS`
     import — one `priceFreshness(price)` call yields both `isStale` and
@@ -1640,7 +1642,7 @@ verifiable, per `ai-workflow-rules.md`'s "When to Split Work"):
     below — `refresh-button.tsx` reads the header / the payload field
     and imports no freshness constant at all.
   - **Out of scope, deliberately:** `auto-refresh.tsx` keeps its own
-    `lastRefreshAtRef` clock (gates on time since *its* last
+    `lastRefreshAtRef` clock (gates on time since _its_ last
     `router.refresh()`, not since capture) and its constant import —
     folding it onto the capture clock is a behaviour change, not a
     deepening.
@@ -1665,7 +1667,7 @@ verifiable, per `ai-workflow-rules.md`'s "When to Split Work"):
   `redirect("/sign-in")` even though `app/dashboard/layout.tsx` already
   gates the route with `redirectToSignIn()`. Prompted by a report of
   `GET /dashboard` firing back-to-back (~1.4s apart) in `next dev`.
-  Diagnosis (DevTools + server log): the burst was a *transient* Clerk
+  Diagnosis (DevTools + server log): the burst was a _transient_ Clerk
   **development-instance** handshake settling right after sign-in (`pk_test_`
   keys; `proxy.ts` middleware spiking 700-1000ms every ~6th request = the
   FAPI handshake round-trip), not a steady-state loop — idle focused tab
@@ -1691,7 +1693,7 @@ verifiable, per `ai-workflow-rules.md`'s "When to Split Work"):
   extra click firing another POST. Fix: new `isRefreshing` state set
   synchronously at the top of `handleClick` (before the `await`), so the
   `Spinner` + `aria-disabled` land on the same click; a `busy =
-  isRefreshing || isPending` flag keeps the button spinning continuously
+isRefreshing || isPending` flag keeps the button spinning continuously
   through the fetch and the RSC re-render that follows. `handleClick`
   early-returns when `isRefreshing` is already true, so repeat clicks
   during the in-flight fetch are swallowed instead of making more
@@ -1726,7 +1728,7 @@ verifiable, per `ai-workflow-rules.md`'s "When to Split Work"):
   covered" list, moved out because the cooldown branch is real
   logic. Note: the original prompt that started this was repeated
   `GET /dashboard` in `next dev`; that log had no timestamps, and a
-  sub-agent trace found the more-likely driver of a *sub-60s*
+  sub-agent trace found the more-likely driver of a _sub-60s_
   cadence is Clerk dev-key (`pk_test_…`) `__clerk_handshake` churn
   compounded by the duplicate `auth()` gate in
   `app/dashboard/page.tsx` (its own `redirect("/sign-in")` on top
@@ -1736,13 +1738,13 @@ verifiable, per `ai-workflow-rules.md`'s "When to Split Work"):
 - **Manual refresh cooldown now gates on the newest snapshot of any
   kind, not just prior manual refreshes** (2026-08-27, same session).
   Follow-on to the entry above. `isManualCooldownActive` (`lib/price/
-  getPrice.ts`) is unchanged, but both call sites now feed it the
-  latest snapshot rather than the latest *manual* snapshot:
+getPrice.ts`) is unchanged, but both call sites now feed it the
+  latest snapshot rather than the latest _manual_ snapshot:
   `app/dashboard/page.tsx` uses `price.capturedAt` (already fetched by
   `getPrice()`, so `getLatestManualSnapshot()` was dropped from the
   page's `Promise.all` — one fewer query per render), and
   `app/api/price/refresh/route.ts` calls the now-exported
-  `getLatestSnapshot()`. Effect: after *any* fresh price is captured —
+  `getLatestSnapshot()`. Effect: after _any_ fresh price is captured —
   a manual refresh, or `getPrice()`'s own 30-minute provider fetch on
   a page load — the manual refresh button is disabled and
   `POST /api/price/refresh` returns 429 for `MANUAL_REFRESH_COOLDOWN_MS`
@@ -1770,13 +1772,13 @@ verifiable, per `ai-workflow-rules.md`'s "When to Split Work"):
   - **Auth + rate-limit given a seam: `withAuthAndRateLimit`**
     (`lib/api/withAuthAndRateLimit.ts`). The identical five-line
     auth-then-rate-limit block was duplicated across `POST
-    /api/transactions` and `PATCH`/`DELETE /api/transactions/[id]` —
+/api/transactions` and `PATCH`/`DELETE /api/transactions/[id]` —
     now one higher-order function wraps a handler, checks auth then
     rate limit in a fixed order, and passes `userId` (merged with the
     route's own context, e.g. `params` on the `[id]` routes) into the
     handler. `GET /api/transactions` and `POST /api/price/refresh`
     stay unwrapped — rate limiting was always scoped to the
-    transaction-*mutating* routes only, unchanged. Existing route
+    transaction-_mutating_ routes only, unchanged. Existing route
     tests needed no changes (their `vi.mock` of `@clerk/nextjs/server`
     and `@/lib/api/rateLimit` still intercepts the same imports,
     now reached through the wrapper); added 4 new tests
@@ -1787,7 +1789,7 @@ verifiable, per `ai-workflow-rules.md`'s "When to Split Work"):
     refresh, `POST /api/price/refresh` already returns the inserted
     snapshot's real `capturedAt`; the button now derives
     `cooldownEndsAt` from that instead of `Date.now() +
-    MANUAL_REFRESH_COOLDOWN_MS` taken at a different instant
+MANUAL_REFRESH_COOLDOWN_MS` taken at a different instant
     (post-fetch-latency). The 429-cooldown-already-active branch keeps
     its client-side guess — the error envelope has no `data` field per
     `architecture.md`'s one-shape-per-route rule, so there's no real
@@ -1803,7 +1805,7 @@ verifiable, per `ai-workflow-rules.md`'s "When to Split Work"):
 
 - **Optimistic transaction reconciliation extracted into
   `useOptimisticTransactions`** (`components/dashboard/
-  use-optimistic-transactions.ts`), acted on from an architecture review
+use-optimistic-transactions.ts`), acted on from an architecture review
   (`/improve-codebase-architecture`, 2026-08-27). Previously
   `pendingAdds`/`removedIds`/`awaitingAddRefresh` lived inline in
   `DashboardContent` — the temp-id/settle protocol was assembled at the
@@ -1949,7 +1951,7 @@ verifiable, per `ai-workflow-rules.md`'s "When to Split Work"):
   source rather than assumed correct.
 
 - **Response envelope: `{ data: T } | { error: { code: string;
-  message: string } }`, every route, no exceptions.** One shape to
+message: string } }`, every route, no exceptions.** One shape to
   check against in review instead of "roughly consistent." Written
   into `code-standards.md`'s API Routes section as the literal
   type.
@@ -2057,7 +2059,7 @@ verifiable, per `ai-workflow-rules.md`'s "When to Split Work"):
   Covered: `TransactionDialog` (validation via the real Zod schema,
   optimistic add + rollback-on-failure, sell-exceeds-holdings
   warning, add vs. edit request shape — POST vs. `PATCH
-  /api/transactions/{id}`), `TransactionHistory` (KHR vs. sell
+/api/transactions/{id}`), `TransactionHistory` (KHR vs. sell
   blank-value reasons via their distinct `title` text, the
   optimistic-row "Saving…" state, the two-click delete confirm
   flow), `HeroPriceCard` (Live/Stale labeling), `RefreshButton`
@@ -2090,7 +2092,6 @@ verifiable, per `ai-workflow-rules.md`'s "When to Split Work"):
   single-user tool to open public signup earlier the same day, which
   is what makes "acceptable for personal use" gaps worth closing now
   rather than later.
-
   - **Deploy platform: Vercel.** Reference host for Next.js, zero-
     config PR previews, first-party Neon integration. No code
     consequence beyond the deploy/migration checklist item below;
@@ -2195,7 +2196,7 @@ verifiable, per `ai-workflow-rules.md`'s "When to Split Work"):
   against the same Zod schema as `POST`.** Not a partial-field
   patch — every field is required in the request body, matching
   `updateOwnedTransaction`'s `.set({ ...input, updatedAt: new
-  Date() })`. Both routes now import the shared
+Date() })`. Both routes now import the shared
   `lib/validation/transaction.ts` schema instead of each declaring
   their own, so create and edit can never validate against
   different rules.
@@ -2238,12 +2239,12 @@ verifiable, per `ai-workflow-rules.md`'s "When to Split Work"):
   Quantity column and the edit dialog's quantity `defaultValue`.
   "1.0000" now reads "1"; "1.2500" reads "1.25" — nothing is
   rounded away that the user actually entered. The `<input
-  type="number">` itself was never the problem (Postgres pads to
+type="number">` itself was never the problem (Postgres pads to
   scale on write regardless of what's typed) — this is a
   display-only fix, not a validation change.
 
 - **Price-history chart Y-axis is no longer `domain={["auto",
-  "auto"]}`.** Recharts' auto-domain hugged the data so tightly
+"auto"]}`.** Recharts' auto-domain hugged the data so tightly
   that real price movement read as a flat line. Replaced with a
   domain function padding both ends by 15% of the current
   min/max range (falling back to 2% of the value itself when the
@@ -2252,7 +2253,7 @@ verifiable, per `ai-workflow-rules.md`'s "When to Split Work"):
 
 - **Optimistic state (`pendingAdds`/`removedIds`) lifted from
   `TransactionHistory` into a new `components/dashboard/
-  dashboard-content.tsx` client wrapper.** User reported that
+dashboard-content.tsx` client wrapper.** User reported that
   adding a transaction updated the table row instantly but the
   stat row / gain-loss / break-even line still waited on
   `router.refresh()` — because those were computed server-side in
@@ -2283,9 +2284,9 @@ verifiable, per `ai-workflow-rules.md`'s "When to Split Work"):
   `useTransition`'s real `isPending`), and a new
   `app/dashboard/loading.tsx` (Next.js route-level loading UI,
   shown automatically while `page.tsx`'s auth check + `getPrice()`
-  + DB queries are in flight — matters most on a cold Neon
-  connection). `/` redirects immediately and sign-in/sign-up are
-  Clerk-managed, so neither needed one.
+  - DB queries are in flight — matters most on a cold Neon
+    connection). `/` redirects immediately and sign-in/sign-up are
+    Clerk-managed, so neither needed one.
 
 - **`TransactionDialog` always shows a full `LoadingScreen` in
   place of the form while `submitting`, for every mode — the
@@ -2319,7 +2320,7 @@ verifiable, per `ai-workflow-rules.md`'s "When to Split Work"):
   dependency-light apart from recharts, an explicit prior user
   choice). `components/ui/date-field.tsx` combines them behind a
   hidden `<input type="hidden">` so the existing `formData.get(
-  "transactionDate")` read in `transaction-dialog.tsx` needed no
+"transactionDate")` read in `transaction-dialog.tsx` needed no
   change. Defaults to today (not empty) since a hidden input's
   `required` isn't enforced by the browser.
 
@@ -2357,7 +2358,7 @@ verifiable, per `ai-workflow-rules.md`'s "When to Split Work"):
   `DashboardContent` → `HeroPriceCard` → `RefreshButton`, so the
   button starts disabled ("Refreshed recently") instead of letting a
   click fail. One deviation from the original plan: `insertSnapshot`
-  is a plain unconditional insert used only by this route, *not*
+  is a plain unconditional insert used only by this route, _not_
   wired underneath `insertIfStillStale`'s atomic conditional insert
   as the plan suggested — splitting that single guarded SQL
   statement into a separate check-then-insert would reopen the race
@@ -2524,7 +2525,7 @@ verifiable, per `ai-workflow-rules.md`'s "When to Split Work"):
   time showed nothing. Root cause: `canManualRefresh` gated the
   `disabled` prop, so a second click never fired at all — the
   route's existing 429 `COOLDOWN` message (`"Price was just
-  refreshed — try again in a few minutes"`) had no way to reach the
+refreshed — try again in a few minutes"`) had no way to reach the
   user. Fix: `disabled` now tracks only `isPending` (the in-flight
   request); `canManualRefresh` still sets the initial `title`
   tooltip, but no longer blocks the click. The server remains the
@@ -2561,9 +2562,9 @@ verifiable, per `ai-workflow-rules.md`'s "When to Split Work"):
   Resolves the top-priority item from the 2026-08-26 grilling
   session. New `rate_limit_counters` table (`lib/db/schema.ts`,
   migration `0002_spooky_luckman.sql`): one row per `(user_id,
-  window_start)`, incremented via an atomic Postgres upsert
+window_start)`, incremented via an atomic Postgres upsert
   (`incrementRequestCount`, `lib/db/queries/rateLimit.ts`) — `INSERT
-  ... ON CONFLICT DO UPDATE SET count = count + 1`, so the database
+... ON CONFLICT DO UPDATE SET count = count + 1`, so the database
   arbitrates concurrency per code-standards.md, not a
   check-then-write in JS. `windowStart` is floored to
   `RATE_LIMIT_WINDOW_MS` boundaries using the app clock (`Date.now()`),
@@ -2577,7 +2578,7 @@ verifiable, per `ai-workflow-rules.md`'s "When to Split Work"):
   called first thing (after the `auth()` check, before any DB read
   or Zod validation) in all three transaction-mutating handlers —
   `POST /api/transactions`, `PATCH` and `DELETE
-  /api/transactions/[id]` — returning `429 RATE_LIMITED` on the
+/api/transactions/[id]` — returning `429 RATE_LIMITED` on the
   existing `{ error: { code, message } }` envelope. A blocked
   request still increments the counter, which is what keeps the
   block in effect for the rest of the window instead of flapping.
@@ -2598,7 +2599,7 @@ verifiable, per `ai-workflow-rules.md`'s "When to Split Work"):
   dependency needed). Unlike every other route, this one is
   authenticated by signature, not `auth()`, since Clerk calls it
   server-to-server with no session cookie. On `user.type ===
-  "user.deleted"`, calls the new `deleteAllTransactionsForUser`
+"user.deleted"`, calls the new `deleteAllTransactionsForUser`
   query (`lib/db/queries/transactions.ts`) to remove every
   transaction row for that Clerk user id, resolving the orphaned-row
   open question. Every other event type returns 200 and is ignored,
@@ -2695,11 +2696,11 @@ verifiable, per `ai-workflow-rules.md`'s "When to Split Work"):
   `@clerk/ui` install initially failed (`EEXIST`/`EACCES` on a
   stray root-owned dir under `~/.npm/_cacache`, likely left by a
   prior `sudo npm` run) — worked around with `--cache <scratch
-  dir>` rather than touching the root-owned cache; that stray
+dir>` rather than touching the root-owned cache; that stray
   directory is still there and will keep breaking installs that
   hit its cache keys until someone with sudo cleans it up
   (`sudo chown -R $(whoami) ~/.npm` or `sudo rm -rf
-  ~/.npm/_cacache`).
+~/.npm/_cacache`).
 - User reports GitHub/Apple/Facebook OAuth (added in the Clerk
   Dashboard) still don't appear on `/sign-in`, only Google + email
   do. Unresolved — `clerk auth login` timed out twice waiting on
@@ -2710,7 +2711,7 @@ verifiable, per `ai-workflow-rules.md`'s "When to Split Work"):
   or the dashboard edits landed on a different
   instance/environment than the `pk_test_`/`sk_test_` keys
   currently in `.env.local`. Next step: user completes `clerk auth
-  login`, then `clerk link --app app_3IPmnrB8WJNqRcixFjjf3stYS87`
+login`, then `clerk link --app app_3IPmnrB8WJNqRcixFjjf3stYS87`
   and `clerk config pull` to inspect the `social` config directly.
 - The architecture diagram to work from has the browser and
   `clerkMiddleware` above a dashed Next.js server boundary
@@ -2851,9 +2852,9 @@ verifiable, per `ai-workflow-rules.md`'s "When to Split Work"):
   7. Added `@supports not (backdrop-filter: …)` fallback raising the
      fill opacity of `.liquid-glass` / `.liquid-glass-gold` so the
      glass surfaces stay visible where backdrop-filter is off.
-  `welcome-landing.test.tsx` gains a mutable auth mock + a signed-in
-  test (dashboard CTA shown, auth CTAs hidden); 9 pass. tsc + eslint
-  clean.
+     `welcome-landing.test.tsx` gains a mutable auth mock + a signed-in
+     test (dashboard CTA shown, auth CTAs hidden); 9 pass. tsc + eslint
+     clean.
 - **2026-08-31:** sidebar footer settings link moved onto the
   user/profile row. Previously the settings gear sat beside the
   `ThemeToggle`; now `ThemeToggle` is on its own line and the gear is
@@ -2866,7 +2867,7 @@ verifiable, per `ai-workflow-rules.md`'s "When to Split Work"):
 - **2026-08-31:** fixed the sign-out hang (page froze after clicking
   "Sign out" in the `<UserButton>` menu until a manual refresh). Root
   cause: Clerk's built-in sign-out clears the session then does a
-  *soft* client-side navigation to `afterSignOutUrl`; with the App
+  _soft_ client-side navigation to `afterSignOutUrl`; with the App
   Router RSC Router Cache still holding the signed-in view of `/`
   (which `redirect()`s to `/dashboard`), nothing forced a fresh
   server render, so the UI sat until a hard refresh. Fix mirrors the
@@ -2875,53 +2876,50 @@ verifiable, per `ai-workflow-rules.md`'s "When to Split Work"):
   1. New `components/dashboard/sign-out-button.tsx` — `useClerk()`
      `signOut()` then `window.location.href = "/"` (hard nav), with a
      full-screen `bg-background/90 backdrop-blur-sm` overlay (`Spinner`
-     + "Signing you out…") covering the gap; on `signOut()` failure it
-     resets and toasts `nav.signOutError` rather than stranding the
-     user.
+     - "Signing you out…") covering the gap; on `signOut()` failure it
+       resets and toasts `nav.signOutError` rather than stranding the
+       user.
   2. Wired into the sidebar footer row (beside the settings gear) and
      the mobile top bar in `dashboard-shell.tsx`.
   3. Clerk's built-in menu sign-out hidden via appearance
      (`userButtonPopoverActionButton__signOut: { display: "none" }`)
      in both `<UserButton>` instances so there is one working path.
   4. `afterSignOutUrl="/"` set explicitly on `<ClerkProvider>`.
-  New i18n keys `nav.signOut` / `nav.signingOut` / `nav.signOutError`.
-  tsc + eslint clean, 391 tests pass, `npm run build` green.
+     New i18n keys `nav.signOut` / `nav.signingOut` / `nav.signOutError`.
+     tsc + eslint clean, 391 tests pass, `npm run build` green.
 
 - **2026-08-31:** redesigned the sign-in / sign-up pages as a centered
   split card (reference: Dribbble "web login with Rive-animated logo").
   New `components/auth/`:
   1. `auth-shell.tsx` — server component. Centered rounded card on a
-     warm near-black (`#0f0c08`) gold-lit page background. Left = dark
-     `#0b0b0b` brand panel with `<AuthCoin>` (hidden `<md`); right =
-     light/white form panel with a `UserRound` chip, an
-     `extrabold` heading + muted subheading rendered here, then the
-     Clerk form as children. NOTE: the right panel is intentionally
-     light — a deliberate departure from the app-wide Vault dark theme.
-     Left panel is **white** with the cursor-tilting coin; right panel
-     is **dark** and inherits Clerk's theme.
+     warm near-black (`#0f0c08`) gold-lit page background. Left = white
+     brand panel with `<AuthMascot>` robot; right = dark form panel with
+     a `UserRound` chip, an `extrabold` heading + muted subheading, then
+     the Clerk form as children. Left panel inherits app light theme;
+     right panel inherits app dark theme.
   2. `auth-mascot.tsx` — `"use client"`. Inline-SVG robot whose eyes
-     + head track the mouse cursor anywhere on the page (window
-     `pointermove` → `useMotionValue` → `useSpring`), with an idle
-     "look around" `setInterval` when the cursor holds still. Layered
-     idle motion: float, antenna sway + one expanding signal ring +
-     tip pulse, ear twitches, face-screen shimmer sweep, blink, torso
-     breathing. **All animated props are transforms or opacity only** —
-     an earlier version animated SVG geometry attributes (`r`, `rx`,
-     `width`) and that + canvas `shadowBlur` in `SparkleField` crashed
-     the tab; both were removed. No motion under `useReducedMotion`.
-     (Iterated coin → robot → coin → this cursor-aware robot; the coin
-     component + image were removed.)
+     - head track the mouse cursor anywhere on the page (window
+       `pointermove` → `useMotionValue` → `useSpring`), with an idle
+       "look around" `setInterval` when the cursor holds still. Layered
+       idle motion: float, antenna sway + one expanding signal ring +
+       tip pulse, ear twitches, face-screen shimmer sweep, blink, torso
+       breathing. **All animated props are transforms or opacity only** —
+       compositor-only animations keep the loop cheap. No motion under
+       `useReducedMotion`.
   3. `clerk-appearance.ts` — minimal `appearance`: only strips Clerk's
      card chrome + header so the form sits flat; all colours inherit
      `<ClerkProvider>`'s `shadcn` dark theme (gold primary button, dark
      inputs).
-  Also new: `components/effects/sparkle-field.tsx` — `"use client"`
-  `<canvas>` of gold sparkles drifting upward + twinkling, area-based
-  count, `prefers-reduced-motion` → single static frame. Mounted on the
-  auth pages (via `AuthShell`, `density=1.7`) and over the landing hero
-  (`liquid-glass-landing.tsx`, `absolute inset-0 z-10`, `density=1.2`).
-  `app/sign-in/[[...sign-in]]/page.tsx` + `app/sign-up/[[...sign-up]]/page.tsx`
-  now just wrap `<SignIn>` / `<SignUp>` in `<AuthShell>`. Added
-  `components/auth/auth-shell.test.tsx`. tsc + eslint clean, 392 tests
-  pass, `npm run build` green, verified in browser. Branch
-  `feat/auth-split-card`.
+     Also new: `components/effects/sparkle-field.tsx` — `"use client"` pure
+     CSS ambient background. Three tiled layers of radial-gradient gold
+     "sparkles" drift upward at different speeds via `transform` keyframes,
+     twinkle via opacity, plus one slow diagonal shimmer sweep. All
+     animations GPU-composited (`transform` / `opacity` only), fully still
+     under `prefers-reduced-motion`. Accepts optional `className` prop
+     (defaults to full-viewport fixed positioning). Mounted on auth pages
+     and over landing hero.
+     `app/sign-in/[[...sign-in]]/page.tsx` + `app/sign-up/[[...sign-up]]/page.tsx`
+     now just wrap `<SignIn>` / `<SignUp>` in `<AuthShell>`. Added
+     `components/auth/auth-shell.test.tsx`. tsc + eslint clean, 392 tests
+     pass, `npm run build` green, verified in browser. Branch
+     `feat/auth-split-card`.

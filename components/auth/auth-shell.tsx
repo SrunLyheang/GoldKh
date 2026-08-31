@@ -26,14 +26,14 @@ export function AuthShell({
       />
       <SparkleField className="pointer-events-none absolute inset-0" />
 
-      <div className="relative z-10 grid w-full max-w-[980px] overflow-hidden rounded-[28px] border border-white/10 bg-background shadow-[0_40px_120px_-24px_rgba(0,0,0,0.7)] md:grid-cols-2">
+      <div className="relative z-10 grid w-full min-w-0 max-w-[980px] overflow-hidden rounded-[28px] border border-white/10 bg-background shadow-[0_40px_120px_-24px_rgba(0,0,0,0.7)] md:grid-cols-2">
         {/* brand panel */}
-        <div className="relative hidden min-h-[560px] bg-white md:block">
+        <div className="relative hidden min-h-[560px] min-w-0 bg-white md:block">
           <AuthMascot />
         </div>
 
         {/* form panel — inherits the app's dark Clerk theme */}
-        <div className="flex flex-col items-center bg-background px-6 py-10 text-foreground sm:px-12 sm:py-14">
+        <div className="flex min-w-0 flex-col items-center bg-background px-6 py-10 text-foreground sm:px-10 sm:py-14">
           <span className="mb-6 flex size-12 items-center justify-center rounded-full bg-muted text-muted-foreground">
             <UserRound className="size-6" />
           </span>
@@ -43,7 +43,7 @@ export function AuthShell({
           <p className="mt-1.5 mb-8 text-sm font-medium text-muted-foreground">
             {subheading}
           </p>
-          <div className="w-full max-w-[360px]">{children}</div>
+          <div className="w-full min-w-0 max-w-[400px]">{children}</div>
         </div>
       </div>
     </main>
