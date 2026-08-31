@@ -257,6 +257,9 @@ const en = {
   settings: {
     title: "Settings",
     accountTitle: "Account",
+    signedInAs: "Signed in as",
+    signOut: "Sign out",
+    signOutDescription: "End your session on this device and return to the home page.",
     preferencesTitle: "Preferences",
     dataTitle: "Data",
     defaultUnit: "Default display unit",

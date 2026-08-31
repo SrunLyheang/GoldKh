@@ -396,7 +396,12 @@ export function TransactionsView({
     () => filterTransactions(transactions, criteria, currentPricePerTroyOz),
     [transactions, criteria, currentPricePerTroyOz]
   );
-  const visibleIds = useMemo(() => visible.map((r) => r.id), [visible]);
+  // Optimistic (temp-) rows have no server id yet — keep them out of every
+  // selection path so select-all and bulk delete never ship a "temp-…" id.
+  const visibleIds = useMemo(
+    () => visible.filter((r) => !r.id.startsWith("temp-")).map((r) => r.id),
+    [visible],
+  );
   // Filters can hide rows that are still in the selection set (toggleAll
   // only touches visible ids). Bulk delete and the selection bar operate
   // on the visible intersection only, so a hidden row is never reported
@@ -473,9 +478,11 @@ export function TransactionsView({
           ← {t.chart.backToDashboard}
         </Link>
         <div className="flex items-center gap-2">
-          {visible.length > 0 && (
+          {(visible.length > 0 || selectMode) && (
             // Inline copy: locale is en-only and dictionary.ts is frozen
-            // this phase (plan §11 Phase 0).
+            // this phase (plan §11 Phase 0). Kept mounted while select mode
+            // is active so Cancel stays reachable even when a filter hides
+            // every row.
             <button
               type="button"
               onClick={selectMode ? exitSelectMode : enterSelectMode}

@@ -23,10 +23,14 @@ function buildWalk(seed: number): number[] {
     return s / 4294967296;
   };
   const out: number[] = [];
-  let v = 0.5;
+  // Start low and climb: a steady upward trend with candle-to-candle
+  // jitter on top, so it reads like a stock rallying through the day
+  // rather than a flat random walk.
+  let v = 0.14;
   for (let i = 0; i < POINTS; i++) {
-    v += (rand() - 0.47) * 0.12;
-    v = Math.max(0.08, Math.min(0.92, v));
+    const trend = 0.0165; // per-step drift toward the top
+    v += trend + (rand() - 0.5) * 0.09;
+    v = Math.max(0.08, Math.min(0.94, v));
     out.push(v);
   }
   return out;

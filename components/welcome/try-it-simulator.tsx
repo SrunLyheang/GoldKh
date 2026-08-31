@@ -110,7 +110,9 @@ export function TryItSimulator({ signedIn }: TryItSimulatorProps) {
   // P&L bar: a centre line with fill growing right for a gain, left for a
   // loss, capped at ±40% so a wild slider drag stays inside the track.
   const barPct = Math.max(-40, Math.min(40, position.unrealizedPercent));
-  const barWidth = `${Math.abs(barPct) * 2.5}%`;
+  // The fill is pinned to the centre line and grows into one half of the
+  // track, so ±40% maps onto the 50% half-width (×1.25), not the full bar.
+  const barWidth = `${Math.abs(barPct) * 1.25}%`;
 
   return (
     <div className="liquid-glass rounded-3xl border border-white/10 p-6 sm:p-8">

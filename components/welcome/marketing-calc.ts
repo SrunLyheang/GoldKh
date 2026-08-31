@@ -93,7 +93,7 @@ export function computeMarketingPosition(
 
 export function formatUsd(value: number, fractionDigits = 2): string {
   if (!Number.isFinite(value)) return "$0.00";
-  return `$${value.toLocaleString(undefined, {
+  return `$${value.toLocaleString("en-US", {
     minimumFractionDigits: fractionDigits,
     maximumFractionDigits: fractionDigits,
   })}`;

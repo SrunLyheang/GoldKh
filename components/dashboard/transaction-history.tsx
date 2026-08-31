@@ -678,9 +678,11 @@ export function TransactionHistory({
           </Link>
         </div>
         <div className="flex items-center gap-2">
-          {rows.length > 0 && (
+          {(rows.length > 0 || selectMode) && (
             // Inline copy: locale is en-only and dictionary.ts is frozen
-            // for this phase (see plan §11 Phase 0).
+            // for this phase (see plan §11 Phase 0). Kept mounted while
+            // select mode is active so Cancel stays reachable even if the
+            // last row is deleted mid-selection.
             <button
               type="button"
               onClick={selectMode ? exitSelectMode : enterSelectMode}

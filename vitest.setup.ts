@@ -55,13 +55,21 @@ const MOTION_ONLY_PROPS = new Set([
   "onUpdate",
 ]);
 
+const motionValueStub = (value: unknown = 0) => ({
+  get: () => value,
+  set: () => {},
+  jump: () => {},
+});
+
 vi.mock("motion/react", () => ({
   useReducedMotion: () => true,
-  useMotionValue: (initial: number) => ({
-    get: () => initial,
-    set: () => {},
-    jump: () => {},
-  }),
+  useMotionValue: (initial: number) => motionValueStub(initial),
+  // Derived-value hooks: component tests take the reduced-motion branch
+  // and never read these, but the hooks still run before that branch, so
+  // they must exist and return a motion-value-like object.
+  useTransform: () => motionValueStub(0),
+  useSpring: () => motionValueStub(0),
+  useMotionTemplate: () => motionValueStub(""),
   animate: (
     _value: unknown,
     target: number,

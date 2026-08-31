@@ -793,6 +793,52 @@ html:has([data-landing-theme="dark"]) body {
   pointer-events: none;
 }
 
+/* ─── Spotlight Card ─────────────────────────────────────────────────────────── */
+/* A cursor-tracking amber glow for the glass cards. SpotlightCard writes
+   --spot-x / --spot-y (percentages) and gates the layer with
+   --spot-opacity; the fill sits below the card content, which the
+   component lifts into its own `relative z-10` layer. */
+.spotlight-card {
+  position: relative;
+}
+.spotlight-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: var(--spot-opacity, 0);
+  transition: opacity 0.4s ease;
+  background: radial-gradient(
+    circle 460px at var(--spot-x, 50%) var(--spot-y, 50%),
+    rgba(251, 191, 36, 0.3) 0%,
+    rgba(251, 191, 36, 0.14) 32%,
+    rgba(251, 191, 36, 0.05) 55%,
+    transparent 78%
+  );
+}
+
+/* Fallback for pointers/browsers where JS never drives the vars:
+   a centred glow still blooms on hover. */
+@media (hover: hover) {
+  .spotlight-card:hover::after {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .spotlight-card {
+    transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+      box-shadow 0.3s ease;
+  }
+  .spotlight-card:hover {
+    transform: translateY(-3px);
+    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.18),
+      0 16px 40px 0 rgba(0, 0, 0, 0.4), 0 0 28px 0 rgba(251, 191, 36, 0.12);
+  }
+}
+
 /* Smooth anchor scrolling only on pages that mount the liquid-glass
    landing tree — never in the signed-in dashboard. */
 html:has(.liquid-glass-landing-root) {
@@ -999,5 +1045,92 @@ html:has(.liquid-glass-landing-root) {
   }
   .spark-line {
     stroke-dashoffset: 0;
+  }
+}
+
+/* Auth screens (sign-in / sign-up): a slow gold aurora backdrop.
+   CSS-only so it costs nothing per frame; stilled for reduced motion. */
+@keyframes auth-aurora-drift-1 {
+  0%,
+  100% {
+    transform: translate3d(-12%, -8%, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(10%, 6%, 0) scale(1.15);
+  }
+}
+@keyframes auth-aurora-drift-2 {
+  0%,
+  100% {
+    transform: translate3d(8%, 10%, 0) scale(1.1);
+  }
+  50% {
+    transform: translate3d(-10%, -6%, 0) scale(0.95);
+  }
+}
+@keyframes auth-aurora-drift-3 {
+  0%,
+  100% {
+    transform: translate3d(0, 6%, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(-8%, -10%, 0) scale(1.2);
+  }
+}
+.auth-aurora-blob {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(80px);
+  opacity: 0.55;
+  will-change: transform;
+}
+.auth-aurora-blob-1 {
+  top: -10%;
+  left: -5%;
+  width: 42vw;
+  height: 42vw;
+  background: radial-gradient(
+    circle at center,
+    color-mix(in oklch, var(--primary) 35%, transparent),
+    transparent 70%
+  );
+  animation: auth-aurora-drift-1 22s ease-in-out infinite;
+}
+.auth-aurora-blob-2 {
+  right: -8%;
+  bottom: -15%;
+  width: 48vw;
+  height: 48vw;
+  background: radial-gradient(
+    circle at center,
+    color-mix(in oklch, var(--primary) 22%, transparent),
+    transparent 70%
+  );
+  animation: auth-aurora-drift-2 28s ease-in-out infinite;
+}
+.auth-aurora-blob-3 {
+  top: 28%;
+  left: 34%;
+  width: 36vw;
+  height: 36vw;
+  background: radial-gradient(
+    circle at center,
+    color-mix(in oklch, var(--state-gain) 12%, transparent),
+    transparent 70%
+  );
+  animation: auth-aurora-drift-3 34s ease-in-out infinite;
+}
+.auth-aurora-vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse at center,
+    transparent 35%,
+    var(--background) 100%
+  );
+}
+@media (prefers-reduced-motion: reduce) {
+  .auth-aurora-blob {
+    animation: none;
   }
 }
