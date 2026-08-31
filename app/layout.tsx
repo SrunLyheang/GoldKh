@@ -34,6 +34,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="font-sans">
         <ClerkProvider
+          afterSignOutUrl="/"
           appearance={{ theme: shadcn }}
           localization={{ signIn: { start: { title: "Sign in" } } }}
         >
