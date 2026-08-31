@@ -49,10 +49,12 @@
   snapshot), are built from `listRecentPriceSnapshots()` on each
   load — same lazy model as the hero price. There is no
   scheduled job writing denser history and no external backfill,
-  so a preset like `3M` reaches only as far back as the oldest
-  stored snapshot and then clamps. This keeps the goldapi.io
-  free-tier quota untouched by charting. If snapshot sparsity
-  ever makes a chart useless, the follow-up is a
+  so a preset like `3M` is disabled when it would exceed the
+  oldest stored snapshot; it shows an informational toast instead
+  of silently clamping to the oldest snapshot. This keeps the
+  goldapi.io free-tier quota untouched by charting unless the
+  chart contract is intentionally changed to restore clamping. If
+  snapshot sparsity ever makes a chart useless, the follow-up is a
   `portfolio_snapshots` table written on dashboard load (still no
   cron) — see progress-tracker.md Open Questions.
 - **No blob or file storage.** Nothing this application stores
@@ -78,7 +80,10 @@
   `POST /api/transactions` (create), `PATCH|DELETE
   /api/transactions/[id]` (owned mutation), `POST
   /api/transactions/bulk` (CSV import — one all-or-nothing
-  multi-row insert, 200-row cap, one rate-limit token),
+  multi-row insert, 200-row cap, one rate-limit token; its
+  validation-failure response is the one documented exception to
+  the envelope — it adds an `issues` array of `{ index, message }`
+  alongside `error` so the import dialog can keep the bad rows),
   `DELETE /api/transactions` (delete all the caller's rows), and
   `DELETE /api/account` (Clerk `users.deleteUser`; DB cleanup via
   the existing `user.deleted` webhook).

@@ -35,7 +35,7 @@ function todayKey(): string {
 // gets a warning badge so an accidental re-import is visible.
 function isDuplicate(
   input: NewTransactionInput,
-  existing: SerializableTransaction[]
+  existing: SerializableTransaction[],
 ): boolean {
   return existing.some(
     (row) =>
@@ -45,7 +45,7 @@ function isDuplicate(
       row.transactionDate === input.transactionDate &&
       Number(row.quantity) === Number(input.quantity) &&
       Number(row.pricePerUnit) === Number(input.pricePerUnit) &&
-      (row.notes ?? "") === (input.notes ?? "")
+      (row.notes ?? "") === (input.notes ?? ""),
   );
 }
 
@@ -66,8 +66,10 @@ export function CsvDialog({
   const [fileName, setFileName] = useState<string | null>(null);
   const [committing, startCommit] = useTransition();
   const fileRef = useRef<HTMLInputElement>(null);
+  const selectionGeneration = useRef(0);
 
   function reset() {
+    selectionGeneration.current += 1;
     setParsed(null);
     setFileName(null);
     if (fileRef.current) fileRef.current.value = "";
@@ -87,8 +89,15 @@ export function CsvDialog({
   }
 
   async function handleFile(file: File) {
+    const generation = selectionGeneration.current + 1;
+    selectionGeneration.current = generation;
     setFileName(file.name);
+
     const text = await file.text();
+    if (generation !== selectionGeneration.current) {
+      return;
+    }
+
     const result = parseTransactionsCsv(text);
     if (result.fileError) {
       setParsed(null);
@@ -97,8 +106,12 @@ export function CsvDialog({
           ? t.csv.emptyFile
           : result.fileError === "header"
             ? t.csv.errorToast
-            : t.csv.parseError
+            : t.csv.parseError,
       );
+      return;
+    }
+
+    if (generation !== selectionGeneration.current) {
       return;
     }
     setParsed(result.rows);
@@ -130,7 +143,7 @@ export function CsvDialog({
         notify.error(
           body?.error?.code === "TOO_MANY_ROWS"
             ? t.csv.tooManyRows(MAX_BULK_ROWS)
-            : t.csv.errorToast
+            : t.csv.errorToast,
         );
         return;
       }
@@ -154,7 +167,9 @@ export function CsvDialog({
         <DialogHeader>
           <DialogTitle>{t.csv.title}</DialogTitle>
           <DialogDescription>
-            {mode === "export" ? t.csv.exportDescription : t.csv.importDescription}
+            {mode === "export"
+              ? t.csv.exportDescription
+              : t.csv.importDescription}
           </DialogDescription>
         </DialogHeader>
 
@@ -168,7 +183,7 @@ export function CsvDialog({
                 "tt-label border py-2 text-[11px] transition-colors",
                 mode === m
                   ? "border-primary bg-primary text-primary-foreground"
-                  : "border-border text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                  : "border-border text-muted-foreground hover:bg-accent hover:text-accent-foreground",
               )}
             >
               {m === "export" ? t.csv.export : t.csv.import}
@@ -178,14 +193,22 @@ export function CsvDialog({
 
         {mode === "export" ? (
           <div className="flex flex-col gap-3 pt-2">
-            <p className="text-[12px] text-muted-foreground">{t.csv.columnsHint}</p>
-            <Button onClick={handleExport} disabled={rows.length === 0} className="w-full">
+            <p className="text-[12px] text-muted-foreground">
+              {t.csv.columnsHint}
+            </p>
+            <Button
+              onClick={handleExport}
+              disabled={rows.length === 0}
+              className="w-full"
+            >
               {t.csv.download}
             </Button>
           </div>
         ) : (
           <div className="flex flex-col gap-3 pt-2">
-            <p className="text-[12px] text-muted-foreground">{t.csv.columnsHint}</p>
+            <p className="text-[12px] text-muted-foreground">
+              {t.csv.columnsHint}
+            </p>
             <input
               ref={fileRef}
               type="file"
@@ -204,7 +227,9 @@ export function CsvDialog({
                     <thead className="sticky top-0 bg-card">
                       <tr className="tt-label border-b border-border text-[10px] text-muted-foreground">
                         <th className="px-3 py-2 text-left font-medium">#</th>
-                        <th className="py-2 pr-3 text-left font-medium">{t.csv.preview}</th>
+                        <th className="py-2 pr-3 text-left font-medium">
+                          {t.csv.preview}
+                        </th>
                         <th className="py-2 pr-3 text-left font-medium" />
                       </tr>
                     </thead>
@@ -226,7 +251,7 @@ export function CsvDialog({
                                   "tt-label px-1.5 py-0.5 text-[9.5px]",
                                   r.valid
                                     ? "bg-state-gain/15 text-state-gain"
-                                    : "bg-destructive/15 text-destructive"
+                                    : "bg-destructive/15 text-destructive",
                                 )}
                               >
                                 {r.valid ? t.csv.rowValid : t.csv.rowInvalid}
@@ -240,7 +265,7 @@ export function CsvDialog({
                             <td className="py-2 pr-3 text-muted-foreground">
                               {r.valid && r.input
                                 ? `${r.input.type} ${formatQuantity(
-                                    r.input.quantity
+                                    r.input.quantity,
                                   )} ${r.input.unit}`
                                 : r.error}
                             </td>
@@ -263,9 +288,7 @@ export function CsvDialog({
                   </span>
                   <Button
                     onClick={handleCommit}
-                    disabled={
-                      committing || validRows.length === 0 || overCap
-                    }
+                    disabled={committing || validRows.length === 0 || overCap}
                   >
                     {committing
                       ? t.csv.committing

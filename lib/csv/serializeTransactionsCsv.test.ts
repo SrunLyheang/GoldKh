@@ -56,6 +56,32 @@ describe("serializeTransactionsCsv", () => {
     expect(row.endsWith(",anniversary gift")).toBe(true);
   });
 
+  it.each([
+    ["=", "=1+1"],
+    ["+", "+1"],
+    ["-", "-1"],
+    ["@", "@SUM(A1:A9)"],
+  ])(
+    "neutralizes a notes value beginning with %s before escaping",
+    (_prefix, note) => {
+      const csv = serializeTransactionsCsv([tx({ notes: note })]);
+      const [, row] = csv.trim().split("\r\n");
+      expect(row.endsWith(`,'${note}`)).toBe(true);
+    }
+  );
+
+  it("neutralizes a formula-prefixed note that also needs RFC-4180 quoting", () => {
+    const csv = serializeTransactionsCsv([tx({ notes: "=HYPERLINK(x), y" })]);
+    const [, row] = csv.trim().split("\r\n");
+    expect(row.endsWith(`,"'=HYPERLINK(x), y"`)).toBe(true);
+  });
+
+  it("leaves a note that merely contains =, +, -, or @ mid-string unchanged", () => {
+    const csv = serializeTransactionsCsv([tx({ notes: "1+1 gift @ noon" })]);
+    const [, row] = csv.trim().split("\r\n");
+    expect(row.endsWith(",1+1 gift @ noon")).toBe(true);
+  });
+
   it("keeps KHR rows with their large integer totals", () => {
     const csv = serializeTransactionsCsv([
       tx({ currency: "KHR", pricePerUnit: "1200000", quantity: "2", unit: "damlung" }),

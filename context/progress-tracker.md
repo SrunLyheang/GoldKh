@@ -393,8 +393,13 @@ and `price_snapshots` (§8).
 ## Done: Phase 0 — dashboard-expansion shared shell (2026-08-31, uncommitted)
 
 First phase of `context/design-specs/dashboard-expansion-plan.md`. Shared
-shell only — no feature logic. Later phases (D, A, B, C) build on this and
-must not touch `sidebar.tsx`, `dictionary.ts`, or `components/icons/*`.
+shell only — no feature logic. As originally scoped, later phases (D, A,
+B, C) must not touch `sidebar.tsx`, `dictionary.ts`, or
+`components/icons/*`. Two later-phase exceptions were since approved:
+edits to `dictionary.ts` (additional keys as phases needed them) and the
+deletion of `components/icons/settings-icon.tsx` in favour of Lucide
+`Settings` (see the later progress entry). `sidebar.tsx` remains
+untouched past Phase 0.
 
 - **Bespoke nav icon set** — `components/icons/` (`dashboard-icon`,
   `transactions-icon`, `price-icon`, `insights-icon`, `settings-icon` +

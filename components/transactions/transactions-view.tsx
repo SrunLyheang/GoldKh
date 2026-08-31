@@ -378,11 +378,19 @@ export function TransactionsView({
     [transactions, criteria, currentPricePerTroyOz]
   );
   const visibleIds = useMemo(() => visible.map((r) => r.id), [visible]);
+  // Filters can hide rows that are still in the selection set (toggleAll
+  // only touches visible ids). Bulk delete and the selection bar operate
+  // on the visible intersection only, so a hidden row is never reported
+  // or deleted.
+  const visibleSelectedIds = useMemo(() => {
+    const seen = new Set(visibleIds);
+    return selection.selectedArray.filter((id) => seen.has(id));
+  }, [selection.selectedArray, visibleIds]);
 
   const refresh = () => startSync(() => router.refresh());
 
   function handleBulkDelete() {
-    const ids = selection.selectedArray;
+    const ids = visibleSelectedIds;
     if (ids.length === 0) return;
     startBulk(async () => {
       let res: Response;
@@ -555,10 +563,10 @@ export function TransactionsView({
         )}
       </Panel>
 
-      {selection.selectedCount > 0 && (
+      {visibleSelectedIds.length > 0 && (
         <div className="sticky bottom-4 z-20">
           <BulkActionsBar
-            count={selection.selectedCount}
+            count={visibleSelectedIds.length}
             onClear={selection.clear}
             onDelete={() => setBulkOpen(true)}
             className="shadow-lg"
@@ -569,7 +577,7 @@ export function TransactionsView({
       <BulkDeleteDialog
         open={bulkOpen}
         onOpenChange={(open) => !bulkPending && setBulkOpen(open)}
-        count={selection.selectedCount}
+        count={visibleSelectedIds.length}
         pending={bulkPending}
         onConfirm={handleBulkDelete}
       />

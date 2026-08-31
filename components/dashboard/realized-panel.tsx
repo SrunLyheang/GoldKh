@@ -84,14 +84,14 @@ export function RealizedPanel({
             type="button"
             onClick={toggle}
             aria-expanded={!collapsed}
-            aria-controls={bodyId}
+            aria-controls={collapsed ? undefined : bodyId}
             aria-label={collapsed ? t.realized.show : t.realized.hide}
             className="-m-1 flex items-center gap-1.5 rounded p-1 outline-none transition-colors hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50"
           >
             <ChevronDown
               className={cn(
                 "h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform",
-                !collapsed && "rotate-180"
+                !collapsed && "rotate-180",
               )}
             />
             <p className="tt-label text-[11px] text-muted-foreground">

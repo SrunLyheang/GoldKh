@@ -17,7 +17,49 @@ const MAX_BODY_BYTES = 16 * 1024;
 const MAX_CSP_REPORTS_PER_REQUEST = 50;
 const CSP_REPORT_WINDOW_MS = 60_000;
 const CSP_REPORTS_PER_IP = 20;
+const CSP_REPORT_CACHE_MAX_ENTRIES = 512;
+const CSP_REPORT_CACHE_CLEANUP_INTERVAL_MS = 60_000;
 const recentCspEvents = new Map<string, number[]>();
+let lastCspCacheCleanup = 0;
+
+function pruneRecentCspEvents(now: number): void {
+  if (recentCspEvents.size === 0) {
+    lastCspCacheCleanup = now;
+    return;
+  }
+
+  if (now - lastCspCacheCleanup >= CSP_REPORT_CACHE_CLEANUP_INTERVAL_MS) {
+    for (const [ip, timestamps] of recentCspEvents) {
+      const recent = timestamps.filter(
+        (timestamp) => now - timestamp < CSP_REPORT_WINDOW_MS,
+      );
+
+      if (recent.length === 0) {
+        recentCspEvents.delete(ip);
+      } else if (recent.length !== timestamps.length) {
+        recentCspEvents.set(ip, recent);
+      }
+    }
+
+    lastCspCacheCleanup = now;
+  }
+
+  if (recentCspEvents.size <= CSP_REPORT_CACHE_MAX_ENTRIES) {
+    return;
+  }
+
+  const entries = [...recentCspEvents.entries()].sort(
+    ([, a], [, b]) =>
+      (a[0] ?? Number.MAX_SAFE_INTEGER) - (b[0] ?? Number.MAX_SAFE_INTEGER),
+  );
+
+  for (const [ip] of entries.slice(
+    0,
+    recentCspEvents.size - CSP_REPORT_CACHE_MAX_ENTRIES,
+  )) {
+    recentCspEvents.delete(ip);
+  }
+}
 
 export async function POST(request: Request): Promise<Response> {
   const raw = await request.text();
@@ -81,17 +123,7 @@ function isRateLimitedForCspReport(request: Request): boolean {
   }
 
   const now = Date.now();
-
-  // Opportunistic sweep: an IP that reported once and never again would
-  // otherwise sit in the map forever. Only runs once the map has grown,
-  // and the map is small, so this stays cheap.
-  if (recentCspEvents.size > 512) {
-    for (const [ip, times] of recentCspEvents) {
-      if (times.every((t) => now - t >= CSP_REPORT_WINDOW_MS)) {
-        recentCspEvents.delete(ip);
-      }
-    }
-  }
+  pruneRecentCspEvents(now);
 
   const timestamps = recentCspEvents.get(key) ?? [];
   const recent = timestamps.filter(
@@ -99,11 +131,12 @@ function isRateLimitedForCspReport(request: Request): boolean {
   );
 
   if (recent.length >= CSP_REPORTS_PER_IP) {
-    recentCspEvents.set(key, recent);
+    recentCspEvents.set(key, recent.slice(-CSP_REPORTS_PER_IP));
     return true;
   }
 
   recent.push(now);
-  recentCspEvents.set(key, recent);
+  recentCspEvents.set(key, recent.slice(-CSP_REPORTS_PER_IP));
+  pruneRecentCspEvents(now);
   return false;
 }

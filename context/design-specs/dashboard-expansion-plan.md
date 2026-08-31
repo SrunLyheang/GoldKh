@@ -1,6 +1,9 @@
 # Dashboard Expansion Plan
 
-Status: **proposed — awaiting inspection**. Created 2026-08-31 via a
+Status: **implemented** — Phases 0, D, A, B, C landed 2026-08-31; see
+`progress-tracker.md` for the per-phase record and any deviations from
+this spec (e.g. Settings ships with the Lucide `Settings` icon, not the
+custom gear — §3 below). Created 2026-08-31 via a
 grilling session (two rounds). Adds four things beyond today's single
 dashboard: a reworked transaction panel, a full transactions route, a
 detailed price-chart route, and an Insights route — plus a Settings
@@ -68,7 +71,7 @@ Sidebar (`components/dashboard/sidebar.tsx`) and its mobile drawer.
 | Transactions | `/dashboard/transactions` | nav | two horizontal arrows crossing (buy down-left / sell up-right) |
 | Price | `/dashboard/price` | nav | stepped line over a short baseline (not a smooth swoosh) |
 | Insights | `/dashboard/insights` | nav | square gauge / dial with a single tick |
-| Settings | `/dashboard/settings` | footer, next to theme toggle | 6-tooth gear, square teeth |
+| Settings | `/dashboard/settings` | footer user row, opposite `UserButton` (theme toggle on its own line above) | shipped with Lucide `Settings`; the custom 6-tooth gear was drawn then dropped post-Phase 0 — see progress-tracker.md |
 
 - `NAV_ITEMS` gains Transactions, Price, Insights. Settings stays a
   separate footer `<Link>`.
@@ -198,7 +201,8 @@ user's transactions + recent price snapshots + current price. Renders
 
 - Sort: by date (default, desc) or by P&L; click a column header.
 - Filtering + sorting are pure: `lib/calc/filterTransactions.ts`
-  (`(rows, criteria) => rows`), unit tested.
+  (`(rows, criteria, currentPricePerTroyOz) => rows` — the price feeds
+  the per-row P&L used by the "pnl" sort), unit tested.
 - Mobile: filters collapse behind a `Filter (n)` button.
 - Header holds the CSV `Import / Export` button (§4.5) and a back link
   to `/dashboard`.

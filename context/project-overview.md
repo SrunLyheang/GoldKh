@@ -112,7 +112,8 @@ now hold 7 chi, still at a $300 average cost.
   calculator — all derived at read time from the ledger and stored
   price snapshots.
 - Settings (`/dashboard/settings`): Clerk account management, display
-  preferences (default unit / currency / theme, browser-local), and
+  preferences (default unit and theme, browser-local — currency stays
+  USD-only until KHR display lands, so it is not a user choice yet), and
   destructive data actions (export, delete all transactions, delete
   account).
 

@@ -36,10 +36,19 @@ export function buildPortfolioSeries(
 ): PortfolioSeriesPoint[] {
   const ordered = [...snapshots].sort((a, b) => a.t - b.t);
 
+  // computeHoldings runs a running weighted average, so a sell replayed
+  // before the buy that funds it skews the basis. Normalise to
+  // chronological order here rather than trusting caller order (the
+  // ledger is usually newest-first). Parse each transactionDate once and
+  // reuse the timestamp for snapshot filtering.
+  const timeline = transactions
+    .map((tx) => ({ tx, at: new Date(tx.transactionDate).getTime() }))
+    .sort((a, b) => a.at - b.at);
+
   return ordered.map((snapshot) => {
-    const upToHere = transactions.filter(
-      (tx) => new Date(tx.transactionDate).getTime() <= snapshot.t,
-    );
+    const upToHere = timeline
+      .filter((entry) => entry.at <= snapshot.t)
+      .map((entry) => entry.tx);
     const { totalTroyOz, averageCostPerTroyOz } = computeHoldings(upToHere);
 
     const qty = new Decimal(totalTroyOz);

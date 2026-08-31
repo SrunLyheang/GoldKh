@@ -62,7 +62,7 @@ export function getRowDisplay(
   row: TransactionRow,
   currentPricePerTroyOz: string,
   displayUnit: GoldUnit,
-  t: Dictionary
+  t: Dictionary,
 ) {
   const isBuy = row.type === "buy";
   const isPending = row.id.startsWith("temp-");
@@ -80,8 +80,8 @@ export function getRowDisplay(
     isHardVerdict(
       classifyPrice(
         Number(pricePerDisplayUnit),
-        Number(priceFromTroyOz(currentPricePerTroyOz, displayUnit))
-      )
+        Number(priceFromTroyOz(currentPricePerTroyOz, displayUnit)),
+      ),
     );
   // Both cells fall back to "—" for two different reasons that used to
   // look identical: KHR conversion is deferred entirely (project-
@@ -97,7 +97,7 @@ export function getRowDisplay(
     row.currency === "USD"
       ? formatUsd(valuation.amountUsd ?? "0")
       : `${new Intl.NumberFormat("en-US").format(
-          Number(new Decimal(row.quantity).times(row.pricePerUnit))
+          Number(new Decimal(row.quantity).times(row.pricePerUnit)),
         )} KHR`;
   // Lowercase to match the existing "10 chi"/"3 damlung" convention
   // this table already used before i18n (row.unit was rendered raw).
@@ -173,7 +173,7 @@ export function RowActions({
               aria-label={t.transactions.actionsFor(
                 row.type === "buy" ? t.transactions.buy : t.transactions.sell,
                 row.quantity,
-                unitLabels(t, row.unit).primary
+                unitLabels(t, row.unit).primary,
               )}
               className="shrink-0 rounded-sm p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
             >
@@ -211,6 +211,8 @@ export function RowActions({
 // prevented from scrolling the page.
 function expandKeyHandler(toggle: () => void) {
   return (e: KeyboardEvent) => {
+    // Ignore keys aimed at nested controls (checkbox, actions menu).
+    if (e.target !== e.currentTarget) return;
     if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
       toggle();
@@ -265,7 +267,7 @@ function Row({
         className={cn(
           "cursor-pointer border-b border-border last:border-0 focus:outline-none focus-visible:bg-accent/50 hover:bg-accent/40",
           isPending && "opacity-60",
-          (expanded || selected) && "bg-accent/40"
+          (expanded || selected) && "bg-accent/40",
         )}
       >
         <td className="py-3 pr-1 pl-4">
@@ -282,13 +284,13 @@ function Row({
             <ChevronDown
               className={cn(
                 "h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform",
-                expanded && "rotate-180"
+                expanded && "rotate-180",
               )}
             />
             <div
               className={cn(
                 "flex h-6 w-6 shrink-0 items-center justify-center rounded-md",
-                isBuy ? "bg-state-gain/15" : "bg-destructive/15"
+                isBuy ? "bg-state-gain/15" : "bg-destructive/15",
               )}
             >
               {isBuy ? (
@@ -326,7 +328,9 @@ function Row({
           {valuation.currentValueUsd ? (
             formatUsd(valuation.currentValueUsd)
           ) : (
-            <span title={blankValueReason} className="cursor-help">—</span>
+            <span title={blankValueReason} className="cursor-help">
+              —
+            </span>
           )}
         </td>
         <td className="py-3 pr-3 text-right font-mono text-[13px] tabular-nums">
@@ -339,7 +343,12 @@ function Row({
               {formatUsd(valuation.pnlUsd)}
             </MonoValue>
           ) : (
-            <span title={blankValueReason} className="cursor-help text-muted-foreground">—</span>
+            <span
+              title={blankValueReason}
+              className="cursor-help text-muted-foreground"
+            >
+              —
+            </span>
           )}
         </td>
         <td
@@ -369,7 +378,7 @@ function Row({
               displayUnit={displayUnit}
               spotPerDamlungOnDate={spotPerDamlungOnDate(
                 priceHistory,
-                row.transactionDate
+                row.transactionDate,
               )}
             />
           </td>
@@ -423,7 +432,7 @@ function TransactionCard({
       className={cn(
         "flex flex-col gap-3.5 p-0",
         isPending && "opacity-60",
-        selected && "ring-1 ring-primary/40"
+        selected && "ring-1 ring-primary/40",
       )}
     >
       <div
@@ -434,7 +443,7 @@ function TransactionCard({
         onKeyDown={expandKeyHandler(onToggle)}
         className={cn(
           "flex min-h-11 cursor-pointer items-center justify-between gap-2 px-4 pt-4 focus:outline-none focus-visible:bg-accent/40",
-          expanded && "bg-accent/30"
+          expanded && "bg-accent/30",
         )}
       >
         <div className="flex min-w-0 items-center gap-2.5">
@@ -448,7 +457,7 @@ function TransactionCard({
           <div
             className={cn(
               "flex h-7 w-7 shrink-0 items-center justify-center rounded-md",
-              isBuy ? "bg-state-gain/15" : "bg-destructive/15"
+              isBuy ? "bg-state-gain/15" : "bg-destructive/15",
             )}
           >
             {isBuy ? (
@@ -467,7 +476,10 @@ function TransactionCard({
             </MonoValue>
           </div>
         </div>
-        <div className="flex shrink-0 items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+        <div
+          className="flex shrink-0 items-center gap-1.5"
+          onClick={(e) => e.stopPropagation()}
+        >
           {isPending ? (
             <span className="text-[11.5px] text-muted-foreground">
               {t.transactions.saving}
@@ -483,15 +495,19 @@ function TransactionCard({
           <ChevronDown
             className={cn(
               "h-4 w-4 text-muted-foreground transition-transform",
-              expanded && "rotate-180"
+              expanded && "rotate-180",
             )}
           />
         </div>
       </div>
       <div className="grid grid-cols-2 gap-x-4 gap-y-3.5 px-4 pb-4">
         <div>
-          <p className="tt-label text-[10.5px] text-muted-foreground">{t.transactions.paid}</p>
-          <MonoValue className="mt-0.5 block text-[13.5px]">{paidAmount}</MonoValue>
+          <p className="tt-label text-[10.5px] text-muted-foreground">
+            {t.transactions.paid}
+          </p>
+          <MonoValue className="mt-0.5 block text-[13.5px]">
+            {paidAmount}
+          </MonoValue>
         </div>
         <div>
           <p className="tt-label text-[10.5px] text-muted-foreground">
@@ -512,25 +528,39 @@ function TransactionCard({
           </span>
         </div>
         <div>
-          <p className="tt-label text-[10.5px] text-muted-foreground">{t.transactions.currentValue}</p>
+          <p className="tt-label text-[10.5px] text-muted-foreground">
+            {t.transactions.currentValue}
+          </p>
           {valuation.currentValueUsd ? (
             <MonoValue className="mt-0.5 block text-[13.5px]">
               {formatUsd(valuation.currentValueUsd)}
             </MonoValue>
           ) : (
-            <span title={blankValueReason} className="cursor-help text-[13.5px] text-muted-foreground">
+            <span
+              title={blankValueReason}
+              className="cursor-help text-[13.5px] text-muted-foreground"
+            >
               —
             </span>
           )}
         </div>
         <div>
-          <p className="tt-label text-[10.5px] text-muted-foreground">{t.transactions.pnl}</p>
+          <p className="tt-label text-[10.5px] text-muted-foreground">
+            {t.transactions.pnl}
+          </p>
           {valuation.pnlUsd ? (
-            <MonoValue tone={isGain ? "gain" : "loss"} signed className="mt-0.5 block text-[13.5px]">
+            <MonoValue
+              tone={isGain ? "gain" : "loss"}
+              signed
+              className="mt-0.5 block text-[13.5px]"
+            >
               {formatUsd(valuation.pnlUsd)}
             </MonoValue>
           ) : (
-            <span title={blankValueReason} className="cursor-help text-[13.5px] text-muted-foreground">
+            <span
+              title={blankValueReason}
+              className="cursor-help text-[13.5px] text-muted-foreground"
+            >
               —
             </span>
           )}
@@ -543,7 +573,7 @@ function TransactionCard({
           displayUnit={displayUnit}
           spotPerDamlungOnDate={spotPerDamlungOnDate(
             priceHistory,
-            row.transactionDate
+            row.transactionDate,
           )}
         />
       )}
@@ -594,7 +624,7 @@ export function TransactionHistory({
   // selection path so a bulk delete never ships a "temp-…" id.
   const selectableIds = useMemo(
     () => rows.filter((r) => !r.id.startsWith("temp-")).map((r) => r.id),
-    [rows]
+    [rows],
   );
 
   async function handleBulkConfirm() {
@@ -638,7 +668,9 @@ export function TransactionHistory({
           </button>
           <Button size="sm" onClick={onAddClick}>
             <Plus className="h-4 w-4" />
-            <span className="tt-label text-[11.5px]">{t.transactions.addTransaction}</span>
+            <span className="tt-label text-[11.5px]">
+              {t.transactions.addTransaction}
+            </span>
           </Button>
         </div>
       </div>
@@ -672,14 +704,24 @@ export function TransactionHistory({
                     label="Select all transactions"
                   />
                 </th>
-                <th className="py-3 pr-3 pl-2 text-left font-medium">{t.transactions.date}</th>
-                <th className="py-3 pr-3 text-left font-medium">{t.transactions.quantity}</th>
-                <th className="py-3 pr-3 text-right font-medium">{t.transactions.paid}</th>
+                <th className="py-3 pr-3 pl-2 text-left font-medium">
+                  {t.transactions.date}
+                </th>
+                <th className="py-3 pr-3 text-left font-medium">
+                  {t.transactions.quantity}
+                </th>
+                <th className="py-3 pr-3 text-right font-medium">
+                  {t.transactions.paid}
+                </th>
                 <th className="py-3 pr-3 text-right font-medium">
                   /{unitLabels(t, displayUnit).primaryLower}
                 </th>
-                <th className="py-3 pr-3 text-right font-medium">{t.transactions.currentValue}</th>
-                <th className="py-3 pr-3 text-right font-medium">{t.transactions.pnl}</th>
+                <th className="py-3 pr-3 text-right font-medium">
+                  {t.transactions.currentValue}
+                </th>
+                <th className="py-3 pr-3 text-right font-medium">
+                  {t.transactions.pnl}
+                </th>
                 <th className="py-3 pr-4" />
               </tr>
             </thead>

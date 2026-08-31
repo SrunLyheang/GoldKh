@@ -27,6 +27,14 @@ export const CSV_COLUMNS = [
 
 export const CSV_HEADER = CSV_COLUMNS.join(",");
 
+// CSV formula injection guard: a notes value opening with =, +, -, or @ is
+// read as a formula by Excel / Sheets / LibreOffice on import. Prefixing a
+// single quote makes the spreadsheet treat the whole cell as text. Ordinary
+// notes (any other first character) are returned untouched.
+function neutralizeFormula(value: string): string {
+  return /^[=+\-@]/.test(value) ? `'${value}` : value;
+}
+
 // RFC-4180 field escaping: wrap in double quotes and double any embedded
 // quote whenever the value carries a comma, quote, CR, or LF.
 function escapeField(value: string): string {
@@ -57,7 +65,7 @@ export function serializeTransactionsCsv(
         totalPaid,
         row.currency,
         row.transactionDate,
-        escapeField(row.notes ?? ""),
+        escapeField(neutralizeFormula(row.notes ?? "")),
       ].join(",")
     );
   }

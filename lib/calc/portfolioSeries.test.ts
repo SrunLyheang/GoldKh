@@ -75,6 +75,21 @@ describe("buildPortfolioSeries", () => {
     );
   });
 
+  it("normalises caller order: newest-first input matches oldest-first", () => {
+    const snapshots = [snap("2026-01-25", "2100")];
+    const oldestFirst = buildPortfolioSeries(
+      [BUY_10_CHI_3000, SELL_3_CHI_1200],
+      snapshots,
+    );
+    const newestFirst = buildPortfolioSeries(
+      [SELL_3_CHI_1200, BUY_10_CHI_3000],
+      snapshots,
+    );
+    expect(newestFirst).toEqual(oldestFirst);
+    // 7 chi left at the unchanged $300/chi average → $2100 cost basis.
+    expect(Number(newestFirst[0].costBasisUsd)).toBeCloseTo(2100, 6);
+  });
+
   it("counts a transaction dated the same day as the snapshot", () => {
     const [point] = buildPortfolioSeries(
       [BUY_10_CHI_3000],
