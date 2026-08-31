@@ -19,7 +19,7 @@ function usePrefersReducedMotion(): boolean {
       typeof window.matchMedia === "function"
         ? window.matchMedia(REDUCED_MOTION_QUERY).matches
         : false,
-    () => false
+    () => false,
   );
 }
 
@@ -189,72 +189,77 @@ export function AnimatedHeroImage() {
       style={{ perspective: "1000px" }}
     >
       {/* ── 1. 3D Parallax Video Wrapper ──────────────────────────────────────── */}
-      <div
-        className="absolute inset-[-2%] w-[104%] h-[104%] anim-float-gentle transition-transform duration-75 ease-out"
-        style={{
-          transform: `rotateX(${tilt.x}deg) rotateY(${tilt.y}deg) scale(1.02)`,
-          transformStyle: "preserve-3d",
-        }}
-      >
-        {/* The Looping Video with the glowing liquid sphere in hand */}
-        <video
-          ref={videoRef}
-          className="w-full h-full object-cover"
-          src="/videos/hero_bg.mp4"
-          autoPlay={!reducedMotion}
-          muted
-          loop
-          playsInline
-        />
-
-        {/* ── 2. Animated Radiant Orange Light Beam Overlay ─────────────────────── */}
+      <div className="absolute inset-[-2%] w-[104%] h-[104%] anim-float-gentle transition-transform duration-75 ease-out">
         <div
-          className="absolute top-[6%] right-[10%] w-[38%] h-[55%] anim-beam-orange pointer-events-none mix-blend-screen"
+          className="w-full h-full"
           style={{
-            background:
-              "radial-gradient(ellipse at 45% 45%, rgba(255, 140, 40, 0.45) 0%, rgba(255, 100, 20, 0.2) 40%, transparent 75%)",
-            transform: "rotate(-32deg)",
+            transform: `rotateX(${tilt.x}deg) rotateY(${tilt.y}deg) scale(1.02)`,
+            transformStyle: "preserve-3d",
           }}
-        />
+        >
+          {/* The Looping Video with the glowing liquid sphere in hand */}
+          <video
+            ref={videoRef}
+            className="w-full h-full object-cover"
+            src="/videos/hero_bg.mp4"
+            autoPlay={!reducedMotion}
+            muted
+            loop
+            playsInline
+          />
 
-        {/* ── 3. Animated Electric Cyan Light Beam Overlay ──────────────────────── */}
-        <div
-          className="absolute top-[22%] left-[8%] w-[42%] h-[48%] anim-beam-cyan pointer-events-none mix-blend-screen"
-          style={{
-            background:
-              "radial-gradient(ellipse at 50% 50%, rgba(60, 200, 255, 0.4) 0%, rgba(30, 140, 255, 0.15) 45%, transparent 75%)",
-            transform: "rotate(-25deg)",
-          }}
-        />
+          {/* ── 2. Animated Radiant Orange Light Beam Overlay ─────────────────────── */}
+          <div
+            className="absolute top-[6%] right-[10%] w-[38%] h-[55%] anim-beam-orange pointer-events-none mix-blend-screen"
+            style={{
+              background:
+                "radial-gradient(ellipse at 45% 45%, rgba(255, 140, 40, 0.45) 0%, rgba(255, 100, 20, 0.2) 40%, transparent 75%)",
+              transform: "rotate(-32deg)",
+            }}
+          />
 
-        {/* ── 4. Glowing Orb Core Aura ─────────────────────────────────────────── */}
-        <div
-          className="absolute top-[38%] left-[53%] -translate-x-1/2 -translate-y-1/2 w-[380px] h-[380px] sm:w-[480px] sm:h-[480px] anim-gold-glow pointer-events-none mix-blend-screen"
-          style={{
-            background:
-              "radial-gradient(circle, rgba(255, 200, 100, 0.5) 0%, rgba(255, 130, 40, 0.2) 40%, rgba(60, 180, 255, 0.1) 60%, transparent 80%)",
-          }}
-        />
+          {/* ── 3. Animated Electric Cyan Light Beam Overlay ──────────────────────── */}
+          <div
+            className="absolute top-[22%] left-[8%] w-[42%] h-[48%] anim-beam-cyan pointer-events-none mix-blend-screen"
+            style={{
+              background:
+                "radial-gradient(ellipse at 50% 50%, rgba(60, 200, 255, 0.4) 0%, rgba(30, 140, 255, 0.15) 45%, transparent 75%)",
+              transform: "rotate(-25deg)",
+            }}
+          />
 
-        {/* ── 5. Cursor-Follow Specular Highlight on Sphere ───────────────────── */}
-        <div
-          className="absolute w-[220px] h-[220px] rounded-full pointer-events-none mix-blend-color-dodge transition-opacity duration-300"
-          style={{
-            left: `${mousePos.x * 100}%`,
-            top: `${mousePos.y * 100}%`,
-            transform: "translate(-50%, -50%)",
-            background:
-              "radial-gradient(circle, rgba(255, 240, 200, 0.35) 0%, rgba(245, 180, 80, 0.12) 45%, transparent 70%)",
-            opacity:
-              mousePos.x > 0.35 && mousePos.x < 0.75 && mousePos.y > 0.15 && mousePos.y < 0.65
-                ? 1
-                : 0.2,
-          }}
-        />
+          {/* ── 4. Glowing Orb Core Aura ─────────────────────────────────────────── */}
+          <div
+            className="absolute top-[38%] left-[53%] -translate-x-1/2 -translate-y-1/2 w-[380px] h-[380px] sm:w-[480px] sm:h-[480px] anim-gold-glow pointer-events-none mix-blend-screen"
+            style={{
+              background:
+                "radial-gradient(circle, rgba(255, 200, 100, 0.5) 0%, rgba(255, 130, 40, 0.2) 40%, rgba(60, 180, 255, 0.1) 60%, transparent 80%)",
+            }}
+          />
 
-        {/* ── 6. Vignettes for Text Contrast ───────────────────────────────────── */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-black/50 pointer-events-none" />
-        <div className="absolute inset-0 bg-gradient-to-r from-black/75 via-black/15 to-transparent pointer-events-none" />
+          {/* ── 5. Cursor-Follow Specular Highlight on Sphere ───────────────────── */}
+          <div
+            className="absolute w-[220px] h-[220px] rounded-full pointer-events-none mix-blend-color-dodge transition-opacity duration-300"
+            style={{
+              left: `${mousePos.x * 100}%`,
+              top: `${mousePos.y * 100}%`,
+              transform: "translate(-50%, -50%)",
+              background:
+                "radial-gradient(circle, rgba(255, 240, 200, 0.35) 0%, rgba(245, 180, 80, 0.12) 45%, transparent 70%)",
+              opacity:
+                mousePos.x > 0.35 &&
+                mousePos.x < 0.75 &&
+                mousePos.y > 0.15 &&
+                mousePos.y < 0.65
+                  ? 1
+                  : 0.2,
+            }}
+          />
+
+          {/* ── 6. Vignettes for Text Contrast ───────────────────────────────────── */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-black/50 pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-r from-black/75 via-black/15 to-transparent pointer-events-none" />
+        </div>
       </div>
 
       {/* ── 7. Golden Dust & Star Particles Layer ─────────────────────────────── */}

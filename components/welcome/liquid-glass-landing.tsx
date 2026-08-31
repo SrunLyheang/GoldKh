@@ -30,8 +30,10 @@ const CURRENT_YEAR = new Date().getFullYear();
 export function LiquidGlassLanding() {
   const signedIn = useSignedIn();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [converterQty, setConverterQty] = useState<number>(1);
-  const [converterUnit, setConverterUnit] = useState<"damlung" | "chi">("damlung");
+  const [converterQty, setConverterQty] = useState<string>("1");
+  const [converterUnit, setConverterUnit] = useState<"damlung" | "chi">(
+    "damlung",
+  );
 
   // Indicative gold price for this marketing converter only — NOT a live
   // feed. The signed-in dashboard pulls the real spot from goldapi.io.
@@ -44,7 +46,15 @@ export function LiquidGlassLanding() {
   const spotPerDamlung = INDICATIVE_SPOT_PER_OZ * TROY_OZ_PER_DAMLUNG;
 
   // Converter calculations
-  const totalDamlung = converterUnit === "damlung" ? converterQty : converterQty / 10;
+  const parsedConverterQty = Number.parseFloat(converterQty);
+  const sanitizedConverterQty = Number.isFinite(parsedConverterQty)
+    ? Math.max(0, parsedConverterQty)
+    : 0;
+
+  const totalDamlung =
+    converterUnit === "damlung"
+      ? sanitizedConverterQty
+      : sanitizedConverterQty / 10;
   const totalChi = totalDamlung * 10;
   const totalGrams = totalDamlung * GRAMS_PER_DAMLUNG;
   const totalOz = totalDamlung * TROY_OZ_PER_DAMLUNG;
@@ -58,18 +68,19 @@ export function LiquidGlassLanding() {
   ];
 
   return (
-    <div className="liquid-glass-landing-root relative min-h-screen bg-black text-white font-sans selection:bg-white selection:text-black">
-      
+    <div className="landing-root liquid-glass-landing-root relative min-h-screen bg-black text-white font-sans selection:bg-white selection:text-black">
       {/* ── 1. Hero Section (Animated Looping Orb Video + Parallax + Particles) ─ */}
       <section className="relative w-full h-screen overflow-hidden">
-        
         {/* Animated Hero with Looping Orb Video, 3D Tilt, Light Beams & Particles */}
         <AnimatedHeroImage />
 
         {/* Top Navbar */}
         <header className="absolute top-0 left-0 right-0 z-20 flex items-center justify-between px-5 sm:px-8 py-5">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 text-white font-medium text-base group">
+          <Link
+            href="/"
+            className="flex items-center gap-2 text-white font-medium text-base group"
+          >
             <Coins className="w-5 h-5 text-amber-400 group-hover:rotate-12 transition-transform" />
             <span className="tracking-tight font-semibold">GoldKh</span>
           </Link>
@@ -180,7 +191,9 @@ export function LiquidGlassLanding() {
           </h1>
 
           <p className="text-white/60 text-sm sm:text-base leading-relaxed mb-7 max-w-md">
-            Keep track of the physical gold you own in Cambodia. Log your buys and sells, and GoldKh works out what you paid on average and whether you&apos;re up or down at today&apos;s price.
+            Keep track of the physical gold you own in Cambodia. Log your buys
+            and sells, and GoldKh works out what you paid on average and whether
+            you&apos;re up or down at today&apos;s price.
           </p>
 
           <div className="flex flex-wrap items-center gap-3">
@@ -202,9 +215,11 @@ export function LiquidGlassLanding() {
 
       {/* ── Scrollable Body Content ────────────────────────────────────────── */}
       <main className="relative z-10 bg-black">
-
         {/* ── 2. Features Section (#features) ─────────────────────────────────── */}
-        <section id="features" className="scroll-mt-24 py-28 px-5 sm:px-8 max-w-7xl mx-auto border-t border-white/10">
+        <section
+          id="features"
+          className="scroll-mt-24 py-28 px-5 sm:px-8 max-w-7xl mx-auto border-t border-white/10"
+        >
           <div className="text-center max-w-3xl mx-auto mb-16">
             <span className="text-xs font-mono uppercase tracking-widest text-amber-400 font-semibold mb-3 inline-block">
               ✦ What You Get
@@ -213,12 +228,12 @@ export function LiquidGlassLanding() {
               Made for people who own physical gold.
             </h2>
             <p className="text-white/65 text-sm sm:text-base leading-relaxed">
-              Everything you need to keep track of your gold, without a spreadsheet or doing the math by hand.
+              Everything you need to keep track of your gold, without a
+              spreadsheet or doing the math by hand.
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            
             {/* Feature 1 */}
             <div className="liquid-glass rounded-3xl p-7 flex flex-col justify-between border border-white/10 hover:border-amber-400/30 transition-colors group">
               <div>
@@ -229,7 +244,9 @@ export function LiquidGlassLanding() {
                   Your Real Average Cost
                 </h3>
                 <p className="text-white/65 text-sm leading-relaxed">
-                  Buy at a few different prices and it gets hard to say what your gold actually cost you. GoldKh does the weighted-average math so you always know your break-even.
+                  Buy at a few different prices and it gets hard to say what
+                  your gold actually cost you. GoldKh does the weighted-average
+                  math so you always know your break-even.
                 </p>
               </div>
               <div className="mt-6 pt-4 border-t border-white/10 text-xs font-mono text-amber-300 flex items-center gap-1.5">
@@ -248,12 +265,15 @@ export function LiquidGlassLanding() {
                   Works in Chi and Damlung
                 </h3>
                 <p className="text-white/65 text-sm leading-relaxed">
-                  Enter your gold in Chi (ជី) and Damlung (ដំឡឹង), the way it&apos;s actually bought and sold here. GoldKh converts to grams and troy ounces in the background (1 damlung = 1.205658 oz).
+                  Enter your gold in Chi (ជី) and Damlung (ដំឡឹង), the way
+                  it&apos;s actually bought and sold here. GoldKh converts to
+                  grams and troy ounces in the background (1 damlung = 1.205658
+                  oz).
                 </p>
               </div>
               <div className="mt-6 pt-4 border-t border-white/10 text-xs font-mono text-amber-300 flex items-center gap-1.5">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                1 Damlung = 10 Chi = 37.5g
+                <CheckCircle2 className="w-4 h-4 text-emerald-400" />1 Damlung =
+                10 Chi = 37.5g
               </div>
             </div>
 
@@ -267,7 +287,9 @@ export function LiquidGlassLanding() {
                   Live Spot Price
                 </h3>
                 <p className="text-white/65 text-sm leading-relaxed">
-                  See what your gold is worth at the current world spot price, with a chart of how the price has moved. Every price shows the exact time it was pulled.
+                  See what your gold is worth at the current world spot price,
+                  with a chart of how the price has moved. Every price shows the
+                  exact time it was pulled.
                 </p>
               </div>
               <div className="mt-6 pt-4 border-t border-white/10 text-xs font-mono text-amber-300 flex items-center gap-1.5">
@@ -286,7 +308,9 @@ export function LiquidGlassLanding() {
                   Up or Down, at a Glance
                 </h3>
                 <p className="text-white/65 text-sm leading-relaxed">
-                  See whether your gold is worth more or less than you paid for it, in USD, against the latest spot price. It also shows your gain or loss on gold you&apos;ve already sold.
+                  See whether your gold is worth more or less than you paid for
+                  it, in USD, against the latest spot price. It also shows your
+                  gain or loss on gold you&apos;ve already sold.
                 </p>
               </div>
               <div className="mt-6 pt-4 border-t border-white/10 text-xs font-mono text-amber-300 flex items-center gap-1.5">
@@ -305,7 +329,9 @@ export function LiquidGlassLanding() {
                   Only You Can See It
                 </h3>
                 <p className="text-white/65 text-sm leading-relaxed">
-                  Your transactions are tied to your account and nobody else&apos;s. No public profiles, no sharing, and your data isn&apos;t sold to anyone.
+                  Your transactions are tied to your account and nobody
+                  else&apos;s. No public profiles, no sharing, and your data
+                  isn&apos;t sold to anyone.
                 </p>
               </div>
               <div className="mt-6 pt-4 border-t border-white/10 text-xs font-mono text-amber-300 flex items-center gap-1.5">
@@ -324,7 +350,9 @@ export function LiquidGlassLanding() {
                   Nothing to Lose Here
                 </h3>
                 <p className="text-white/65 text-sm leading-relaxed">
-                  GoldKh isn&apos;t an exchange. There are no deposits, no withdrawals, and nothing to hack. Your gold stays wherever you keep it.
+                  GoldKh isn&apos;t an exchange. There are no deposits, no
+                  withdrawals, and nothing to hack. Your gold stays wherever you
+                  keep it.
                 </p>
               </div>
               <div className="mt-6 pt-4 border-t border-white/10 text-xs font-mono text-amber-300 flex items-center gap-1.5">
@@ -332,12 +360,14 @@ export function LiquidGlassLanding() {
                 It&apos;s just a tracker
               </div>
             </div>
-
           </div>
         </section>
 
         {/* ── 3. How It Works (#how-it-works) ─────────────────────────────────── */}
-        <section id="how-it-works" className="scroll-mt-24 py-28 px-5 sm:px-8 max-w-7xl mx-auto border-t border-white/10">
+        <section
+          id="how-it-works"
+          className="scroll-mt-24 py-28 px-5 sm:px-8 max-w-7xl mx-auto border-t border-white/10"
+        >
           <div className="text-center max-w-3xl mx-auto mb-16">
             <span className="text-xs font-mono uppercase tracking-widest text-amber-400 font-semibold mb-3 inline-block">
               ✦ 3 Simple Steps
@@ -351,7 +381,6 @@ export function LiquidGlassLanding() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            
             {/* Step 1 */}
             <div className="liquid-glass rounded-3xl p-8 border border-white/10 relative">
               <div className="text-4xl font-bold font-mono text-amber-400/40 mb-5">
@@ -374,7 +403,8 @@ export function LiquidGlassLanding() {
                 Add your buys and sells
               </h3>
               <p className="text-white/65 text-sm leading-relaxed">
-                For each one, enter how much (in Chi or Damlung), the price per unit, and the date.
+                For each one, enter how much (in Chi or Damlung), the price per
+                unit, and the date.
               </p>
             </div>
 
@@ -387,18 +417,20 @@ export function LiquidGlassLanding() {
                 Watch your position
               </h3>
               <p className="text-white/65 text-sm leading-relaxed">
-                See your average cost, what your gold is worth at today&apos;s spot price, and whether you&apos;re up or down.
+                See your average cost, what your gold is worth at today&apos;s
+                spot price, and whether you&apos;re up or down.
               </p>
             </div>
-
           </div>
         </section>
 
         {/* ── 4. Cambodian Units & Live Interactive Converter (#units) ────────── */}
-        <section id="units" className="scroll-mt-24 py-28 px-5 sm:px-8 max-w-7xl mx-auto border-t border-white/10">
+        <section
+          id="units"
+          className="scroll-mt-24 py-28 px-5 sm:px-8 max-w-7xl mx-auto border-t border-white/10"
+        >
           <div className="liquid-glass rounded-3xl p-8 sm:p-12 border border-white/10">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
-              
               {/* Left: Unit Rules Explainer */}
               <div className="lg:col-span-6">
                 <span className="text-xs font-mono uppercase tracking-widest text-amber-400 font-semibold mb-3 inline-block">
@@ -408,21 +440,33 @@ export function LiquidGlassLanding() {
                   The units you already use.
                 </h2>
                 <p className="text-white/70 text-sm leading-relaxed mb-6">
-                  Gold here is bought and sold in <strong>Chi (ជី)</strong> and <strong>Damlung (ដំឡឹង)</strong>. GoldKh converts them to grams and troy ounces exactly, with no rounding along the way.
+                  Gold here is bought and sold in <strong>Chi (ជី)</strong> and{" "}
+                  <strong>Damlung (ដំឡឹង)</strong>. GoldKh converts them to
+                  grams and troy ounces exactly, with no rounding along the way.
                 </p>
 
                 <div className="space-y-3 font-mono text-xs">
                   <div className="liquid-glass-gold px-4 py-3 rounded-2xl flex items-center justify-between border border-amber-400/20">
-                    <span className="text-amber-300 font-bold">1 Damlung (ដំឡឹង)</span>
-                    <span className="text-white font-semibold">10 Chi = 37.5 Grams</span>
+                    <span className="text-amber-300 font-bold">
+                      1 Damlung (ដំឡឹង)
+                    </span>
+                    <span className="text-white font-semibold">
+                      10 Chi = 37.5 Grams
+                    </span>
                   </div>
                   <div className="liquid-glass px-4 py-3 rounded-2xl flex items-center justify-between border border-white/10">
                     <span className="text-white/80 font-bold">1 Chi (ជី)</span>
-                    <span className="text-white font-semibold">3.75 Grams (1/10 Damlung)</span>
+                    <span className="text-white font-semibold">
+                      3.75 Grams (1/10 Damlung)
+                    </span>
                   </div>
                   <div className="liquid-glass px-4 py-3 rounded-2xl flex items-center justify-between border border-white/10">
-                    <span className="text-white/80 font-bold">1 Troy Ounce</span>
-                    <span className="text-white font-semibold">0.829426 Damlung ≈ 31.1035g</span>
+                    <span className="text-white/80 font-bold">
+                      1 Troy Ounce
+                    </span>
+                    <span className="text-white font-semibold">
+                      0.829426 Damlung ≈ 31.1035g
+                    </span>
                   </div>
                 </div>
               </div>
@@ -452,16 +496,18 @@ export function LiquidGlassLanding() {
                     <div className="grid grid-cols-3 gap-3">
                       <input
                         type="number"
-                        min="0.1"
+                        min="0"
                         step="0.5"
                         value={converterQty}
-                        onChange={(e) => setConverterQty(Math.max(0, parseFloat(e.target.value) || 0))}
+                        onChange={(e) => setConverterQty(e.target.value)}
                         className="col-span-2 bg-black/60 border border-amber-400/30 rounded-2xl px-4 py-3 text-white font-mono text-lg font-bold focus:outline-none focus:border-amber-400"
                         placeholder="1.0"
                       />
                       <select
                         value={converterUnit}
-                        onChange={(e) => setConverterUnit(e.target.value as "damlung" | "chi")}
+                        onChange={(e) =>
+                          setConverterUnit(e.target.value as "damlung" | "chi")
+                        }
                         className="bg-black/60 border border-amber-400/30 rounded-2xl px-3 py-3 text-amber-300 font-mono text-xs font-semibold focus:outline-none focus:border-amber-400 cursor-pointer"
                       >
                         <option value="damlung">Damlung (ដំឡឹង)</option>
@@ -473,25 +519,37 @@ export function LiquidGlassLanding() {
                   {/* Conversion Output Grid */}
                   <div className="grid grid-cols-2 gap-3 font-mono text-xs">
                     <div className="bg-black/40 p-3.5 rounded-2xl border border-white/10">
-                      <span className="text-white/50 text-[10px] block">ESTIMATED VALUE</span>
+                      <span className="text-white/50 text-[10px] block">
+                        ESTIMATED VALUE
+                      </span>
                       <span className="text-lg font-bold text-amber-300 mt-1 block">
-                        ${totalValueUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        $
+                        {totalValueUsd.toLocaleString(undefined, {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}
                       </span>
                     </div>
                     <div className="bg-black/40 p-3.5 rounded-2xl border border-white/10">
-                      <span className="text-white/50 text-[10px] block">TOTAL WEIGHT</span>
+                      <span className="text-white/50 text-[10px] block">
+                        TOTAL WEIGHT
+                      </span>
                       <span className="text-lg font-bold text-white mt-1 block">
                         {totalGrams.toFixed(2)}g
                       </span>
                     </div>
                     <div className="bg-black/40 p-3.5 rounded-2xl border border-white/10">
-                      <span className="text-white/50 text-[10px] block">CAMBODIAN CHI</span>
+                      <span className="text-white/50 text-[10px] block">
+                        CAMBODIAN CHI
+                      </span>
                       <span className="text-base font-semibold text-white mt-1 block">
                         {totalChi.toFixed(2)} Chi
                       </span>
                     </div>
                     <div className="bg-black/40 p-3.5 rounded-2xl border border-white/10">
-                      <span className="text-white/50 text-[10px] block">TROY OUNCES</span>
+                      <span className="text-white/50 text-[10px] block">
+                        TROY OUNCES
+                      </span>
                       <span className="text-base font-semibold text-white mt-1 block">
                         {totalOz.toFixed(3)} oz
                       </span>
@@ -500,17 +558,20 @@ export function LiquidGlassLanding() {
 
                   <p className="mt-5 text-[10px] leading-relaxed font-mono text-white/40">
                     Indicative price for illustration only — not a live feed.
-                    Sign in to see your holdings valued at the current spot rate.
+                    Sign in to see your holdings valued at the current spot
+                    rate.
                   </p>
                 </div>
               </div>
-
             </div>
           </div>
         </section>
 
         {/* ── 5. About & Non-Custodial Section (#about) ───────────────────────── */}
-        <section id="about" className="scroll-mt-24 py-28 px-5 sm:px-8 max-w-7xl mx-auto border-t border-white/10">
+        <section
+          id="about"
+          className="scroll-mt-24 py-28 px-5 sm:px-8 max-w-7xl mx-auto border-t border-white/10"
+        >
           <div className="max-w-4xl mx-auto text-center">
             <span className="text-xs font-mono uppercase tracking-widest text-amber-400 font-semibold mb-3 inline-block">
               ✦ What GoldKh Is
@@ -519,29 +580,39 @@ export function LiquidGlassLanding() {
               Not an exchange. No money moves here.
             </h2>
             <p className="text-white/70 text-base leading-relaxed mb-10">
-              GoldKh is just a tracker for people who own physical gold — bars or jewelry — in Cambodia. It doesn&apos;t hold your gold, it doesn&apos;t trade, and it never asks for payment details.
+              GoldKh is just a tracker for people who own physical gold — bars
+              or jewelry — in Cambodia. It doesn&apos;t hold your gold, it
+              doesn&apos;t trade, and it never asks for payment details.
             </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 text-left">
               <div className="liquid-glass rounded-2xl p-6 border border-white/10">
                 <ShieldCheck className="w-6 h-6 text-emerald-400 mb-3" />
-                <h4 className="font-semibold text-white text-base mb-2">Your gold stays with you</h4>
+                <h4 className="font-semibold text-white text-base mb-2">
+                  Your gold stays with you
+                </h4>
                 <p className="text-xs text-white/60 leading-relaxed">
                   GoldKh never touches your gold. It only does the math.
                 </p>
               </div>
               <div className="liquid-glass rounded-2xl p-6 border border-white/10">
                 <Lock className="w-6 h-6 text-amber-400 mb-3" />
-                <h4 className="font-semibold text-white text-base mb-2">Private to you</h4>
+                <h4 className="font-semibold text-white text-base mb-2">
+                  Private to you
+                </h4>
                 <p className="text-xs text-white/60 leading-relaxed">
-                  Your transactions are only visible when you&apos;re signed in to your own account.
+                  Your transactions are only visible when you&apos;re signed in
+                  to your own account.
                 </p>
               </div>
               <div className="liquid-glass rounded-2xl p-6 border border-white/10">
                 <Eye className="w-6 h-6 text-blue-400 mb-3" />
-                <h4 className="font-semibold text-white text-base mb-2">Nothing hidden</h4>
+                <h4 className="font-semibold text-white text-base mb-2">
+                  Nothing hidden
+                </h4>
                 <p className="text-xs text-white/60 leading-relaxed">
-                  Plain math for cost basis and unit conversion. Free to use, no fees.
+                  Plain math for cost basis and unit conversion. Free to use, no
+                  fees.
                 </p>
               </div>
             </div>
@@ -555,7 +626,8 @@ export function LiquidGlassLanding() {
               Start tracking your gold today.
             </h2>
             <p className="text-white/70 text-sm sm:text-base leading-relaxed mb-8 max-w-lg mx-auto">
-              Sign up to see your holdings, your average cost, and whether you&apos;re up or down at today&apos;s price. Free to use.
+              Sign up to see your holdings, your average cost, and whether
+              you&apos;re up or down at today&apos;s price. Free to use.
             </p>
             <div className="flex flex-wrap items-center justify-center gap-4">
               {signedIn ? (
@@ -596,10 +668,21 @@ export function LiquidGlassLanding() {
             </span>
           </div>
           <div className="flex items-center gap-6">
-            <a href="#features" className="hover:text-white transition-colors">Features</a>
-            <a href="#how-it-works" className="hover:text-white transition-colors">How It Works</a>
-            <a href="#units" className="hover:text-white transition-colors">Units</a>
-            <a href="#about" className="hover:text-white transition-colors">About</a>
+            <a href="#features" className="hover:text-white transition-colors">
+              Features
+            </a>
+            <a
+              href="#how-it-works"
+              className="hover:text-white transition-colors"
+            >
+              How It Works
+            </a>
+            <a href="#units" className="hover:text-white transition-colors">
+              Units
+            </a>
+            <a href="#about" className="hover:text-white transition-colors">
+              About
+            </a>
             <Link
               href={signedIn ? "/dashboard" : "/sign-in"}
               className="hover:text-amber-300 transition-colors"
@@ -608,7 +691,6 @@ export function LiquidGlassLanding() {
             </Link>
           </div>
         </footer>
-
       </main>
     </div>
   );
