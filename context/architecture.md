@@ -2,17 +2,17 @@
 
 ## Stack
 
-| Layer     | Technology                                     | Role                                                          |
-| --------- | ----------------------------------------------- | --------------------------------------------------------------- |
-| Framework | Next.js + TypeScript                           | Single repo serving both UI and server logic                  |
-| UI        | Tailwind + shadcn/ui                           | Component styling and primitives                              |
-| Auth      | Clerk                                           | Sign-in, session, and the source of truth for user identity   |
-| Database  | PostgreSQL on Neon (serverless, scale-to-zero) | Transactions ledger and price cache                            |
-| Driver    | `@neondatabase/serverless`                     | Pooled connection string only — see invariant 9                |
-| ORM       | Drizzle                                         | Returns `numeric` as strings; no ORM-level float coercion     |
-| Price     | goldapi.io, Binance PAXG                       | External spot price providers, contacted only on cache miss   |
-| Deploy    | Vercel                                          | Hosting platform — reference Next.js host, pairs with Neon    |
-| Errors    | Sentry (`@sentry/nextjs`)                       | Error tracking, client and server                             |
+| Layer     | Technology                                     | Role                                                        |
+| --------- | ---------------------------------------------- | ----------------------------------------------------------- |
+| Framework | Next.js + TypeScript                           | Single repo serving both UI and server logic                |
+| UI        | Tailwind + shadcn/ui                           | Component styling and primitives                            |
+| Auth      | Clerk                                          | Sign-in, session, and the source of truth for user identity |
+| Database  | PostgreSQL on Neon (serverless, scale-to-zero) | Transactions ledger and price cache                         |
+| Driver    | `@neondatabase/serverless`                     | Pooled connection string only — see invariant 9             |
+| ORM       | Drizzle                                        | Returns `numeric` as strings; no ORM-level float coercion   |
+| Price     | goldapi.io, Binance PAXG                       | External spot price providers, contacted only on cache miss |
+| Deploy    | Vercel                                         | Hosting platform — reference Next.js host, pairs with Neon  |
+| Errors    | Sentry (`@sentry/nextjs`)                      | Error tracking, client and server                           |
 
 ## System Boundaries
 
@@ -78,8 +78,8 @@
 - Transaction mutation routes, all `withAuthAndRateLimit` +
   `assertSameOrigin`, session-scoped, `{ data } | { error }`:
   `POST /api/transactions` (create), `PATCH|DELETE
-  /api/transactions/[id]` (owned mutation), `POST
-  /api/transactions/bulk` (CSV import — one all-or-nothing
+/api/transactions/[id]` (owned mutation), `POST
+/api/transactions/bulk` (CSV import — one all-or-nothing
   multi-row insert, 200-row cap, one rate-limit token; its
   validation-failure response is the one documented exception to
   the envelope — it adds an `issues` array of `{ index, message }`
