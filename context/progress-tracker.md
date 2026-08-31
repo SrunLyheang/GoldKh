@@ -2862,3 +2862,27 @@ verifiable, per `ai-workflow-rules.md`'s "When to Split Work"):
   recognizability; deleted `components/icons/settings-icon.tsx` and its
   `index.ts` export (only consumer was the sidebar). `context/ui-context.md`
   Settings section updated. Typecheck clean.
+
+- **2026-08-31:** fixed the sign-out hang (page froze after clicking
+  "Sign out" in the `<UserButton>` menu until a manual refresh). Root
+  cause: Clerk's built-in sign-out clears the session then does a
+  *soft* client-side navigation to `afterSignOutUrl`; with the App
+  Router RSC Router Cache still holding the signed-in view of `/`
+  (which `redirect()`s to `/dashboard`), nothing forced a fresh
+  server render, so the UI sat until a hard refresh. Fix mirrors the
+  hard-navigation pattern `components/settings/data-actions.tsx`
+  already uses after account deletion:
+  1. New `components/dashboard/sign-out-button.tsx` — `useClerk()`
+     `signOut()` then `window.location.href = "/"` (hard nav), with a
+     full-screen `bg-background/90 backdrop-blur-sm` overlay (`Spinner`
+     + "Signing you out…") covering the gap; on `signOut()` failure it
+     resets and toasts `nav.signOutError` rather than stranding the
+     user.
+  2. Wired into the sidebar footer row (beside the settings gear) and
+     the mobile top bar in `dashboard-shell.tsx`.
+  3. Clerk's built-in menu sign-out hidden via appearance
+     (`userButtonPopoverActionButton__signOut: { display: "none" }`)
+     in both `<UserButton>` instances so there is one working path.
+  4. `afterSignOutUrl="/"` set explicitly on `<ClerkProvider>`.
+  New i18n keys `nav.signOut` / `nav.signingOut` / `nav.signOutError`.
+  tsc + eslint clean, 391 tests pass, `npm run build` green.

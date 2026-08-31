@@ -13,6 +13,7 @@ import {
 } from "@/components/icons";
 import { useLocale } from "@/lib/i18n/locale-context";
 import { cn } from "@/lib/utils";
+import { SignOutButton } from "./sign-out-button";
 import { ThemeToggle } from "./theme-toggle";
 
 // Nav destinations rendered with the bespoke Vault icon set
@@ -119,21 +120,32 @@ export function Sidebar({
           <ThemeToggle className="self-start" />
           <div className="flex items-center justify-between gap-2">
             <UserButton
-              appearance={{ elements: { userButtonBox: "flex-row-reverse" } }}
+              appearance={{
+                elements: {
+                  userButtonBox: "flex-row-reverse",
+                  // The built-in sign out does a soft client-side nav that
+                  // leaves the dashboard frozen until a refresh — replaced
+                  // by <SignOutButton> below. See sign-out-button.tsx.
+                  userButtonPopoverActionButton__signOut: { display: "none" },
+                },
+              }}
               showName
             />
-            <Link
-              href="/dashboard/settings"
-              onClick={onClose}
-              aria-label={t.nav.settings}
-              aria-current={settingsActive ? "page" : undefined}
-              className={cn(
-                "inline-flex shrink-0 items-center justify-center rounded-md border border-border bg-accent/60 p-1.5 transition-colors hover:text-foreground",
-                settingsActive ? "text-primary" : "text-muted-foreground"
-              )}
-            >
-              <Settings className="h-5 w-5" />
-            </Link>
+            <div className="flex shrink-0 items-center gap-1.5">
+              <Link
+                href="/dashboard/settings"
+                onClick={onClose}
+                aria-label={t.nav.settings}
+                aria-current={settingsActive ? "page" : undefined}
+                className={cn(
+                  "inline-flex shrink-0 items-center justify-center rounded-md border border-border bg-accent/60 p-1.5 transition-colors hover:text-foreground",
+                  settingsActive ? "text-primary" : "text-muted-foreground"
+                )}
+              >
+                <Settings className="h-5 w-5" />
+              </Link>
+              <SignOutButton />
+            </div>
           </div>
         </div>
       </aside>

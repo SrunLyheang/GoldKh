@@ -12,6 +12,9 @@ const en = {
     price: "Price",
     insights: "Insights",
     settings: "Settings",
+    signOut: "Sign out",
+    signingOut: "Signing you out…",
+    signOutError: "Couldn't sign out — try again.",
   },
   hero: {
     pricePer: (unit: string) => `Price per ${unit}`,
