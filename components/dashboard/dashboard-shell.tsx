@@ -5,6 +5,7 @@ import { Menu } from "lucide-react";
 import Image from "next/image";
 import { useState, type ReactNode } from "react";
 import { LocaleProvider } from "@/lib/i18n/locale-context";
+import { PrefsProvider } from "@/lib/prefs/prefs-context";
 import { ThemeProvider } from "@/lib/theme/theme-context";
 import { Toaster } from "@/components/ui/sonner";
 import { Sidebar } from "./sidebar";
@@ -22,6 +23,7 @@ export function DashboardShell({ children }: { children: ReactNode }) {
   return (
     <LocaleProvider>
       <ThemeProvider>
+        <PrefsProvider>
         <div className="vault-grain relative flex min-h-screen bg-background">
           <Sidebar open={open} onClose={() => setOpen(false)} />
           <div className="relative z-10 flex min-w-0 flex-1 flex-col md:ml-59">
@@ -58,6 +60,7 @@ export function DashboardShell({ children }: { children: ReactNode }) {
           </div>
         </div>
         <Toaster />
+        </PrefsProvider>
       </ThemeProvider>
     </LocaleProvider>
   );

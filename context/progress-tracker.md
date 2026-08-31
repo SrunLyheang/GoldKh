@@ -12,6 +12,485 @@ Update this file after every meaningful implementation change.
   the remaining work toward hardening (rate limiting, the
   `user.deleted` webhook, UI test coverage) over new features.
 
+## Done: bulk-delete transactions (2026-08-31, uncommitted)
+
+Multi-select delete on both transaction surfaces (the compact dashboard
+panel and the full `/dashboard/transactions` view), per a bounded
+brainstorm this session. All four gates green (`tsc --noEmit`, `eslint`,
+`vitest run` 378, `next build`).
+
+- **Query.** `deleteManyOwnedTransactions(userId, ids)` in
+  `lib/db/queries/transactions.ts` — one `DELETE … WHERE userId = ? AND
+  id IN (…)` via drizzle `inArray`, `.returning({ id })`. Ownership-scoped
+  in the statement; the returned id list is the source of truth for what
+  went. Empty list short-circuits without a query.
+- **Route.** New `DELETE` on `app/api/transactions/bulk/route.ts`
+  alongside the CSV `POST`. `withAuthAndRateLimit` + `assertSameOrigin`,
+  body `{ ids: string[] }` (`z.string().uuid()`, `.min(1)`), reuses the
+  `MAX_BULK_ROWS = 200` cap → `400 TOO_MANY_ROWS`; malformed →
+  `400 INVALID_INPUT`; success → `apiOk({ deleted: n })`. +8 route tests.
+- **Shared UI** (`components/transactions/`): `use-row-selection.ts`
+  (Set-backed `toggle` / `toggleAll(visibleIds)` / `clear` /
+  `allSelected`; select-all is scoped to the ids passed in, i.e. the
+  filtered set), `row-checkbox.tsx` (native checkbox, wrapper
+  `stopPropagation` so a tick doesn't trip the row expander),
+  `bulk-actions-bar.tsx` ("N selected" · Clear · Delete, layout left to
+  the caller), `bulk-delete-dialog.tsx` (confirm modal on the existing
+  `ui/dialog` + `Button`, count-aware copy, `pending` disables both
+  buttons). +tests for the hook and the dialog.
+- **`/dashboard/transactions`** (`transactions-view.tsx`): leading
+  checkbox column on the desktop table + a checkbox in each mobile card
+  header, select-all `<th>` operating on the filtered rows, a
+  `sticky bottom-4` `BulkActionsBar`, and a `useTransition`-gated
+  `handleBulkDelete` that fires one `DELETE /api/transactions/bulk`,
+  toasts, clears selection, and `router.refresh()`es. Optimistic
+  (`temp-`) rows fail the `uuid()` check so they're never selectable
+  anyway; the checkbox is hidden for them.
+- **Dashboard panel** (`transaction-history.tsx` +
+  `dashboard-content.tsx`): same checkbox treatment; `TransactionHistory`
+  gains local `useRowSelection` + a `onBulkDelete(ids) => Promise<boolean>`
+  prop and renders the bar (inline, above the table) + dialog.
+  `dashboard-content.tsx`'s `handleBulkDelete` reuses the existing
+  optimistic machinery unchanged — `markRemoved` per id, one bulk fetch,
+  `unmarkRemoved` all + toast on failure, `startSync(router.refresh)` on
+  success. `use-optimistic-transactions.ts` untouched. +2 panel tests,
+  +1 view test; existing `transaction-history.test.tsx` renders updated
+  for the new required prop.
+- Strings inline English (dictionary.ts frozen this phase), matching the
+  existing "Transaction deleted." precedent. No schema change.
+
+## Feat: collapsible Realized panel (2026-08-31, uncommitted)
+
+`components/dashboard/realized-panel.tsx` — the panel header is now a
+`<button>` toggle. Clicking it collapses the panel to just its
+"Realized from N sales" label (hiding the figure, percent, and caption);
+clicking again restores it. For hiding the number on a shared screen.
+
+- Persisted to `localStorage` key `goldkh-realized-collapsed` ("1" /
+  "0"), display-only, never sent to the server. Hydration-safe: starts
+  expanded on the server and first paint, reads the stored value in an
+  effect (same pattern as PrefsProvider / ThemeProvider). All
+  `localStorage` access is try/catch-guarded.
+- `aria-expanded` / `aria-controls` on the button; chevron rotates 180°
+  when open, matching the transaction-history row expander. Focus ring
+  uses the repo's `focus-visible:ring-3 focus-visible:ring-ring/50`.
+- New i18n keys `realized.hide` / `realized.show` (button `aria-label`).
+- `realized-panel.test.tsx` — added toggle-hides-figure and
+  persists-across-remount cases (8 tests green). `tsc` / `eslint` clean.
+
+## Fix: realized P&L replayed newest-first (2026-08-31, uncommitted)
+
+User-reported: bought 10 chi (1 damlung) @ $5,585 on the 30th, sold 1
+damlung @ $5,200 on the 31st; the Realized panel showed "$5,200.00" at
+0.00% instead of the true **−$385 (−6.9%)**.
+
+Root cause: `computeHoldings` / `computeRealized` replay the ledger
+forward with a running weighted average and are documented to require
+oldest-first input, but every caller passed `listTransactionsForUser`'s
+result, which is `desc(transaction_date)` (newest-first, for the history
+table). The sell was replayed before the buy existed → cost basis $0 →
+realized = full proceeds. The Position card masked it because the buy and
+sell net to zero quantity.
+
+- **`lib/calc/chronological.ts`** — `toChronological(rows)`, a stable
+  oldest-first copy keyed on `transactionDate`. Pure, `lib/calc/`.
+- **`dashboard-content.tsx`** and **`insights-content.tsx`** now sort
+  through `toChronological` before `computeHoldings` / `computeRealized`;
+  the history table keeps the server's newest-first order.
+- Tests: `lib/calc/chronological.test.ts` (includes a regression that a
+  newest-first ledger mis-reads as $5,200 and the sorted one reads
+  −$385). `vitest run` green, `eslint` clean.
+- Known limitation unchanged: `transaction_date` is day-granular, so a
+  same-day buy+sell has no defined replay order (a `created_at`
+  tiebreaker would need threading through `TransactionRow`).
+
+## Done: Phase B — Settings route (2026-08-31, uncommitted)
+
+Sixth phase of `context/design-specs/dashboard-expansion-plan.md` (§6,
+§7, §11), after Phase A. New `/dashboard/settings` route — account,
+display preferences, and destructive data actions. No schema change. All
+four checks green (`tsc --noEmit`, `eslint`, `vitest run` 352,
+`next build`).
+
+- **PrefsProvider (B1).** `lib/prefs/prefs-context.tsx` — `Prefs`
+  (`displayUnit`, `currency`), `goldkh-prefs` localStorage key, same
+  hydration-safe pattern as `ThemeProvider` / `LocaleProvider` (starts on
+  `DEFAULT_PREFS`, reads the stored value in an effect). Provided in
+  `DashboardShell` inside `ThemeProvider`. `dashboard-content.tsx` now
+  seeds `displayUnit` from `usePrefs().prefs.displayUnit` instead of the
+  hardcoded `"damlung"` (one-line initializer change — takes effect on a
+  remount after prefs load; an in-session toggle still wins).
+- **Preferences panel (B2).** `components/settings/preferences.tsx` —
+  default display unit (chi / damlung) and default currency (USD / KHR)
+  as `SegmentedControl`s wired to `usePrefs().setPrefs` (saves
+  immediately, no save button); theme via the existing `ThemeToggle`.
+  Currency is stored but only USD is honoured anywhere — KHR display
+  stays deferred.
+- **Account panel.** `components/settings/account.tsx` — Clerk
+  `<UserProfile routing="hash" />` embedded in a `Panel`, minimal
+  `appearance` (borderless, full width). Same bare approach as the
+  sign-in / sign-up pages.
+- **Data panel (B3).** `components/settings/data-actions.tsx` — Export
+  (reuses `serializeTransactionsCsv` + a `Blob` download; `transactions`
+  passed from the server page), Delete all transactions, Delete account.
+  Both destructive actions gate behind typing `DELETE` in a
+  `ConfirmAction` sub-component. Delete-all → `DELETE /api/transactions`
+  then `router.refresh()`; delete-account → `DELETE /api/account` then a
+  hard `window.location.href = "/"` (drops the now-dead Clerk session and
+  all client state).
+- **Routes (B3).** `DELETE /api/transactions` added to the existing
+  route file — `withAuthAndRateLimit` + `assertSameOrigin`, session-
+  scoped, `deleteAllTransactionsForUser` (already present, was the
+  webhook's), `{ data: { deleted } }`. New `app/api/account/route.ts`
+  (`DELETE`) — `withAuthAndRateLimit` + `assertSameOrigin`,
+  `clerkClient().users.deleteUser(userId)`, `502 ACCOUNT_DELETE_FAILED`
+  on a Clerk error, `{ data: { deleted: true } }`. DB cleanup still runs
+  via the existing `user.deleted` webhook. +4 route tests for DELETE
+  transactions, +5 for the account route.
+- **Page.** `app/dashboard/settings/page.tsx` filled — server shell,
+  reads only the transaction list (for export), renders the three client
+  islands.
+- All `settings.*` dictionary keys came from Phase 0 — `dictionary.ts`
+  untouched.
+- Tests: `data-actions.test.tsx` (confirm gates both destructive
+  fetches), plus the Phase-A `csv-dialog.test.tsx` /
+  `transactions-view.test.tsx` added alongside. No `prefs-context` mock
+  needed in `vitest.setup.ts` — no standalone component test renders a
+  `usePrefs` consumer.
+
+## Done: transactions route — filter UX pass (2026-08-31, uncommitted)
+
+User feedback on the `/dashboard/transactions` page: the always-open
+4-column filter grid buried the table, the native date inputs overflowed
+their cells and collided with the quantity control, and the "Amount paid"
+`type="number"` input wouldn't accept keystrokes.
+
+- `components/transactions/transaction-filters.tsx` reworked into a
+  **table-first collapsed bar**: one `[ Filter (n) ]` toggle row that also
+  shows each active filter as a removable chip, a `Clear` link, and the
+  right-aligned result count — the control set only renders when expanded.
+  Same behaviour on every viewport now (was desktop-inline / mobile-only
+  collapse). Expanded, the controls are a compact `flex-wrap` row with
+  small `tt-label` captions instead of the big headings.
+- Amount / Quantity fields switched from `type="number"` to
+  `type="text"` + `inputMode="decimal"` + a `sanitizeDecimal` guard
+  (digits + one dot). The `$` sits in an absolute prefix. Fixes the
+  no-input bug and removes the spinner / scroll-wheel foot-guns.
+- Date inputs got explicit `w-35 min-w-0` so they can't overflow and
+  overlap the next control.
+- `transactions-view.tsx`: passes `resultCount` into the bar (dropped the
+  separate count line), page `<h1>` bumped 15→17px.
+- `transactions-view.test.tsx` updated to open the filter panel before
+  asserting on the controls.
+
+## Done: Phase A — transaction panel + full route + CSV (2026-08-31, uncommitted)
+
+Fifth phase of `context/design-specs/dashboard-expansion-plan.md` (§4,
+§4b, §4.5, §7, §11), after Phase 0. Reworks the dashboard transaction
+panel, adds the full `/dashboard/transactions` route, and wires CSV
+import/export. No schema change. All four checks green (`tsc --noEmit`,
+`eslint`, `vitest run` 337, `next build`).
+
+- **Compact overflow list (A1).** `transaction-history.tsx` desktop table
+  container dropped from `max-h-80` to `max-h-68` (~5 body rows + sticky
+  header before scroll); the mobile card list is now its own
+  `max-h-115 overflow-auto` column (~3 cards). Mobile card polish:
+  larger buy/sell chip (`h-7 w-7` / `h-4 w-4` icon), 44px min touch row,
+  more padding, 2×2 figure grid.
+- **Row click → inline expand (A2).** New shared
+  `components/transactions/transaction-detail.tsx` (`TransactionDetail`)
+  renders full date, per-unit price, spot-on-date, notes, and the
+  buy/sell/KHR P&L breakdown. Desktop `Row` and mobile `TransactionCard`
+  are `role="button"` + `aria-expanded` + Enter/Space, one row open at a
+  time via component-local `useState<string | null>`. The `⋯` actions
+  cell and its wrapper `stopPropagation`. New pure helper
+  `spotPerDamlungOnDate(points, dateKey)` in `lib/calc/priceHistory.ts`
+  (+ 3 tests): newest chart point at/before end-of-day, `null` when the
+  history doesn't reach back that far.
+- **Clickable section titles (A3).** The Transaction History panel title
+  is a `<Link>` to `/dashboard/transactions` ("Transaction History →")
+  with a sibling "View all →". (The Price History panel title link
+  landed in Phase D.)
+- **CSV export (A4).** `lib/csv/serializeTransactionsCsv.ts` (+ 6 tests):
+  `type,quantity,unit,total_paid,currency,date,notes`,
+  `total_paid = pricePerUnit × quantity` rounded to 2 dp, RFC-4180 field
+  escaping, `\r\n` terminators. Client-only `Blob` download,
+  `goldkh-transactions-YYYY-MM-DD.csv`. No endpoint.
+- **Bulk insert route (A5).** `app/api/transactions/bulk/route.ts`
+  (`POST`, + 7 route tests) — `withAuthAndRateLimit` + `assertSameOrigin`,
+  `{ transactions: NewTransactionInput[] }`, `MAX_BULK_ROWS = 200`
+  (`lib/constants/csv.ts`, shared with the dialog), one all-or-nothing
+  multi-row INSERT via new `createManyTransactionsForUser` in
+  `lib/db/queries/transactions.ts`. Over-cap → `400 TOO_MANY_ROWS`;
+  per-row schema failure → `400 INVALID_INPUT` with an `issues`
+  `{ index, message }[]` list alongside the standard `error` object
+  (documented deviation from the strict two-shape envelope, per §7).
+- **CSV import dialog (A6).** `components/dashboard/csv-dialog.tsx`
+  (`"use client"`) — Export / Import segmented modes.
+  `lib/csv/parseTransactionsCsv.ts` (+ 11 tests): hand-rolled RFC-4180-ish
+  tokenizer (quoted fields, doubled quotes, embedded commas/newlines,
+  `\r\n`), case/order-insensitive header, unknown columns ignored,
+  `pricePerUnit` derived `total_paid ÷ quantity` (4 dp), each row run
+  through the existing `transactionInputSchema`. Preview table: per-row
+  Valid/Invalid badge + first error, non-blocking Duplicate badge
+  (exact match on every ledger field against the loaded rows). Confirm →
+  one POST to `/api/transactions/bulk`; on success the surrounding page
+  reconciles via `router.refresh()` in a `useTransition`. Mounted in the
+  dashboard panel header and the `/dashboard/transactions` header.
+- **Full transactions route (A7).** `app/dashboard/transactions/page.tsx`
+  filled (server — same three reads as the dashboard page).
+  `components/transactions/transactions-view.tsx` (`"use client"`): all
+  rows, own scroll, same click-to-expand + `⋯` edit/delete (reuses the
+  exported `RowActions` / `AllRowsContext` from `transaction-history.tsx`,
+  plain `router.refresh()` — no optimistic list on this page), sortable
+  Date / P&L column headers, CSV button, back link.
+  `components/transactions/transaction-filters.tsx`: amount ±10% / date
+  range / quantity+unit / direction, AND-combined, inline on desktop and
+  collapsed behind `Filter (n)` on mobile. Pure
+  `lib/calc/filterTransactions.ts` (+ 9 tests) does the filter + sort
+  (`(rows, criteria, price) => rows`); state is component-local, not
+  persisted, not in the URL for v1.
+- `dashboard-content.tsx`: passes `priceHistory={chartPoints}` and
+  `onCsvImported` to `TransactionHistory` (the one-line `displayUnit`
+  seed change is Phase B's).
+- All `filters.*` / `csv.*` dictionary keys came from Phase 0 —
+  `dictionary.ts` untouched. Two affordances with no key ("View all →",
+  "Transaction deleted.") use inline English with a comment, locale being
+  en-only.
+
+## Done: Phase D — DetailedChart + `/dashboard/price` (2026-08-31, uncommitted)
+
+Second phase of `context/design-specs/dashboard-expansion-plan.md` (§D,
+§11), after Phase 0. No new charting dependency — Recharts `<Brush>` plus
+a component-state y-domain.
+
+- **`components/charts/detailed-chart.tsx`** (new, `"use client"`, +
+  `detailed-chart.test.tsx`, 16 cases) — one reusable interactive
+  time-series chart. Props: `series: {key,label,color,data:{t,value}[]}[]`,
+  `compact?`, `onExpand?`, `referenceLines?`, plus optional tick/value
+  formatters and `emptyLabel`. `mergeSeries` collapses N sparse series
+  onto one timestamp-keyed row array so a single `<LineChart>` + `<Brush>`
+  covers all of them. `computeSeriesYAxis` sizes the y-domain from the
+  visible (brushed) slice's series values **alone** — reference lines are
+  excluded (issue #4 carry-over); `placeReferenceLine` clamps an off-scale
+  line to the nearer edge with an `↑`/`↓` label. `presetRange` /
+  `presetCoversAll` compute the `1W/1M/3M/All` index windows off
+  `Date.now()` and clamp to available history (a preset that already spans
+  the dataset is disabled). D1 compact mode = Brush + `Expand ↗` control +
+  plot-area click target (a Brush drag is excluded from the drill-in
+  click). D2 full mode = range presets + crosshair value tooltip + taller
+  height (360 vs 220).
+- **`app/dashboard/price/page.tsx`** (D3) — filled the Phase 0 stub.
+  Server component; mirrors `app/dashboard/page.tsx`'s data load
+  (`getPrice()` then `listRecentPriceSnapshots()`, plus
+  `listTransactionsForUser` for `computeHoldings`). Renders `DetailedChart`
+  full-mode with the current per-damlung price header, the live/stale dot
+  and "as of" time (`priceFreshness`, `formatClockTime`), the market-closed
+  treatment (`isMarketOpen`), the average-cost `ReferenceLine` when the
+  user holds a position, and a back link to `/dashboard`.
+- **`components/dashboard/price-history-chart.tsx`** (D4) — refactored to
+  render `DetailedChart` in `compact` mode with
+  `onExpand={() => router.push("/dashboard/price")}`. The section title is
+  now a `<Link href="/dashboard/price">` ("Price History →"). The dashed
+  average-cost `ReferenceLine` is passed through to `DetailedChart`; its
+  caption and the market-closed badge/note stay local, so behaviour is
+  preserved. `computeYAxis`/`placeBreakEven` (previously exported here)
+  were removed — the generalised `computeSeriesYAxis`/`placeReferenceLine`
+  in `detailed-chart.tsx` replace them; `price-history-chart.test.tsx`
+  rewritten to cover the section-title link, the drill-in, and the
+  existing market-closed / break-even-caption behaviour.
+- **`lib/i18n/dictionary.ts`** — added `chart.openDetailed` (plot
+  drill-in aria-label), `chart.showingRange` / `chart.zoomHint` /
+  `chart.historyShorterThanRange`, and reworded `chart.reset` →
+  "Reset zoom"; the rest of the `chart.*` keys came from Phase 0.
+- **Chart-UX follow-up pass** (user feedback: presets/brush read as
+  unintuitive). Full mode now: presets as a segmented control (Vault
+  `SegmentedControl` shape) with a `Reset zoom` button that appears only
+  while zoomed; a `Showing <from> – <to> · <hint>` caption above the plot;
+  a taller (30px) Brush strip. A preset whose window is longer than the
+  stored history renders `aria-disabled` and, on click, fires
+  `notify.info("Your price history is shorter than that range …")` instead
+  of silently acting like "All". New `notify.info` added to `lib/ui/toast.ts`
+  (neutral sonner `toast(...)`); `vitest.setup.ts`'s `sonner` mock made
+  callable (`Object.assign(vi.fn(), { success, error })`).
+- **`richControls` prop** — decouples "has the full toolset" (presets,
+  `Showing …` caption, hover tooltip, 28px brush) from `compact` (layout
+  height + drill-in). Defaults to `!compact`. `components/insights/
+  value-over-time.tsx` (Phase C) now passes `compact richControls` so the
+  portfolio chart gets the same controls as `/dashboard/price` while
+  staying inline (280px, no `onExpand`). `chart.historyShorterThanRange`
+  copy neutralised ("Your history doesn't go back that far yet …") so it
+  fits both the spot and portfolio charts.
+- Verified green: `tsc --noEmit`, `eslint`, `vitest run` (335/335 —
+  Phase C's `lib/calc/*` + `components/insights/*` landed alongside),
+  `next build` (`/dashboard/price` listed as `ƒ`).
+- Docs: `ui-context.md` Layout Patterns gains a "Detailed price chart
+  (`DetailedChart` + `/dashboard/price`)" entry and rewrites the dashboard
+  "Price history chart" entry; `architecture.md` Storage Model documents
+  the "charts read `price_snapshots` at request time, no cron" choice.
+
+## Done: Phase C — Insights route (2026-08-31, uncommitted)
+
+Fourth phase of `context/design-specs/dashboard-expansion-plan.md` (§5,
+§11), after Phase D. New `/dashboard/insights` route answering "is my
+position any good": readouts, portfolio value over time, per-buy quality,
+and a what-if calculator. Imports `DetailedChart` from Phase D read-only.
+No schema change — everything is derived at read time from `transactions`
+and `price_snapshots` (§8).
+
+- **`lib/calc/portfolioSeries.ts`** (new, + `.test.ts`, 8 cases) — pure
+  `buildPortfolioSeries(transactions, snapshots)`. For each snapshot
+  instant `t`, replays every transaction dated `<= t`, takes
+  `computeHoldings`, and values it two ways: `costBasisUsd = totalTroyOz ×
+  averageCostPerTroyOz`, `marketValueUsd = totalTroyOz × snapshotPrice`.
+  Snapshots are `{ t: number, pricePerTroyOz: string }` (epoch-ms, crosses
+  the server→client boundary cleanly). KHR rows excluded via
+  `computeHoldings`.
+- **`lib/calc/buyQuality.ts`** (new, + `.test.ts`, 8 cases) — pure
+  `computeBuyQuality(transactions, snapshots)`. One row per USD buy:
+  `paidUsd`, `pricePerUnitUsd`, spot for that row's unit on the buy date
+  (nearest snapshot at/before it, else `null`), and `vsSpotPercent =
+  (spot − price) / price × 100` (positive = bought below spot; same
+  denominator convention as `computeGainLoss`). Sells and KHR buys
+  dropped; input order preserved (the table sorts).
+- **`lib/calc/insights.ts`** (new, + `.test.ts`, 4 cases) — pure
+  `computeInsights(transactions)` for the two readout aggregates not
+  already covered by `computeHoldings`/`computeGainLoss`/`computeRealized`:
+  `totalInvestedUsd` (Σ over USD buys, cumulative), `buyCount`, and
+  `largestBuy` (biggest USD buy by amount, or `null`).
+- **`lib/calc/whatIf.ts`** (new, + `.test.ts`, 6 cases) — pure
+  `computeWhatIf(currentHoldings, { quantity, unit, totalPriceUsd })`.
+  Folds a hypothetical buy into the weighted-average position: new blended
+  average cost (per troy oz + per damlung), new totals (chi + damlung),
+  and break-even spot per damlung (equals the blended average cost with no
+  fees modelled). Non-positive hypothetical quantity → all-zero result for
+  the calculator's empty state.
+- **`app/dashboard/insights/page.tsx`** — filled the Phase 0 stub. Server
+  component; same data load as the dashboard (`getPrice()` then
+  `listRecentPriceSnapshots()`, plus `listTransactionsForUser`). Maps rows
+  to the calc-layer shapes and passes them to `InsightsContent`.
+- **`components/insights/*`** (new) — `insights-content.tsx` (`"use
+  client"` shell, runs each pure calc once via `useMemo`, four
+  `Panel size="lg"` sections in the 32px rhythm with
+  `.tt-heading .tt-bracket` headers); `readouts.tsx` (3–4 plain-language
+  lines, each rendered only when it has something to say);
+  `value-over-time.tsx` (wraps `DetailedChart` inline, `compact`, no
+  `onExpand`/route — two series, market value + cost basis; `<2` points
+  falls through to `DetailedChart`'s own empty state); `buy-history.tsx`
+  (sortable table, by date or `vs spot`, nulls last; `+/-` tone on the
+  vs-spot column); `what-if.tsx` (`"use client"`, stateless inputs →
+  `computeWhatIf`, empty hint until quantity and price are both entered).
+- All `insights.*` dictionary keys came from Phase 0 — `dictionary.ts`
+  untouched this phase.
+- Verified green: `tsc --noEmit`, `eslint`, `vitest run` (304/304),
+  `next build` (`/dashboard/insights` listed as `ƒ`).
+- Docs: `project-overview.md` In Scope gains Insights; `ui-context.md`
+  Layout Patterns gains an "Insights route" entry; `architecture.md`
+  Storage Model note on read-time snapshot reconstruction already covers
+  the portfolio chart (added in Phase D). The `price_snapshots` density
+  caveat is already logged under Open Questions.
+
+## Done: Phase 0 — dashboard-expansion shared shell (2026-08-31, uncommitted)
+
+First phase of `context/design-specs/dashboard-expansion-plan.md`. Shared
+shell only — no feature logic. Later phases (D, A, B, C) build on this and
+must not touch `sidebar.tsx`, `dictionary.ts`, or `components/icons/*`.
+
+- **Bespoke nav icon set** — `components/icons/` (`dashboard-icon`,
+  `transactions-icon`, `price-icon`, `insights-icon`, `settings-icon` +
+  barrel `index.ts`). Each a 24×24 stroke-`currentColor` SVG,
+  `strokeWidth={2}`, square caps, miter joins, `{ className? }` prop. The
+  Dashboard icon's one filled square is the sole `fill="currentColor"`
+  exception. Lucide fallbacks documented in the plan §3.1.
+- **Sidebar** — `NAV_ITEMS` gains Transactions / Price / Insights with the
+  custom icons; Settings is a footer gear `<Link>` next to `ThemeToggle`.
+  Active-match is now exact (`pathname === href`) so child routes don't
+  light up Dashboard; `aria-current="page"` added. Dropped the unused
+  `LayoutDashboard`/`X`-only lucide comment; `X` still used for close.
+- **Dictionary** — added every namespace later phases need so they never
+  edit `dictionary.ts`: `nav.*` (transactions/price/insights/settings),
+  `filters.*`, `csv.*`, `insights.*`, `settings.*`, and `chart.*`
+  additions (DetailedChart + `/dashboard/price`). English copy only;
+  locale stays `"en"`.
+- **Stub routes** — `app/dashboard/{transactions,price,insights,settings}/page.tsx`,
+  minimal server components rendering a `tt-bracket` title + one `lg`
+  Panel with "coming soon". They inherit `app/dashboard/layout.tsx`
+  (auth gate + `DashboardShell`).
+- Verified green: `tsc --noEmit`, `eslint`, `vitest run` (255/255),
+  `next build` (all four dashboard routes listed).
+
+## Done: codebase-review cleanup pass (2026-08-31, uncommitted)
+
+Full-repo review (dead code, comment rot, consolidation, bugs). Safe
+cleanup applied; two behaviour-changing consolidations deferred pending
+sign-off.
+
+- **Khmer removal finished.** The 2026-08-29 km removal had left live
+  residue: `Noto_Sans_Khmer` was still loaded on every page in
+  `app/layout.tsx` (+ `--font-khmer` var), three `html[lang="km"]` rule
+  blocks in `globals.css`, a `language:{en,km}` dictionary entry, a
+  self-admitted no-op localStorage-read effect + unused `setLocale` in
+  `locale-context.tsx`, and a stale `LanguageToggle` comment in
+  `segmented-control.tsx`. All removed. `LocaleProvider`/`useLocale`/`t`
+  kept (single-locale seam, per this session's decision).
+- **Landing page no longer advertises a removed feature.** The feature
+  grid's 4th card ("English and ខ្មែរ — switch the whole interface…")
+  was false since the km removal. Dropped to a 3-card layout
+  (`feature-grid.tsx`: lead avg-cost cell wide over live-price + units;
+  `bilingualTitle`/`bilingualBody` + the now-unused `IconGlyph` removed).
+- **Comment rot.** Stripped dangling pointers to deleted docs
+  (`context/design-specs/03-dashboard-animation-and-input-feedback.md`,
+  `current-issues-plan.md`, `context/product-strategy.md`) from
+  `animated-pnl-card.tsx`, `realized-panel.tsx`, `lib/ui/toast.ts`,
+  `lib/ui/use-count-up.ts`, `lib/validation/transaction.ts`,
+  `lib/calc/realized.ts`. Fixed `AGENTS.md`'s
+  `architecture-context.md` → `architecture.md`. Corrected
+  `theme-context.tsx`'s "Clear on unmount" comment (runs on every theme
+  change too).
+- **Dead variant removed.** `InlineBanner`'s `success` branch (unused
+  since Phase 5 made it error-only) — component simplified to error-only,
+  `variant` prop dropped, one call site updated.
+- Nits: merged a stray `lucide-react` import in `transaction-history.tsx`.
+- Verified: `tsc --noEmit`, `eslint`, `vitest run` (256/256) all clean.
+
+### Follow-up: consolidation batch (2026-08-31, uncommitted)
+
+The four items flagged above, applied and verified:
+
+- **One toast system.** `RefreshButton` no longer hand-rolls a centered
+  floating toast — every outcome now goes through the shared Sonner
+  `notify` (`notify.error` for cooldown / market-closed / failure,
+  `notify.success` for a completed refresh). Removed the local `toast`
+  state + its dismiss effect + the rendered node, and the
+  `@keyframes toast-float-up` / `.animate-toast-float-up` CSS in
+  `globals.css`. `refresh-button.test.tsx` rewritten to assert against
+  the `notify` spies (matches `transaction-dialog.test.tsx`'s pattern).
+- **One error channel for mutations.** `dashboard-content.tsx` delete
+  failures now `notify.error(...)` instead of feeding an in-page banner;
+  add/edit failures were already toasting. Deleted: the `error` state +
+  its 5s clear effect in `dashboard-content.tsx`, the `error` prop
+  through `TransactionHistory`, `AddSettledResult`'s now-unused `message`
+  field, and `components/dashboard/inline-banner.tsx` entirely (its
+  `success` variant was already dead). `transaction-history.test.tsx`
+  lost its "renders the error banner" case; two other tests dropped the
+  `error={null}` prop; `transaction-dialog.test.tsx` +
+  `use-optimistic-transactions.test.ts` updated for the slimmer
+  `AddSettledResult`.
+- **`csp-report` map growth bounded.** `isRateLimitedForCspReport` now
+  sweeps entries whose timestamps have all expired once the map passes
+  512 keys, and writes the filtered list back on the rate-limited branch
+  too.
+- **`PriceHistoryChart` uses `<Panel size="lg">`** for both its
+  empty-state and chart containers instead of a hand-rolled
+  `rounded-xl border … p-4` div — matches Panel's own doc comment
+  ("`lg` panels (hero, chart)") and squares the corners in line with the
+  rest of the dashboard.
+
+Skipped (per this session): the sell-before-buy negative-position guard
+in `computeHoldings` / `computeRealized`.
+
+Verified: `tsc --noEmit`, `eslint`, `vitest run` (255/255) all clean.
+
 ## Done: timezone-pinned display clock — React #418 fix (2026-08-30, uncommitted)
 
 - Hydration mismatch (React error #418) on the dashboard. Root cause:
@@ -954,6 +1433,16 @@ verifiable, per `ai-workflow-rules.md`'s "When to Split Work"):
   efficiently, and inventing a number would violate
   ai-workflow-rules.md's "don't invent product behavior" rule.
   The hero card renders without it. Resolve if this is wanted.
+- **`price_snapshots` density vs. the expansion-plan charts.** The
+  detailed price chart (Phase D) and the Insights portfolio chart
+  (Phase C) reconstruct history from stored `price_snapshots` at read
+  time — no cron, no backfill (see `architecture.md` Storage Model and
+  `dashboard-expansion-plan.md` §2/§8). Snapshots cluster around when
+  users load the dashboard and have gaps everywhere else, so a sparse
+  history makes those charts thin. If that becomes a real problem, the
+  follow-up is a `portfolio_snapshots` table written on each dashboard
+  load (still no cron) — out of scope for Phases C/D. Revisit only if
+  users ask for denser history.
 - **Notes-field content sanitization/injection hardening** — flagged
   by the user as future work, not built. `lib/validation/transaction.ts`'s
   `notes` field is length-capped (500 chars) only, no content
@@ -2267,3 +2756,12 @@ verifiable, per `ai-workflow-rules.md`'s "When to Split Work"):
   tighter stagger steps (60ms) so entries overlap into one flow
   instead of discrete pops. `filter` reset added to the reduced-
   motion blocks.
+
+- **2026-08-31:** sidebar footer settings link moved onto the
+  user/profile row. Previously the settings gear sat beside the
+  `ThemeToggle`; now `ThemeToggle` is on its own line and the gear is
+  right-aligned opposite the `UserButton` (`justify-between` row). Swapped
+  the bespoke boxy `SettingsIcon` for Lucide's `Settings` cog for
+  recognizability; deleted `components/icons/settings-icon.tsx` and its
+  `index.ts` export (only consumer was the sidebar). `context/ui-context.md`
+  Settings section updated. Typecheck clean.

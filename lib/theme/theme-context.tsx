@@ -58,8 +58,9 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     } else {
       root.setAttribute("data-theme", theme);
     }
-    // Clear on unmount so a non-default theme doesn't leak onto routes
-    // that render outside this provider (e.g. the marketing pages).
+    // Clear when the theme changes or the provider unmounts, so a
+    // non-default theme doesn't leak onto routes that render outside this
+    // provider (e.g. the marketing pages).
     return () => root.removeAttribute("data-theme");
   }, [theme]);
 

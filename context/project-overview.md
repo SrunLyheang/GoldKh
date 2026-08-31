@@ -96,10 +96,25 @@ now hold 7 chi, still at a $300 average cost.
 
 - Clerk-authenticated multi-user accounts.
 - Buy and sell transaction recording with full history.
+- Full transactions route (`/dashboard/transactions`): every row, with
+  amount / date / quantity / direction filtering and Date / P&L sort.
+- Row-level detail: a dashboard/route transaction row expands in place to
+  show full date, per-unit price, spot on that date, notes, and the P&L
+  breakdown.
+- CSV import and export of transactions (dashboard panel and the full
+  route), bulk insert capped at 200 rows per import.
 - Weighted average cost basis.
 - Realized gain/loss on sold gold, weighted average basis.
 - Cached, multi-provider gold price fetching.
 - Display in USD and in Cambodian gold units (chi, damlung).
+- Insights view (`/dashboard/insights`): plain-language readouts,
+  portfolio value over time, per-buy quality vs spot, and a what-if
+  calculator — all derived at read time from the ledger and stored
+  price snapshots.
+- Settings (`/dashboard/settings`): Clerk account management, display
+  preferences (default unit / currency / theme, browser-local), and
+  destructive data actions (export, delete all transactions, delete
+  account).
 
 ### Out of Scope
 

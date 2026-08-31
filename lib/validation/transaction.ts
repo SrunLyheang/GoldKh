@@ -9,8 +9,7 @@ const MIN_QUANTITY_DAMLUNG = MIN_QUANTITY_CHI / 10;
 // User-facing validation copy. Kept as literals here (not routed through
 // the i18n dictionary) because the schema runs on the server too, where
 // there is no locale context — matches the pre-existing pattern of inline
-// messages on this schema. Only English ships right now; see
-// context/design-specs/03-dashboard-animation-and-input-feedback.md.
+// messages on this schema. Only English ships right now.
 export const transactionMessages = {
   notANumber: "Enter a number, like 2.5.",
   tooManyDecimals: "Use at most 4 decimal places.",

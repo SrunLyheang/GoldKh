@@ -1,18 +1,37 @@
 "use client";
 
 import { UserButton } from "@clerk/nextjs";
-import { LayoutDashboard, X } from "lucide-react";
+import { Settings, X } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import {
+  DashboardIcon,
+  InsightsIcon,
+  PriceIcon,
+  TransactionsIcon,
+} from "@/components/icons";
 import { useLocale } from "@/lib/i18n/locale-context";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "./theme-toggle";
 
-// "History" was removed — it pointed at "/dashboard#history", an anchor
-// on this same page rather than a real separate route. Add a real nav
-// item back here if/when history becomes its own page.
-const NAV_ITEMS = [{ labelKey: "dashboard" as const, href: "/dashboard", icon: LayoutDashboard }];
+// Nav destinations rendered with the bespoke Vault icon set
+// (components/icons/). Settings is not here — it stays a separate
+// footer <Link> on the user/profile row.
+const NAV_ITEMS = [
+  { labelKey: "dashboard" as const, href: "/dashboard", icon: DashboardIcon },
+  {
+    labelKey: "transactions" as const,
+    href: "/dashboard/transactions",
+    icon: TransactionsIcon,
+  },
+  { labelKey: "price" as const, href: "/dashboard/price", icon: PriceIcon },
+  {
+    labelKey: "insights" as const,
+    href: "/dashboard/insights",
+    icon: InsightsIcon,
+  },
+];
 
 // Below `md`, this renders as a slide-in overlay drawer controlled by
 // `open`/`onClose` (see dashboard-shell.tsx for the hamburger trigger).
@@ -27,6 +46,7 @@ export function Sidebar({
 }) {
   const pathname = usePathname();
   const { t } = useLocale();
+  const settingsActive = pathname === "/dashboard/settings";
 
   return (
     <>
@@ -66,13 +86,16 @@ export function Sidebar({
         </div>
         <nav className="flex flex-1 flex-col gap-1.5 px-3.5 pt-1">
           {NAV_ITEMS.map(({ labelKey, href, icon: Icon }) => {
-            const active = pathname === href.split("#")[0];
+            // Exact match, not startsWith: child routes like
+            // /dashboard/transactions must not also light up Dashboard.
+            const active = pathname === href;
             const label = t.nav[labelKey];
             return (
               <Link
                 key={labelKey}
                 href={href}
                 onClick={onClose}
+                aria-current={active ? "page" : undefined}
                 className={cn(
                   "relative flex items-center gap-2.5 rounded-md px-3 py-2.5 text-[13.5px] font-medium transition-all duration-150",
                   active
@@ -94,10 +117,24 @@ export function Sidebar({
         </nav>
         <div className="flex flex-col gap-4 border-t border-border px-4 py-5">
           <ThemeToggle className="self-start" />
-          <UserButton
-            appearance={{ elements: { userButtonBox: "flex-row-reverse" } }}
-            showName
-          />
+          <div className="flex items-center justify-between gap-2">
+            <UserButton
+              appearance={{ elements: { userButtonBox: "flex-row-reverse" } }}
+              showName
+            />
+            <Link
+              href="/dashboard/settings"
+              onClick={onClose}
+              aria-label={t.nav.settings}
+              aria-current={settingsActive ? "page" : undefined}
+              className={cn(
+                "inline-flex shrink-0 items-center justify-center rounded-md border border-border bg-accent/60 p-1.5 transition-colors hover:text-foreground",
+                settingsActive ? "text-primary" : "text-muted-foreground"
+              )}
+            >
+              <Settings className="h-5 w-5" />
+            </Link>
+          </div>
         </div>
       </aside>
     </>

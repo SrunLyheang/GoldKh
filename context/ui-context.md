@@ -225,18 +225,69 @@ sell rows and non-USD rows — see `lib/calc/transactionRow.ts`),
 delete. Delete is a trash icon that swaps in-place to
 Delete/Cancel buttons on click — no modal.
 
-**Price history chart** — Full width, below the transaction
-history. A 220px Recharts line chart of `price_snapshots` over
-time, converted to price/damlung to match the hero card's unit.
-Gold (`--primary`) line, muted dashed `CartesianGrid`, no axis
-lines (`axisLine={false}`), muted-foreground tick labels. When
-the user holds a position, a dashed `--muted-foreground`
-`ReferenceLine` marks their average cost — same "dashed
-break-even line" idea as the disclaimer's dealer-premium note,
-carried over from an earlier version of this app. Renders an
-empty-state message instead of a chart when fewer than 2 points
-exist yet, since `price_snapshots` only gains rows as users load
-the dashboard (no backfill — see progress-tracker.md).
+**Detailed price chart (`DetailedChart` + `/dashboard/price`)** —
+`components/charts/detailed-chart.tsx` is one reusable interactive
+time-series chart (Recharts line + `<Brush>` for drag-to-range,
+with the y-domain recomputed in component state from the visible
+slice). No new charting dependency. It takes an array of
+`{ key, label, color, data:{t,value}[] }` series (one for spot
+price, two for the Insights portfolio chart) plus optional
+`referenceLines`. Two modes:
+
+- **`compact`** — reduced height (220px), Brush only, an
+  `Expand ↗` control plus a plot-area click target, both calling
+  `onExpand`. Used by the dashboard's `PriceHistoryChart`, which
+  passes `onExpand={() => router.push("/dashboard/price")}`.
+- **full** (default, the `/dashboard/price` route) — taller
+  (360px). `1W / 1M / 3M / All` presets as a segmented control
+  (the Vault `SegmentedControl` shape); a `Reset zoom` button
+  appears to its right only while zoomed. Above the plot, a
+  `Showing <from> – <to> · <drag hint>` caption. A crosshair +
+  value tooltip on hover, and a taller (30px) Brush strip. A
+  preset whose window is longer than the stored history reads
+  `aria-disabled` and, on click, fires an info toast
+  ("Your price history is shorter than that range …") rather than
+  silently behaving like "All" — there is no backfill. The route
+  adds a current-price header, the "as of" timestamp with the
+  live/stale dot, the market-closed treatment (`isMarketOpen`),
+  and the average-cost `ReferenceLine` when the user holds a
+  position. Back link to `/dashboard`.
+
+The y-domain is sized from the series values alone — reference
+lines are excluded so a fat-fingered average cost can't flatten
+the real line (carried over from issue #4); off-scale reference
+lines clamp to the nearer edge with an `↑`/`↓` label.
+
+**Price history chart (dashboard)** — Full width, below the
+transaction history. `PriceHistoryChart` now renders `DetailedChart`
+in `compact` mode; the section title is a `<Link>` to
+`/dashboard/price` ("Price History →"). Spot price converted to
+price/damlung to match the hero card's unit, gold (`--primary`)
+line. Keeps the dashed average-cost `ReferenceLine` (passed through
+to `DetailedChart`) and its caption, and the market-closed badge +
+note, local. Renders `DetailedChart`'s empty-state message when
+fewer than 2 points exist yet, since `price_snapshots` only gains
+rows as users load the dashboard (no backfill — see
+progress-tracker.md).
+
+**Insights route (`/dashboard/insights`)** — Four stacked
+`Panel size="lg"` sections in the 32px block rhythm, each with a
+`.tt-heading .tt-bracket` header. (1) *Readouts* — 3–4
+plain-language lines (average cost vs spot, total invested, net
+position, largest buy), each shown only when it has a value. (2)
+*Portfolio value over time* — the shared `DetailedChart` inline in
+`compact` mode with **no** `onExpand`/route (it's the user's
+position, not spot price); two series, market value and cost basis,
+reconstructed at each stored snapshot. (3) *Buy history* — a
+sortable table (by date or `vs spot`, rows with no old-enough
+snapshot show "—" and sort last), the vs-spot column toned
+gain/loss with a `+/-` sign cell. (4) *What-if calculator* —
+stateless quantity + unit + total-price inputs; shows the blended
+average cost, new totals, and break-even spot once quantity and
+price are both entered, an empty hint before that. All figures are
+derived at read time from `transactions` + `price_snapshots` (pure
+helpers in `lib/calc/portfolioSeries.ts`, `buyQuality.ts`,
+`insights.ts`, `whatIf.ts`).
 
 **Add transaction dialog** — Single-column, generously spaced
 (`gap-6` between fields, not a cramped 2-column grid). Buy/Sell
@@ -266,6 +317,57 @@ list rows. Widened from the original 26px/16–18px/10px figures in a
 is an empty dashboard, and it must tell them what to do. The empty
 dashboard now lists the three-step how-it-works flow above the CTA.
 
+**Transaction overflow panel** — The dashboard Transaction History
+panel is a compact overflow list: the desktop table scroll container
+is `max-h-68` (~5 body rows + sticky header) and the mobile card list
+is its own `max-h-115 overflow-auto` column (~3 cards). No filter UI
+on the dashboard — all filtering lives on `/dashboard/transactions`.
+
+**Row-expand ("zoom in")** — A transaction row (desktop) or card
+(mobile) is `role="button"` + `aria-expanded` + Enter/Space; clicking
+it toggles an in-place detail region (`TransactionDetail`, shared with
+the full route) showing full date, per-unit price, spot on that date,
+notes, and the P&L breakdown. One row open at a time. The `⋯` actions
+menu and any link inside a row `stopPropagation`.
+
+**Clickable section titles** — The Transaction History and Price
+History panel titles are `<Link>`s ("… →") into `/dashboard/transactions`
+and `/dashboard/price`. Only the title (and, for the price panel, the
+plot area) — not the whole panel, which holds its own buttons.
+
+**Full transactions route (`/dashboard/transactions`)** — Every row,
+its own scroll, Date / P&L column-header sort, the same row-expand, and a
+CSV Import/Export button. Filtering (amount ±10% / date range /
+quantity+unit / direction, AND-combined, client-side) lives in a
+**table-first collapsed bar**: a `Filter (n)` toggle, a removable chip
+per active filter, a `Clear` link, and the right-aligned result count;
+the control set only renders when expanded (same on every viewport).
+Amount / quantity are `type="text"` + `inputMode="decimal"` with a
+digits-and-one-dot guard — never a native number spinner. State is
+component-local — not persisted, not in the URL for v1.
+
+**CSV import/export** — One `CsvDialog` (Export / Import modes),
+rendered in the dashboard panel header and the full-route header.
+Export is client-only (`Blob` download). Import previews every parsed
+row with a Valid/Invalid badge + first error and a non-blocking
+Duplicate badge, then POSTs the valid rows to `/api/transactions/bulk`
+in one request.
+
+**Settings (`/dashboard/settings`)** — Server shell, three client
+islands: **Account** (Clerk `<UserProfile routing="hash" />` in a
+`Panel`), **Preferences** (default unit / currency `SegmentedControl`s +
+`ThemeToggle`, saved immediately to `goldkh-prefs` via `PrefsProvider` —
+no save button), **Data** (export, delete all transactions, delete
+account — the two destructive rows gate behind typing `DELETE`). Reached
+from the sidebar footer gear on the user/profile row (Lucide `Settings`,
+right-aligned opposite the `UserButton`; the `ThemeToggle` sits on its
+own line above).
+
+**PrefsProvider** — `lib/prefs/prefs-context.tsx`, provided in
+`DashboardShell` inside `ThemeProvider`. Same hydration-safe pattern as
+`ThemeProvider` / `LocaleProvider`. `DashboardContent` seeds its
+`displayUnit` from it.
+
 ## Stale Price
 
 Resolved. When `isSnapshotStale()` (`lib/price/getPrice.ts`) is
@@ -279,9 +381,11 @@ gain/loss meaning.
 
 These need a visual treatment before the dashboard is complete:
 
-- **Long transaction lists.** The scroll container is defined,
-  but not what a user with 200 rows sees — pagination, or
-  scroll alone.
+- **Very long transaction lists on the full route.** The dashboard
+  panel now has an explicit overflow budget (~5 rows, scroll for the
+  rest), but `/dashboard/transactions` renders every row with scroll
+  alone — pagination or virtualization for a user with hundreds of
+  rows is still undesigned.
 
 ## Icons
 

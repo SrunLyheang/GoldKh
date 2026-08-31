@@ -21,3 +21,21 @@ export function buildDamlungPriceSeries(
     pricePerDamlung: Number(priceFromTroyOz(snap.pricePerTroyOz, "damlung")),
   }));
 }
+
+// The spot price per damlung as of a `YYYY-MM-DD` transaction date: the
+// newest chart point captured at or before the end of that day. `null`
+// when no snapshot is that old (the history doesn't reach back far
+// enough), which the row-detail view renders as "—". `points` is
+// oldest-first, matching buildDamlungPriceSeries' output.
+export function spotPerDamlungOnDate(
+  points: ChartPoint[],
+  dateKey: string
+): number | null {
+  const cutoff = `${dateKey}T23:59:59.999Z`;
+  let match: number | null = null;
+  for (const point of points) {
+    if (point.date <= cutoff) match = point.pricePerDamlung;
+    else break;
+  }
+  return match;
+}

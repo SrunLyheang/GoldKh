@@ -7,10 +7,10 @@ import { useReveal, useInView } from "./use-reveal";
 
 const SERIF = "font-[family-name:var(--font-newsreader)]";
 
-// Asymmetric hairline bento: one tall cell (weighted-average cost, the
-// idea the whole product turns on), two stacked cells, and one wide row.
-// Single 1px ruled block — gap-px over a bg-border fill, same as the
-// dashboard stat grid — so it reads as one sheet, not four cards.
+// Hairline bento: the lead cell (weighted-average cost, the idea the
+// whole product turns on) sits wide over two supporting cells. Single 1px
+// ruled block — gap-px over a bg-border fill, same as the dashboard stat
+// grid — so it reads as one sheet, not three cards.
 export function FeatureGrid() {
   const { t } = useLocale();
   const f = t.welcome.features;
@@ -43,18 +43,22 @@ export function FeatureGrid() {
         ref={gridRef}
         className={`landing-stagger ${
           gridVisible ? "is-visible" : ""
-        } mt-12 grid gap-px overflow-hidden rounded-xl border border-border bg-border sm:grid-cols-3 sm:grid-rows-2`}
+        } mt-12 grid gap-px overflow-hidden rounded-xl border border-border bg-border sm:grid-cols-2`}
       >
-        <article className="bg-card p-7 sm:row-span-2 sm:p-9">
-          <IconChip>
-            <IconScale />
-          </IconChip>
-          <h3 className={`${SERIF} mt-5 text-[19px] text-foreground`}>
-            {f.avgCostTitle}
-          </h3>
-          <p className="mt-2.5 max-w-[34ch] text-[13.5px] leading-[1.7] text-muted-foreground">
-            {f.avgCostBody}
-          </p>
+        <article className="bg-card p-7 sm:col-span-2 sm:p-9">
+          <div className="flex items-start gap-4">
+            <IconChip>
+              <IconScale />
+            </IconChip>
+            <div>
+              <h3 className={`${SERIF} text-[19px] text-foreground`}>
+                {f.avgCostTitle}
+              </h3>
+              <p className="mt-2 max-w-[58ch] text-[13.5px] leading-[1.7] text-muted-foreground">
+                {f.avgCostBody}
+              </p>
+            </div>
+          </div>
         </article>
 
         <FeatureCell
@@ -67,22 +71,6 @@ export function FeatureGrid() {
           title={f.unitsTitle}
           body={f.unitsBody}
         />
-
-        <article className="bg-card p-7 sm:col-span-2 sm:p-9">
-          <div className="flex items-start gap-4">
-            <IconChip>
-              <IconGlyph />
-            </IconChip>
-            <div>
-              <h3 className={`${SERIF} text-[19px] text-foreground`}>
-                {f.bilingualTitle}
-              </h3>
-              <p className="mt-2 max-w-[58ch] text-[13.5px] leading-[1.7] text-muted-foreground">
-                {f.bilingualBody}
-              </p>
-            </div>
-          </div>
-        </article>
       </div>
     </section>
   );
@@ -150,15 +138,6 @@ function IconCoins() {
     <svg {...svgProps}>
       <ellipse cx="12" cy="6" rx="7" ry="3" />
       <path d="M5 6v6c0 1.66 3.13 3 7 3s7-1.34 7-3V6M5 12v6c0 1.66 3.13 3 7 3s7-1.34 7-3v-6" />
-    </svg>
-  );
-}
-
-function IconGlyph() {
-  return (
-    <svg {...svgProps}>
-      <path d="M4 6h9M8.5 6c0 4.5-1.8 7.6-4.5 9.5M6 10c0 2.7 2.3 5 5.5 5.7" />
-      <path d="M13.5 20 17.5 10 21.5 20M15 16.5h5" />
     </svg>
   );
 }

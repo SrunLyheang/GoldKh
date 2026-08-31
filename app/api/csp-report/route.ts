@@ -81,12 +81,25 @@ function isRateLimitedForCspReport(request: Request): boolean {
   }
 
   const now = Date.now();
+
+  // Opportunistic sweep: an IP that reported once and never again would
+  // otherwise sit in the map forever. Only runs once the map has grown,
+  // and the map is small, so this stays cheap.
+  if (recentCspEvents.size > 512) {
+    for (const [ip, times] of recentCspEvents) {
+      if (times.every((t) => now - t >= CSP_REPORT_WINDOW_MS)) {
+        recentCspEvents.delete(ip);
+      }
+    }
+  }
+
   const timestamps = recentCspEvents.get(key) ?? [];
   const recent = timestamps.filter(
     (timestamp) => now - timestamp < CSP_REPORT_WINDOW_MS,
   );
 
   if (recent.length >= CSP_REPORTS_PER_IP) {
+    recentCspEvents.set(key, recent);
     return true;
   }
 

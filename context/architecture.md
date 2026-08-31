@@ -42,6 +42,19 @@
   One row per captured price, storing the value, the provider
   that served it, and the capture timestamp. Shared across all
   users; not owned by anyone.
+- **Charts read the snapshot table at request time; no cron.**
+  The dashboard price chart and `/dashboard/price`
+  (`DetailedChart`), and the Insights portfolio-value chart
+  (`buildPortfolioSeries` replays the ledger against each stored
+  snapshot), are built from `listRecentPriceSnapshots()` on each
+  load — same lazy model as the hero price. There is no
+  scheduled job writing denser history and no external backfill,
+  so a preset like `3M` reaches only as far back as the oldest
+  stored snapshot and then clamps. This keeps the goldapi.io
+  free-tier quota untouched by charting. If snapshot sparsity
+  ever makes a chart useless, the follow-up is a
+  `portfolio_snapshots` table written on dashboard load (still no
+  cron) — see progress-tracker.md Open Questions.
 - **No blob or file storage.** Nothing this application stores
   is large enough to justify it.
 
@@ -60,6 +73,15 @@
   string, URL parameter, or header.
 - Price data is not user-owned and is readable by any
   authenticated user.
+- Transaction mutation routes, all `withAuthAndRateLimit` +
+  `assertSameOrigin`, session-scoped, `{ data } | { error }`:
+  `POST /api/transactions` (create), `PATCH|DELETE
+  /api/transactions/[id]` (owned mutation), `POST
+  /api/transactions/bulk` (CSV import — one all-or-nothing
+  multi-row insert, 200-row cap, one rate-limit token),
+  `DELETE /api/transactions` (delete all the caller's rows), and
+  `DELETE /api/account` (Clerk `users.deleteUser`; DB cleanup via
+  the existing `user.deleted` webhook).
 
 ## Invariants
 

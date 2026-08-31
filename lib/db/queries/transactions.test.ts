@@ -25,6 +25,7 @@ vi.mock("@/lib/db/client", () => ({
 }));
 
 import {
+  deleteManyOwnedTransactions,
   deleteOwnedTransaction,
   updateOwnedTransaction,
 } from "./transactions";
@@ -102,5 +103,32 @@ describe("deleteOwnedTransaction", () => {
     const result = await deleteOwnedTransaction("user_123", "missing");
 
     expect(result).toEqual({ ok: false, reason: "not_found" });
+  });
+});
+
+describe("deleteManyOwnedTransactions", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("returns the ids the scoped delete actually removed", async () => {
+    deleteReturningMock.mockResolvedValue([{ id: "tx_1" }, { id: "tx_2" }]);
+
+    const result = await deleteManyOwnedTransactions("user_123", [
+      "tx_1",
+      "tx_2",
+      "tx_other",
+    ]);
+
+    expect(result).toEqual([{ id: "tx_1" }, { id: "tx_2" }]);
+  });
+
+  it("short-circuits without touching the db on an empty id list", async () => {
+    const { db } = await import("@/lib/db/client");
+
+    const result = await deleteManyOwnedTransactions("user_123", []);
+
+    expect(result).toEqual([]);
+    expect(db.delete).not.toHaveBeenCalled();
   });
 });

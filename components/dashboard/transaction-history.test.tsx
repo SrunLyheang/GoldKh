@@ -23,6 +23,7 @@ function row(overrides: Partial<TransactionRow> = {}): TransactionRow {
 }
 
 const noop = () => {};
+const noopBulk = async () => true;
 
 describe("TransactionHistory", () => {
   it("labels a buy row and shows its quantity/unit", () => {
@@ -30,8 +31,8 @@ describe("TransactionHistory", () => {
       <TransactionHistory
         rows={[row({ type: "buy", quantity: "10", unit: "chi" })]}
         currentPricePerTroyOz="2000"
-        error={null}
         onDelete={noop}
+        onBulkDelete={noopBulk}
         onAddClick={noop}
         onEditSuccess={noop}
       />
@@ -44,8 +45,8 @@ describe("TransactionHistory", () => {
       <TransactionHistory
         rows={[row({ id: "row-sell", type: "sell", quantity: "3" })]}
         currentPricePerTroyOz="2000"
-        error={null}
         onDelete={noop}
+        onBulkDelete={noopBulk}
         onAddClick={noop}
         onEditSuccess={noop}
       />
@@ -62,8 +63,8 @@ describe("TransactionHistory", () => {
       <TransactionHistory
         rows={[row({ id: "row-khr", currency: "KHR", pricePerUnit: "1200000" })]}
         currentPricePerTroyOz="2000"
-        error={null}
         onDelete={noop}
+        onBulkDelete={noopBulk}
         onAddClick={noop}
         onEditSuccess={noop}
       />
@@ -77,8 +78,8 @@ describe("TransactionHistory", () => {
       <TransactionHistory
         rows={[row({ id: "temp-abc123" })]}
         currentPricePerTroyOz="2000"
-        error={null}
         onDelete={noop}
+        onBulkDelete={noopBulk}
         onAddClick={noop}
         onEditSuccess={noop}
       />
@@ -87,33 +88,103 @@ describe("TransactionHistory", () => {
     expect(screen.queryByRole("button", { name: /actions for/i })).not.toBeInTheDocument();
   });
 
-  it("renders the error banner when passed", () => {
-    render(
-      <TransactionHistory
-        rows={[]}
-        currentPricePerTroyOz="2000"
-        error="Something broke"
-        onDelete={noop}
-        onAddClick={noop}
-        onEditSuccess={noop}
-      />
-    );
-    expect(screen.getByText("Something broke")).toBeInTheDocument();
-  });
-
   it("shows the sync bar while syncing", () => {
     render(
       <TransactionHistory
         rows={[row()]}
         currentPricePerTroyOz="2000"
-        error={null}
         syncing
         onDelete={noop}
+        onBulkDelete={noopBulk}
         onAddClick={noop}
         onEditSuccess={noop}
       />
     );
     expect(screen.getByRole("progressbar")).toBeInTheDocument();
+  });
+
+  it("expands a row's detail on click and collapses it on a second click", async () => {
+    const user = userEvent.setup();
+    render(
+      <TransactionHistory
+        rows={[row({ notes: "anniversary" })]}
+        currentPricePerTroyOz="2000"
+        onDelete={noop}
+        onBulkDelete={noopBulk}
+        onAddClick={noop}
+        onEditSuccess={noop}
+      />
+    );
+
+    expect(screen.queryByText("anniversary")).not.toBeInTheDocument();
+
+    // The desktop row and the mobile card both render; click the first
+    // expandable region.
+    const [firstRow] = screen.getAllByRole("button", { expanded: false });
+    await user.click(firstRow);
+    expect(screen.getAllByText("anniversary").length).toBeGreaterThan(0);
+
+    await user.click(firstRow);
+    expect(screen.queryByText("anniversary")).not.toBeInTheDocument();
+  });
+
+  it("shows the CSV Import / Export control", () => {
+    render(
+      <TransactionHistory
+        rows={[row()]}
+        currentPricePerTroyOz="2000"
+        onDelete={noop}
+        onBulkDelete={noopBulk}
+        onAddClick={noop}
+        onEditSuccess={noop}
+      />
+    );
+    expect(
+      screen.getByRole("button", { name: "Import / Export" })
+    ).toBeInTheDocument();
+  });
+
+  it("bulk-deletes the selected rows through the confirm dialog", async () => {
+    const onBulkDelete = vi.fn(async () => true);
+    const user = userEvent.setup();
+    render(
+      <TransactionHistory
+        rows={[row({ id: "row-1" }), row({ id: "row-2", quantity: "5" })]}
+        currentPricePerTroyOz="2000"
+        onDelete={noop}
+        onBulkDelete={onBulkDelete}
+        onAddClick={noop}
+        onEditSuccess={noop}
+      />
+    );
+
+    await user.click(screen.getByLabelText("Select all transactions"));
+    expect(screen.getByText("2 selected")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /Delete/ }));
+    await user.click(
+      await screen.findByRole("button", { name: "Delete 2 transactions" })
+    );
+
+    expect(onBulkDelete).toHaveBeenCalledWith(["row-1", "row-2"]);
+  });
+
+  it("keeps optimistic (temp-id) rows out of select-all", async () => {
+    const onBulkDelete = vi.fn(async () => true);
+    const user = userEvent.setup();
+    render(
+      <TransactionHistory
+        rows={[row({ id: "row-1" }), row({ id: "temp-x", quantity: "5" })]}
+        currentPricePerTroyOz="2000"
+        onDelete={noop}
+        onBulkDelete={onBulkDelete}
+        onAddClick={noop}
+        onEditSuccess={noop}
+      />
+    );
+
+    await user.click(screen.getByLabelText("Select all transactions"));
+    expect(screen.getByText("1 selected")).toBeInTheDocument();
   });
 
   it("requires a second click (Delete after the confirm prompt) before calling onDelete", async () => {
@@ -123,8 +194,8 @@ describe("TransactionHistory", () => {
       <TransactionHistory
         rows={[row()]}
         currentPricePerTroyOz="2000"
-        error={null}
         onDelete={onDelete}
+        onBulkDelete={noopBulk}
         onAddClick={noop}
         onEditSuccess={noop}
       />
