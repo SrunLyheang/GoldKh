@@ -3,20 +3,9 @@ import { shadcn } from "@clerk/ui/themes";
 import type { Metadata } from "next";
 import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
-import { Newsreader, Noto_Sans_Khmer } from "next/font/google";
+import { Newsreader } from "next/font/google";
 import { cn } from "@/lib/utils";
 import "./globals.css";
-
-// Geist has no Khmer glyphs — the km locale falls back to this instead
-// of the browser's unstyled system Khmer font. Exposed as a CSS
-// variable and switched in via globals.css's `html[lang="km"]` rule
-// rather than always-on, so English stays on Geist Sans exactly as
-// before.
-const notoSansKhmer = Noto_Sans_Khmer({
-  subsets: ["khmer"],
-  weight: ["400", "500", "600"],
-  variable: "--font-khmer",
-});
 
 // Editorial serif for the Ledger theme's headings and hero price.
 // Referenced only from globals.css's `[data-theme="ledger"]` block —
@@ -40,7 +29,6 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={cn(
         GeistSans.variable,
         GeistMono.variable,
-        notoSansKhmer.variable,
         newsreader.variable
       )}
     >

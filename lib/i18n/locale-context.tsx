@@ -1,56 +1,28 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, type ReactNode } from "react";
 import { dictionary, type Dictionary, type Locale } from "./dictionary";
-
-const STORAGE_KEY = "goldkh-locale";
 
 interface LocaleContextValue {
   locale: Locale;
-  setLocale: (locale: Locale) => void;
   t: Dictionary;
 }
 
 const LocaleContext = createContext<LocaleContextValue | null>(null);
 
-// Client-only, localStorage-backed locale (no server rendering
-// consequence — the dashboard is already entirely behind auth and
-// "use client"). Starts "en" on every render (server and first client
-// paint agree, so no hydration mismatch), then reads the stored
-// preference in an effect.
+// Only "en" ships today. This provider is kept as the seam a second
+// locale would slot into (restore a `const km: typeof en` in dictionary.ts,
+// add persistence + a toggle here) — until then it just stamps `lang` on
+// the document and hands the dictionary down.
 export function LocaleProvider({ children }: { children: ReactNode }) {
-  const [locale, setLocaleState] = useState<Locale>("en");
-
-  useEffect(() => {
-    const stored = window.localStorage.getItem(STORAGE_KEY);
-    if (stored === "en") {
-      // Deliberately synchronous: reading localStorage can't happen during
-      // the initial render (no `window` on the server, and reading it in a
-      // lazy useState initializer would make the client's first paint
-      // disagree with the server-rendered "en" markup — a hydration
-      // mismatch). Deferring to this effect is the standard fix, at the
-      // cost of one extra render when a non-default locale was stored.
-      //
-      // Only "en" ships right now — the Khmer locale and its toggle were
-      // removed 2026-08-29 pending a translation review, so this branch is
-      // effectively a no-op. Kept so a second locale can be reinstated
-      // without reworking the provider.
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setLocaleState(stored);
-    }
-  }, []);
+  const locale: Locale = "en";
 
   useEffect(() => {
     document.documentElement.lang = locale;
   }, [locale]);
 
-  function setLocale(next: Locale) {
-    setLocaleState(next);
-    window.localStorage.setItem(STORAGE_KEY, next);
-  }
-
   return (
-    <LocaleContext.Provider value={{ locale, setLocale, t: dictionary[locale] }}>
+    <LocaleContext.Provider value={{ locale, t: dictionary[locale] }}>
       {children}
     </LocaleContext.Provider>
   );

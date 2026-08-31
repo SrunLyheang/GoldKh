@@ -1,9 +1,13 @@
 // @vitest-environment jsdom
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import userEvent from "@testing-library/user-event";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { RealizedPanel } from "./realized-panel";
 
 describe("RealizedPanel", () => {
+  beforeEach(() => window.localStorage.clear());
+  afterEach(() => window.localStorage.clear());
+
   it("shows the realized amount and percent with a loss tone when negative", () => {
     render(
       <RealizedPanel
@@ -72,5 +76,43 @@ describe("RealizedPanel", () => {
       <RealizedPanel realizedUsd="-285" realizedPercent="-5.1" saleCount={1} />
     );
     expect(container.querySelector("[data-sign-cell]")).not.toBeNull();
+  });
+
+  it("hides the figure and caption when the header toggle is clicked", async () => {
+    const user = userEvent.setup();
+    render(
+      <RealizedPanel realizedUsd="300" realizedPercent="10" saleCount={1} />
+    );
+
+    expect(screen.getByText("$300.00")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /hide realized figure/i }));
+
+    expect(screen.queryByText("$300.00")).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(/Gold you still hold isn't counted here/)
+    ).not.toBeInTheDocument();
+    // The label stays as the affordance to bring it back.
+    expect(screen.getByText(/from 1 sale$/)).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /show realized figure/i }));
+    expect(screen.getByText("$300.00")).toBeInTheDocument();
+  });
+
+  it("stays collapsed on remount once hidden (persisted)", async () => {
+    const user = userEvent.setup();
+    const { unmount } = render(
+      <RealizedPanel realizedUsd="300" realizedPercent="10" saleCount={2} />
+    );
+
+    await user.click(screen.getByRole("button", { name: /hide realized figure/i }));
+    expect(screen.queryByText("$300.00")).not.toBeInTheDocument();
+    unmount();
+
+    render(<RealizedPanel realizedUsd="300" realizedPercent="10" saleCount={2} />);
+    expect(screen.queryByText("$300.00")).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /show realized figure/i })
+    ).toHaveAttribute("aria-expanded", "false");
   });
 });

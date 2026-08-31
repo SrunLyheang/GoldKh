@@ -18,7 +18,7 @@ afterEach(() => {
 // to every test file — none of these tests are about locale switching
 // itself (that's LanguageToggle's own concern).
 vi.mock("@/lib/i18n/locale-context", () => ({
-  useLocale: () => ({ locale: "en", setLocale: () => {}, t: dictionary.en }),
+  useLocale: () => ({ locale: "en", t: dictionary.en }),
   LocaleProvider: ({ children }: { children: React.ReactNode }) => children,
 }));
 
@@ -26,10 +26,11 @@ vi.mock("@/lib/i18n/locale-context", () => ({
 // component tests only care that the right toast was requested. Mock the
 // surface: `toast.success` / `toast.error` become spies, `<Toaster>`
 // renders nothing. Assert against `vi.mocked(toast.error)` in a test.
-vi.mock("sonner", () => ({
-  toast: { success: vi.fn(), error: vi.fn() },
-  Toaster: () => null,
-}));
+vi.mock("sonner", () => {
+  // `toast` is callable (notify.info) as well as carrying .success/.error.
+  const toast = Object.assign(vi.fn(), { success: vi.fn(), error: vi.fn() });
+  return { toast, Toaster: () => null };
+});
 
 // motion/react's animate loop needs rAF and real timers. Component tests
 // only care about the settled value, so force the reduced-motion (snap)

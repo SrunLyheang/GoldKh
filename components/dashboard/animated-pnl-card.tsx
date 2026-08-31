@@ -15,7 +15,6 @@ import { Panel } from "./panel";
 // down from where the position was. First visit, an unchanged value, or
 // prefers-reduced-motion render static. Colour tracks the value sign; the
 // percent sub-line snaps.
-// (context/design-specs/03-dashboard-animation-and-input-feedback.md)
 const STORAGE_KEY = "goldkh-last-pnl";
 
 export function AnimatedPnlCard({

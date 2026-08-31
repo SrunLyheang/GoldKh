@@ -1,8 +1,10 @@
 import { apiOk } from "@/lib/api/response";
 import { parseJsonBody } from "@/lib/api/parseJsonBody";
+import { assertSameOrigin } from "@/lib/api/sameOrigin";
 import { withAuth, withAuthAndRateLimit } from "@/lib/api/withAuthAndRateLimit";
 import {
   createTransactionForUser,
+  deleteAllTransactionsForUser,
   listTransactionsForUser,
 } from "@/lib/db/queries/transactions";
 import { transactionInputSchema } from "@/lib/validation/transaction";
@@ -24,4 +26,15 @@ export const POST = withAuthAndRateLimit(async (request, { userId }) => {
 
   const created = await createTransactionForUser(userId, body.data);
   return apiOk(created, 201);
+});
+
+// Wipes every transaction owned by the caller — the Settings "Delete all
+// transactions" action (dashboard-expansion-plan.md §6.3). Session-scoped,
+// rate limited, same-origin only.
+export const DELETE = withAuthAndRateLimit(async (request, { userId }) => {
+  const crossOrigin = assertSameOrigin(request);
+  if (crossOrigin) return crossOrigin;
+
+  const deleted = await deleteAllTransactionsForUser(userId);
+  return apiOk({ deleted: deleted.length });
 });
