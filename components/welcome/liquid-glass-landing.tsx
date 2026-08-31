@@ -525,23 +525,23 @@ export function LiquidGlassLanding() {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 text-left">
               <div className="liquid-glass rounded-2xl p-6 border border-white/10">
                 <ShieldCheck className="w-6 h-6 text-emerald-400 mb-3" />
-                <h4 className="font-semibold text-white text-base mb-2">Zero Custody</h4>
+                <h4 className="font-semibold text-white text-base mb-2">Your gold stays with you</h4>
                 <p className="text-xs text-white/60 leading-relaxed">
-                  Your assets remain in your physical possession. GoldKh is strictly a computational tracking tool.
+                  GoldKh never touches your gold. It only does the math.
                 </p>
               </div>
               <div className="liquid-glass rounded-2xl p-6 border border-white/10">
                 <Lock className="w-6 h-6 text-amber-400 mb-3" />
-                <h4 className="font-semibold text-white text-base mb-2">Private &amp; Secure</h4>
+                <h4 className="font-semibold text-white text-base mb-2">Private to you</h4>
                 <p className="text-xs text-white/60 leading-relaxed">
-                  Your transactions are encrypted and accessible only through your authenticated session.
+                  Your transactions are only visible when you&apos;re signed in to your own account.
                 </p>
               </div>
               <div className="liquid-glass rounded-2xl p-6 border border-white/10">
                 <Eye className="w-6 h-6 text-blue-400 mb-3" />
-                <h4 className="font-semibold text-white text-base mb-2">Open &amp; Transparent</h4>
+                <h4 className="font-semibold text-white text-base mb-2">Nothing hidden</h4>
                 <p className="text-xs text-white/60 leading-relaxed">
-                  Clean mathematical formulas for weighted cost basis and unit conversion with zero hidden fees.
+                  Plain math for cost basis and unit conversion. Free to use, no fees.
                 </p>
               </div>
             </div>
@@ -552,10 +552,10 @@ export function LiquidGlassLanding() {
         <section className="py-24 px-5 sm:px-8 max-w-5xl mx-auto text-center border-t border-white/10">
           <div className="liquid-glass-gold rounded-3xl p-10 sm:p-14 border border-amber-400/30 shadow-2xl relative overflow-hidden">
             <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-white mb-4">
-              Start tracking your gold portfolio today.
+              Start tracking your gold today.
             </h2>
             <p className="text-white/70 text-sm sm:text-base leading-relaxed mb-8 max-w-lg mx-auto">
-              Join GoldKh to see your real-time position, weighted cost, and live unrealized gain or loss.
+              Sign up to see your holdings, your average cost, and whether you&apos;re up or down at today&apos;s price. Free to use.
             </p>
             <div className="flex flex-wrap items-center justify-center gap-4">
               {signedIn ? (

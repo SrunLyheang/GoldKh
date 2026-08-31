@@ -12,6 +12,33 @@ Update this file after every meaningful implementation change.
   the remaining work toward hardening (rate limiting, the
   `user.deleted` webhook, UI test coverage) over new features.
 
+## Done: Landing copy — casual rewrite + fact-check pass (2026-08-31, uncommitted)
+
+- Reviewed all user-facing copy in `components/welcome/liquid-glass-landing.tsx`
+  against `project-overview.md` and this tracker, rewrote it plainer/lower-key,
+  and corrected claims that weren't true:
+  - **Feature 3** dropped "currency conversion" (no USD↔KHR conversion exists;
+    KHR deferred) and softened "Real-time" → "Live Spot Price" (prices are
+    cached + timestamped, refreshed on staleness). Kept the price-history chart
+    mention — that one is real.
+  - **Feature 4** removed "in both USD and local Cambodian Riel" — gain/loss is
+    USD only; KHR rows are excluded from the aggregate. Added a mention of
+    realized gain/loss on sold gold (shipped 2026-08-30).
+  - **Feature 5 / About** dropped "Encrypted PostgreSQL ledger" and "Your
+    transactions are encrypted" — no field-level encryption (Architecture
+    Decisions: transport + provider disk encryption only). Reframed as
+    "Private to your account".
+  - **Step 1** "sign in with one click" → "Sign up with Clerk" (sign-up isn't
+    one click).
+  - Hero subhead dropped the meaningless "steadier, more vibrant portfolio".
+  - CTA labels normalized: "Begin Now" → "Sign up", "Start Today" → "Get
+    Started", "Discover How" → "See How It Works".
+- Unit math on the page was all checked and is correct (1 damlung = 37.5g =
+  10 chi = 1.205658 troy oz; 1 troy oz = 0.829426 damlung ≈ 31.1035g;
+  indicative $4,100/oz → ~$4,943/damlung, clearly labelled indicative).
+- `welcome-landing.test.tsx` CTA-name regexes updated to the new labels.
+  Landing tests: 9/9 pass.
+
 ## Done: Animated Liquid Glass hero visual with glowing liquid sphere (2026-08-31, uncommitted)
 
 - Integrated the exact glowing liquid glass cosmic sphere video (`/videos/hero_bg.mp4`) into `AnimatedHeroImage` (`components/welcome/animated-hero-image.tsx`) with full animation layers:

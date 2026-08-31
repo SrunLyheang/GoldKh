@@ -37,7 +37,7 @@ describe("WelcomeLanding / LiquidGlassLanding", () => {
 
   it("renders the primary sign up CTAs pointing to /sign-up", () => {
     render(<WelcomeLanding />);
-    const ctas = screen.getAllByRole("link", { name: /Start Today|Begin Now|Create Free Account/i });
+    const ctas = screen.getAllByRole("link", { name: /Get Started|Sign up|Create Free Account/i });
     expect(ctas.length).toBeGreaterThan(0);
     for (const cta of ctas) {
       expect(cta).toHaveAttribute("href", "/sign-up");
@@ -68,7 +68,7 @@ describe("WelcomeLanding / LiquidGlassLanding", () => {
     }
     expect(screen.queryByRole("link", { name: /Log in/i })).not.toBeInTheDocument();
     expect(
-      screen.queryByRole("link", { name: /Begin Now|Create Free Account/i })
+      screen.queryByRole("link", { name: /Sign up|Create Free Account/i })
     ).not.toBeInTheDocument();
   });
 
