@@ -3,11 +3,18 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { RefreshButton } from "./refresh-button";
+import { notify } from "@/lib/ui/toast";
 
 const refreshMock = vi.fn();
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ refresh: refreshMock }),
 }));
+
+vi.mock("@/lib/ui/toast", () => ({
+  notify: { success: vi.fn(), error: vi.fn() },
+}));
+const toastSuccess = vi.mocked(notify.success);
+const toastError = vi.mocked(notify.error);
 
 function okResponse(cooldownEndsAt: number | null = Date.now() + 5 * 60_000) {
   return new Response(
@@ -19,6 +26,8 @@ function okResponse(cooldownEndsAt: number | null = Date.now() + 5 * 60_000) {
 describe("RefreshButton", () => {
   beforeEach(() => {
     refreshMock.mockClear();
+    toastSuccess.mockClear();
+    toastError.mockClear();
   });
 
   afterEach(() => {
@@ -36,7 +45,7 @@ describe("RefreshButton", () => {
       method: "POST",
     });
     await waitFor(() => {
-      expect(screen.getByText("Refreshed")).toBeInTheDocument();
+      expect(toastSuccess).toHaveBeenCalledWith("Refreshed");
     });
   });
 
@@ -58,7 +67,7 @@ describe("RefreshButton", () => {
     // ~4 minutes should remain — not a fresh 5-minute window starting now.
     await user.click(button);
     await waitFor(() => {
-      expect(screen.getByText("Please wait 4 minutes")).toBeInTheDocument();
+      expect(toastError).toHaveBeenCalledWith("Please wait 4 minutes");
     });
   });
 
@@ -87,7 +96,7 @@ describe("RefreshButton", () => {
 
     resolveFetch(okResponse());
     await waitFor(() => {
-      expect(screen.getByText("Refreshed")).toBeInTheDocument();
+      expect(toastSuccess).toHaveBeenCalledWith("Refreshed");
     });
   });
 
@@ -106,7 +115,7 @@ describe("RefreshButton", () => {
     await user.click(screen.getByRole("button", { name: /refresh/i }));
 
     await waitFor(() => {
-      expect(screen.getByText("Provider down")).toBeInTheDocument();
+      expect(toastError).toHaveBeenCalledWith("Provider down");
     });
   });
 
@@ -118,9 +127,9 @@ describe("RefreshButton", () => {
     await user.click(screen.getByRole("button", { name: /refresh/i }));
 
     await waitFor(() => {
-      expect(
-        screen.getByText("Couldn't reach the server — try again shortly")
-      ).toBeInTheDocument();
+      expect(toastError).toHaveBeenCalledWith(
+        "Couldn't reach the server — try again shortly"
+      );
     });
   });
 
@@ -135,7 +144,9 @@ describe("RefreshButton", () => {
 
     expect(fetchMock).not.toHaveBeenCalled();
     await waitFor(() => {
-      expect(screen.getByText(/Please wait \d+ minutes/)).toBeInTheDocument();
+      expect(toastError).toHaveBeenCalledWith(
+        expect.stringMatching(/Please wait \d+ minutes/)
+      );
     });
   });
 
@@ -152,9 +163,9 @@ describe("RefreshButton", () => {
 
     expect(fetchMock).not.toHaveBeenCalled();
     await waitFor(() => {
-      expect(
-        screen.getByText("Market's closed — prices resume Monday")
-      ).toBeInTheDocument();
+      expect(toastError).toHaveBeenCalledWith(
+        "Market's closed — prices resume Monday"
+      );
     });
   });
 
@@ -179,9 +190,9 @@ describe("RefreshButton", () => {
     await user.click(screen.getByRole("button", { name: /refresh/i }));
 
     await waitFor(() => {
-      expect(
-        screen.getByText("Market's closed — prices resume Monday")
-      ).toBeInTheDocument();
+      expect(toastError).toHaveBeenCalledWith(
+        "Market's closed — prices resume Monday"
+      );
     });
   });
 
@@ -202,7 +213,7 @@ describe("RefreshButton", () => {
     await user.click(button);
 
     await waitFor(() => {
-      expect(screen.getByText("Too soon")).toBeInTheDocument();
+      expect(toastError).toHaveBeenCalledWith("Too soon");
     });
     expect(button).toHaveAttribute("aria-disabled", "true");
   });

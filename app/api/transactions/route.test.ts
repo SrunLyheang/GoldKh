@@ -4,11 +4,13 @@ const {
   authMock,
   createTransactionMock,
   listTransactionsMock,
+  deleteAllMock,
   isRateLimitedMock,
 } = vi.hoisted(() => ({
   authMock: vi.fn(),
   createTransactionMock: vi.fn(),
   listTransactionsMock: vi.fn(),
+  deleteAllMock: vi.fn(),
   isRateLimitedMock: vi.fn(),
 }));
 
@@ -19,13 +21,14 @@ vi.mock("@clerk/nextjs/server", () => ({
 vi.mock("@/lib/db/queries/transactions", () => ({
   createTransactionForUser: createTransactionMock,
   listTransactionsForUser: listTransactionsMock,
+  deleteAllTransactionsForUser: deleteAllMock,
 }));
 
 vi.mock("@/lib/api/rateLimit", () => ({
   isRateLimited: isRateLimitedMock,
 }));
 
-import { GET, POST } from "./route";
+import { DELETE, GET, POST } from "./route";
 
 function jsonRequest(body: unknown) {
   return new Request("http://localhost/api/transactions", {
@@ -142,5 +145,50 @@ describe("POST /api/transactions", () => {
       expect.objectContaining({ type: "buy", quantity: "10" })
     );
     expect(body).toEqual({ data: { id: "tx_new" } });
+  });
+});
+
+describe("DELETE /api/transactions", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    isRateLimitedMock.mockResolvedValue(false);
+    authMock.mockResolvedValue({ userId: "user_123" });
+  });
+
+  function deleteReq() {
+    return new Request("http://localhost/api/transactions", { method: "DELETE" });
+  }
+
+  it("returns 401 and never touches the DB without a session", async () => {
+    authMock.mockResolvedValue({ userId: null });
+    const res = await DELETE(deleteReq());
+    expect(res.status).toBe(401);
+    expect(deleteAllMock).not.toHaveBeenCalled();
+  });
+
+  it("returns 429 when rate-limited", async () => {
+    isRateLimitedMock.mockResolvedValue(true);
+    const res = await DELETE(deleteReq());
+    expect(res.status).toBe(429);
+    expect(deleteAllMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects a cross-origin request with 403", async () => {
+    const res = await DELETE(
+      new Request("http://localhost/api/transactions", {
+        method: "DELETE",
+        headers: { origin: "https://evil.example" },
+      })
+    );
+    expect(res.status).toBe(403);
+    expect(deleteAllMock).not.toHaveBeenCalled();
+  });
+
+  it("wipes the caller's rows scoped to the session userId and returns the count", async () => {
+    deleteAllMock.mockResolvedValue([{ id: "a" }, { id: "b" }, { id: "c" }]);
+    const res = await DELETE(deleteReq());
+    const body = await res.json();
+    expect(deleteAllMock).toHaveBeenCalledWith("user_123");
+    expect(body).toEqual({ data: { deleted: 3 } });
   });
 });

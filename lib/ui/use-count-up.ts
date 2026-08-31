@@ -48,7 +48,6 @@ interface CountUpOptions {
 // `aimedAtRef` tracks the value we last *started a tween toward*, so the
 // StrictMode replay (same `target`) still animates while a genuine change
 // (different `target`) is recognised as an update.
-// (context/design-specs/03-dashboard-animation-and-input-feedback.md)
 export function useCountUp(
   target: number,
   { durationMs = COUNT_UP_MS, format, from }: CountUpOptions

@@ -269,10 +269,7 @@ describe("TransactionDialog", () => {
       expect(toastError).toHaveBeenCalledWith(td.invalidInput);
     });
     const tempId = onOptimisticAdd.mock.calls[0][0].id;
-    expect(onAddSettled).toHaveBeenCalledWith(tempId, {
-      ok: false,
-      message: td.invalidInput,
-    });
+    expect(onAddSettled).toHaveBeenCalledWith(tempId, { ok: false });
     expect(onOpenChange).not.toHaveBeenCalledWith(false);
   });
 

@@ -48,9 +48,10 @@ export interface EditableTransaction {
   notes?: string | null;
 }
 
-export type AddSettledResult =
-  | { ok: true }
-  | { ok: false; message: string };
+// The dialog reports every add outcome through its own toast; the parent
+// only needs to know whether to reconcile (ok) or leave the rollback
+// alone (not ok).
+export type AddSettledResult = { ok: boolean };
 
 // A number the user might still be mid-typing ("1.", "", ".5") — cheap
 // shape check before handing it to Decimal, which throws on anything
@@ -251,11 +252,10 @@ export function TransactionDialog({
       body = await res.json();
     } catch {
       setSubmitting(false);
-      const message = t.dialog.toast.network;
       if (isOptimistic) {
-        onAddSettled!(tempId!, { ok: false, message });
+        onAddSettled!(tempId!, { ok: false });
       }
-      notify.error(message);
+      notify.error(t.dialog.toast.network);
       return;
     }
 
@@ -272,7 +272,7 @@ export function TransactionDialog({
               ? t.dialog.toast.invalidInput
               : t.dialog.toast.serverError;
       if (isOptimistic) {
-        onAddSettled!(tempId!, { ok: false, message });
+        onAddSettled!(tempId!, { ok: false });
       }
       notify.error(message);
       return;

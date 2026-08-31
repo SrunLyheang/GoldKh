@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/loading";
 import { useLocale } from "@/lib/i18n/locale-context";
 import { requestPriceRefresh } from "@/lib/price/requestPriceRefresh";
+import { notify } from "@/lib/ui/toast";
 
 function minutesFromMs(ms: number): number {
   return Math.max(1, Math.ceil(ms / 60_000));
@@ -15,11 +16,12 @@ function minutesFromMs(ms: number): number {
 // Drives a manual price refresh. requestPriceRefresh() owns the wire
 // contract with POST /api/price/refresh and classifies the result into
 // one of four outcomes (see CONTEXT.md "manual refresh outcome"); this
-// component only maps each outcome to toast copy and local state. The
-// route enforces a shared 5-minute cooldown and hands the deadline back,
-// so the button greys out and re-enables itself locally instead of only
-// failing after a click. It stays clickable while greyed out on purpose:
-// a click during cooldown is what surfaces the "please wait" toast.
+// component maps each outcome to a toast (via the shared `notify`) and
+// local state. The route enforces a shared 5-minute cooldown and hands
+// the deadline back, so the button greys out and re-enables itself
+// locally instead of only failing after a click. It stays clickable
+// while greyed out on purpose: a click during cooldown is what surfaces
+// the "please wait" toast.
 export function RefreshButton({
   cooldownEndsAt: initialCooldownEndsAt,
   marketClosed = false,
@@ -35,7 +37,6 @@ export function RefreshButton({
   const [cooldownEndsAt, setCooldownEndsAt] = useState(initialCooldownEndsAt);
   const [inCooldown, setInCooldown] = useState(initialCooldownEndsAt !== null);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [toast, setToast] = useState<{ text: string; key: number } | null>(null);
 
   // The button spins for both phases of a refresh: the provider fetch
   // (isRefreshing, set synchronously on click so feedback is instant) and
@@ -55,28 +56,20 @@ export function RefreshButton({
     return () => clearTimeout(timeout);
   }, [cooldownEndsAt]);
 
-  useEffect(() => {
-    if (!toast) return;
-    const timeout = setTimeout(() => setToast(null), 1800);
-    return () => clearTimeout(timeout);
-  }, [toast]);
-
-  function showToast(text: string) {
-    setToast({ text, key: Date.now() });
-  }
-
   async function handleClick() {
     // Already fetching — the button is spinning and disabled; swallow the
     // click rather than firing a second POST.
     if (isRefreshing) return;
 
     if (marketClosed) {
-      showToast(t.refresh.marketClosed);
+      notify.error(t.refresh.marketClosed);
       return;
     }
 
     if (inCooldown && cooldownEndsAt) {
-      showToast(t.refresh.pleaseWait(minutesFromMs(cooldownEndsAt - Date.now())));
+      notify.error(
+        t.refresh.pleaseWait(minutesFromMs(cooldownEndsAt - Date.now()))
+      );
       return;
     }
 
@@ -87,10 +80,10 @@ export function RefreshButton({
       const outcome = await requestPriceRefresh();
       switch (outcome.kind) {
         case "unreachable":
-          showToast(t.refresh.couldntReach);
+          notify.error(t.refresh.couldntReach);
           return;
         case "failed":
-          showToast(outcome.message ?? t.refresh.couldntRefresh);
+          notify.error(outcome.message ?? t.refresh.couldntRefresh);
           return;
         case "cooldown":
           // outcome.cooldownEndsAt is already an absolute deadline (the
@@ -99,10 +92,10 @@ export function RefreshButton({
             setCooldownEndsAt(outcome.cooldownEndsAt);
             setInCooldown(true);
           }
-          showToast(outcome.message ?? t.refresh.couldntRefresh);
+          notify.error(outcome.message ?? t.refresh.couldntRefresh);
           return;
         case "marketClosed":
-          showToast(t.refresh.marketClosed);
+          notify.error(t.refresh.marketClosed);
           return;
         case "refreshed":
           setCooldownEndsAt(outcome.cooldownEndsAt);
@@ -112,7 +105,7 @@ export function RefreshButton({
           startTransition(() => {
             router.refresh();
           });
-          showToast(t.refresh.refreshed);
+          notify.success(t.refresh.refreshed);
           return;
       }
     } finally {
@@ -121,32 +114,22 @@ export function RefreshButton({
   }
 
   return (
-    <>
-      <Button
-        variant="secondary"
-        size="sm"
-        aria-disabled={busy || inCooldown || marketClosed}
-        className={busy || inCooldown || marketClosed ? "opacity-50" : undefined}
-        title={
-          marketClosed
-            ? t.refresh.marketClosed
-            : inCooldown
-              ? t.refresh.refreshedRecently
-              : undefined
-        }
-        onClick={handleClick}
-      >
-        {busy ? <Spinner size="xs" /> : <RefreshCw className="h-4 w-4" />}
-        <span className="tt-label text-[11.5px]">{t.refresh.label}</span>
-      </Button>
-      {toast && (
-        <div
-          key={toast.key}
-          className="pointer-events-none fixed top-1/2 left-1/2 z-50 animate-toast-float-up rounded-lg border border-border bg-card px-4 py-2.5"
-        >
-          <p className="text-[12.5px] font-medium text-foreground">{toast.text}</p>
-        </div>
-      )}
-    </>
+    <Button
+      variant="secondary"
+      size="sm"
+      aria-disabled={busy || inCooldown || marketClosed}
+      className={busy || inCooldown || marketClosed ? "opacity-50" : undefined}
+      title={
+        marketClosed
+          ? t.refresh.marketClosed
+          : inCooldown
+            ? t.refresh.refreshedRecently
+            : undefined
+      }
+      onClick={handleClick}
+    >
+      {busy ? <Spinner size="xs" /> : <RefreshCw className="h-4 w-4" />}
+      <span className="tt-label text-[11.5px]">{t.refresh.label}</span>
+    </Button>
   );
 }

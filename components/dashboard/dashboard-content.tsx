@@ -1,11 +1,14 @@
 "use client";
 
-import { useEffect, useState, useTransition, type CSSProperties } from "react";
+import { useState, useTransition, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
+import { notify } from "@/lib/ui/toast";
 import { computeGainLoss } from "@/lib/calc/gainLoss";
 import { computeHoldings } from "@/lib/calc/holdings";
 import { computeRealized } from "@/lib/calc/realized";
+import { toChronological } from "@/lib/calc/chronological";
 import { fromTroyOz, priceFromTroyOz, type GoldUnit } from "@/lib/calc/units";
+import { usePrefs } from "@/lib/prefs/prefs-context";
 import type { ChartPoint } from "@/lib/calc/priceHistory";
 import { EmptyState } from "./empty-state";
 import { HeroPriceCard } from "./hero-price-card";
@@ -16,14 +19,15 @@ import { TransactionHistory, type TransactionRow } from "./transaction-history";
 import { TransactionDialog, type AddSettledResult } from "./transaction-dialog";
 import { useOptimisticTransactions } from "./use-optimistic-transactions";
 
-// Owns the merged transaction list (via useOptimisticTransactions) and the
-// error-banner state around it, so an optimistic change recomputes
-// holdings/gain-loss/break-even client-side and the whole dashboard updates
-// instantly, not just the transaction table row — the user-reported gap:
-// adding a transaction updated the table but the stat row and hero card's
-// numbers still waited on router.refresh(). That reconciling refresh now
-// runs inside a useTransition so it never blanks the page; success is
-// reported once, by the dialog's Sonner toast.
+// Owns the merged transaction list (via useOptimisticTransactions), so an
+// optimistic change recomputes holdings/gain-loss/break-even client-side
+// and the whole dashboard updates instantly, not just the transaction
+// table row — the user-reported gap: adding a transaction updated the
+// table but the stat row and hero card's numbers still waited on
+// router.refresh(). That reconciling refresh runs inside a useTransition
+// so it never blanks the page. Every add/edit/delete outcome — success
+// and failure alike — is reported through the shared Sonner toast; there
+// is no second in-page banner.
 export function DashboardContent({
   transactions,
   pricePerTroyOz,
@@ -46,31 +50,20 @@ export function DashboardContent({
   marketOpen?: boolean;
 }) {
   const router = useRouter();
+  const { prefs } = usePrefs();
   const [addOpen, setAddOpen] = useState(false);
-  const [displayUnit, setDisplayUnit] = useState<GoldUnit>("damlung");
-  const [error, setError] = useState<string | null>(null);
+  const [displayUnit, setDisplayUnit] = useState<GoldUnit>(prefs.displayUnit);
   const [isSyncing, startSync] = useTransition();
   const { rows, addOptimistic, settleAdd, markRemoved, unmarkRemoved } =
     useOptimisticTransactions(transactions);
-
-  useEffect(() => {
-    if (!error) return;
-    const timeout = setTimeout(() => setError(null), 5000);
-    return () => clearTimeout(timeout);
-  }, [error]);
-
-  function handleOptimisticAdd(row: Parameters<typeof addOptimistic>[0]) {
-    setError(null);
-    addOptimistic(row);
-  }
 
   function handleAddSettled(tempId: string, result: AddSettledResult) {
     settleAdd(tempId, result);
     if (result.ok) {
       startSync(() => router.refresh());
-    } else {
-      setError(result.message);
     }
+    // A failed add rolls its optimistic row back (settleAdd) and is
+    // reported by the dialog's own toast — nothing to do here.
   }
 
   function handleEditSuccess() {
@@ -78,7 +71,6 @@ export function DashboardContent({
   }
 
   async function handleDelete(row: TransactionRow) {
-    setError(null);
     markRemoved(row.id);
 
     let res: Response;
@@ -86,27 +78,67 @@ export function DashboardContent({
       res = await fetch(`/api/transactions/${row.id}`, { method: "DELETE" });
     } catch {
       unmarkRemoved(row.id);
-      setError("Couldn't reach the server — the transaction was not deleted.");
+      notify.error("Couldn't reach the server — the transaction was not deleted.");
       return;
     }
 
     if (!res.ok) {
       unmarkRemoved(row.id);
       const body = await res.json().catch(() => null);
-      setError(body?.error?.message ?? "Couldn't delete — please try again.");
+      notify.error(body?.error?.message ?? "Couldn't delete — please try again.");
       return;
     }
 
     startSync(() => router.refresh());
   }
 
-  const holdings = computeHoldings(rows);
+  // Multi-select delete from the Transaction History panel. Optimistically
+  // hides every selected row, fires one bulk request, and rolls the whole
+  // batch back on failure. Returns success so the panel can clear its
+  // selection and close the confirm dialog.
+  async function handleBulkDelete(ids: string[]): Promise<boolean> {
+    ids.forEach(markRemoved);
+
+    let res: Response;
+    try {
+      res = await fetch("/api/transactions/bulk", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids }),
+      });
+    } catch {
+      ids.forEach(unmarkRemoved);
+      notify.error("Couldn't reach the server — nothing was deleted.");
+      return false;
+    }
+
+    if (!res.ok) {
+      ids.forEach(unmarkRemoved);
+      const body = await res.json().catch(() => null);
+      notify.error(body?.error?.message ?? "Couldn't delete — please try again.");
+      return false;
+    }
+
+    const body = await res.json().catch(() => null);
+    const deleted = body?.data?.deleted ?? ids.length;
+    notify.success(
+      `${deleted} transaction${deleted === 1 ? "" : "s"} deleted.`
+    );
+    startSync(() => router.refresh());
+    return true;
+  }
+
+  // computeHoldings and computeRealized replay the ledger forward in
+  // time; `rows` is newest-first for the history table, so they must be
+  // re-sorted oldest-first or a sell is valued against an empty position.
+  const chronological = toChronological(rows);
+  const holdings = computeHoldings(chronological);
   const gainLoss = computeGainLoss(
     holdings.totalTroyOz,
     holdings.averageCostPerTroyOz,
     pricePerTroyOz
   );
-  const realized = computeRealized(rows);
+  const realized = computeRealized(chronological);
   const hasHoldings = Number(holdings.totalTroyOz) > 0;
 
   return (
@@ -128,7 +160,7 @@ export function DashboardContent({
       <TransactionDialog
         open={addOpen}
         onOpenChange={setAddOpen}
-        onOptimisticAdd={handleOptimisticAdd}
+        onOptimisticAdd={addOptimistic}
         onAddSettled={handleAddSettled}
         currentPricePerTroyOz={pricePerTroyOz}
         existingTransactions={rows}
@@ -172,12 +204,14 @@ export function DashboardContent({
             <TransactionHistory
               rows={rows}
               currentPricePerTroyOz={pricePerTroyOz}
-              error={error}
+              priceHistory={chartPoints}
               syncing={isSyncing}
               displayUnit={displayUnit}
               onDelete={handleDelete}
+              onBulkDelete={handleBulkDelete}
               onAddClick={() => setAddOpen(true)}
               onEditSuccess={handleEditSuccess}
+              onCsvImported={() => startSync(() => router.refresh())}
             />
           </div>
         </>

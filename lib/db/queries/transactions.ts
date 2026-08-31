@@ -1,4 +1,4 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, inArray } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { transactions } from "@/lib/db/schema";
 
@@ -77,8 +77,43 @@ export async function deleteOwnedTransaction(
   return deleted ? { ok: true, value: deleted } : classifyMiss(id);
 }
 
-// Called only from the Clerk `user.deleted` webhook — clears rows left
-// behind by a deleted account.
+// Bulk insert for the CSV import path. One multi-row INSERT, so it is
+// all-or-nothing: either every row lands or the statement fails and none
+// do. The caller (the /api/transactions/bulk route) has already validated
+// and capped the list.
+export async function createManyTransactionsForUser(
+  userId: string,
+  inputs: NewTransactionInput[]
+) {
+  if (inputs.length === 0) return [];
+  return db
+    .insert(transactions)
+    .values(inputs.map((input) => ({ ...input, userId })))
+    .returning();
+}
+
+// Bulk delete for the transaction list's multi-select action (DELETE
+// /api/transactions/bulk). Ownership-scoped in the same statement: ids
+// that aren't the caller's — or don't exist — are simply not matched, so
+// the returned id list is the source of truth for what was removed and
+// the client reconciles against it. The caller has already capped the
+// list length.
+export async function deleteManyOwnedTransactions(
+  userId: string,
+  ids: string[]
+) {
+  if (ids.length === 0) return [];
+  return db
+    .delete(transactions)
+    .where(
+      and(eq(transactions.userId, userId), inArray(transactions.id, ids))
+    )
+    .returning({ id: transactions.id });
+}
+
+// Clears every row owned by `userId`. Used by the Clerk `user.deleted`
+// webhook (account cleanup) and by the Settings "Delete all transactions"
+// action (DELETE /api/transactions).
 export async function deleteAllTransactionsForUser(userId: string) {
   return db
     .delete(transactions)

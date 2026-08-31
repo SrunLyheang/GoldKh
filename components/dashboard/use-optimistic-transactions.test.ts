@@ -61,9 +61,7 @@ describe("useOptimisticTransactions", () => {
     const { result } = renderHook(() => useOptimisticTransactions([serverRow()]));
 
     act(() => result.current.addOptimistic(pendingRow()));
-    act(() =>
-      result.current.settleAdd("temp-1", { ok: false, message: "boom" })
-    );
+    act(() => result.current.settleAdd("temp-1", { ok: false }));
 
     expect(result.current.rows.map((r) => r.id)).toEqual(["server-1"]);
   });

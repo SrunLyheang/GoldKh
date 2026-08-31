@@ -9,8 +9,7 @@ interface SegmentedControlOption<T extends string> {
 
 // Used by UnitToggle — a generic segmented-control shape (role="group",
 // pressed-state styling, sizing) kept separate from its options so a
-// future style change has one place to land. Previously also shared with
-// LanguageToggle, removed 2026-08-29.
+// future style change, or a second toggle, has one place to land.
 export function SegmentedControl<T extends string>({
   options,
   value,

@@ -12,7 +12,7 @@ export interface Realized {
 // minus what I sold it for" figure.
 //
 // Same weighted-average basis as computeHoldings (NOT FIFO — see
-// project-overview.md and context/product-strategy.md): each sell is
+// project-overview.md): each sell is
 // valued at the running average cost of the position at the moment of
 // that sell, and proceeds are the recorded sale price.
 //
