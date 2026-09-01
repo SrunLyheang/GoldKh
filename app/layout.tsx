@@ -9,7 +9,7 @@ import "./globals.css";
 
 // Editorial serif for the Ledger theme's headings and hero price.
 // Referenced only from globals.css's `[data-theme="ledger"]` block —
-// the default Vault theme never renders it.
+// the default Liquid Glass theme never renders it.
 const newsreader = Newsreader({
   subsets: ["latin"],
   weight: ["400", "500", "600"],

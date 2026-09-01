@@ -1,4 +1,4 @@
-// Custom Vault-theme nav icon: a square gauge housing with a single
+// Custom dashboard nav icon: a square gauge housing with a single
 // needle and its scale tick. 24×24, square caps + miter joins,
 // stroke only.
 export function InsightsIcon({ className }: { className?: string }) {

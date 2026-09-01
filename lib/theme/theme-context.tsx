@@ -6,15 +6,15 @@ const STORAGE_KEY = "goldkh-theme";
 
 // Adding a theme is one entry here plus one `:root[data-theme="<id>"]`
 // token block in app/globals.css — components never change, they read
-// the tokens. `liquid-glass` is the default; `:root` still carries the
-// `vault` tokens as a fallback, so the SSR markup and the first client
-// paint render as vault for one frame before the provider sets
-// `data-theme="liquid-glass"` (known one-render swap, same as a stored
-// non-default theme — the dashboard is entirely behind auth + "use
+// the tokens. `liquid-glass` is the default. The bare `:root` block is
+// not a selectable theme: it is the pre-hydration fallback and the
+// layer the non-liquid-glass themes derive their `--glass-*` tokens
+// from. SSR markup and the first client paint render from that base for
+// one frame before the provider sets `data-theme="liquid-glass"` (known
+// one-render swap; the dashboard is entirely behind auth + "use
 // client", so there is no SSR consequence).
 export const THEMES = [
   { id: "liquid-glass", label: "Liquid Glass" },
-  { id: "vault", label: "Vault" },
   { id: "ledger", label: "Ledger" },
   { id: "midnight", label: "Midnight" },
   { id: "emerald", label: "Emerald" },
@@ -39,11 +39,11 @@ const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 // Mirrors LocaleProvider: client-only, localStorage-backed, starts on
 // the default ("liquid-glass") every render, then reads the stored
-// preference in an effect. `:root` carries the vault tokens, so the
-// server markup paints as vault for one frame before the mount effect
-// sets `data-theme="liquid-glass"` — the same one-render swap that a
-// stored non-default theme already causes. The dashboard is entirely
-// behind auth and "use client", so there is no SSR consequence.
+// preference in an effect. The server markup paints from the `:root`
+// base for one frame before the mount effect sets
+// `data-theme="liquid-glass"` — the same one-render swap that a stored
+// non-default theme already causes. The dashboard is entirely behind
+// auth and "use client", so there is no SSR consequence.
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setThemeState] = useState<ThemeId>("liquid-glass");
 
@@ -60,14 +60,10 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const root = document.documentElement;
-    if (theme === "vault") {
-      root.removeAttribute("data-theme");
-    } else {
-      root.setAttribute("data-theme", theme);
-    }
-    // Clear when the theme changes or the provider unmounts, so a
-    // non-default theme doesn't leak onto routes that render outside this
-    // provider (e.g. the marketing pages).
+    root.setAttribute("data-theme", theme);
+    // Clear when the theme changes or the provider unmounts, so the
+    // dashboard theme doesn't leak onto routes that render outside this
+    // provider (e.g. the marketing pages) — they fall back to `:root`.
     return () => root.removeAttribute("data-theme");
   }, [theme]);
 

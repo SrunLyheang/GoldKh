@@ -17,7 +17,7 @@ import { AccountButton } from "./account-button";
 import { SignOutButton } from "./sign-out-button";
 import { ThemeToggle } from "./theme-toggle";
 
-// Nav destinations rendered with the bespoke Vault icon set
+// Nav destinations rendered with the bespoke dashboard icon set
 // (components/icons/). Settings is not here — it stays a separate
 // footer <Link> on the user/profile row.
 const NAV_ITEMS = [

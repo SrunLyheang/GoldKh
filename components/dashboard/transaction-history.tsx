@@ -721,7 +721,7 @@ export function TransactionHistory({
           aria-label={t.transactions.syncing}
           className="mb-3 h-0.5 w-full overflow-hidden bg-border"
         >
-          <div className="h-full w-1/3 bg-primary motion-safe:animate-[vault-indeterminate_1.1s_ease-in-out_infinite] motion-reduce:w-full motion-reduce:opacity-40" />
+          <div className="h-full w-1/3 bg-primary motion-safe:animate-[sync-indeterminate_1.1s_ease-in-out_infinite] motion-reduce:w-full motion-reduce:opacity-40" />
         </div>
       )}
       {selection.selectedCount > 0 && (

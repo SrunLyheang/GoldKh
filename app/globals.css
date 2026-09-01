@@ -50,16 +50,18 @@
     --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-:root,
-:root[data-theme="vault"],
-[data-theme="vault"] {
-    /* Vault — dark only, no light mode. The `[data-theme="vault"]`
-       selectors are only so the theme picker can preview Vault inside a
-       scoped wrapper; the provider still sets NO attribute on <html> for
-       Vault, so SSR is unaffected. Every theme block below is likewise
-       written as `:root[data-theme="x"], [data-theme="x"]` so a nested
+:root {
+    /* Base token layer — NOT a selectable theme. Two jobs: it is the
+       pre-hydration fallback (the frame before ThemeProvider sets
+       `data-theme="liquid-glass"`), and it is the layer the
+       non-liquid-glass themes derive their `--glass-*` / idiom tokens
+       from (Midnight, Emerald, Terminal only override colours, then
+       inherit the frosted treatment computed here). Dark, warm-neutral,
+       square — deliberately plain so the fallback frame reads as
+       "loading", not as a distinct theme. Every real theme block below
+       is written `:root[data-theme="x"], [data-theme="x"]` so a nested
        `<div data-theme="x">` (the picker's swatches) gets the full token
-       set, not just the <html> element. See context/ui-context.md. */
+       set, not just <html>. See context/ui-context.md. */
     --background: #0f0c08;
     --foreground: #f5f1e8;
     --card: #151009;
@@ -84,16 +86,14 @@
     --chart-3: #4ade80;
     --chart-4: #f87171;
     --chart-5: #f5f1e8;
-    /* Industrial Brutalism fusion (see context/ui-context.md): sharp 90°
-       corners everywhere. Every rounded-* utility derives from this one
-       token, so zeroing it is the single edit that squares the app. */
+    /* Square by default; every rounded-* utility derives from this one
+       token. Each real theme block below sets its own corner. */
     --radius: 0px;
 
-    /* Theme idiom tokens. These carry the Vault (Industrial Brutalism)
-       values; each `[data-theme]` block below overrides them. Components
-       reach the idiom only through `.tt-label` / `.tt-heading` /
-       `.tt-display` / `.tt-bracket` / `.shadow-vault-*`, never by
-       hardcoding it — that is what makes a new theme one CSS block.
+    /* Theme idiom tokens — plain base values; each `[data-theme]` block
+       below overrides them. Components reach the idiom only through
+       `.tt-label` / `.tt-heading` / `.tt-display` / `.tt-bracket`, never
+       by hardcoding it — that is what makes a new theme one CSS block.
        See context/ui-context.md's Theming section. */
     --label-font: var(--font-mono);
     --label-transform: uppercase;
@@ -121,7 +121,7 @@
        each theme's own --card / --foreground / --primary, so the five
        non-default themes inherit a coherent frosted treatment for free
        — only the two light themes (below) and the dedicated
-       `liquid-glass` block override them. Components reach glass only
+       `liquid-glass` block override them outright. Components reach glass only
        through `.glass-surface` / `.glass-overlay` / `.glass-glow`,
        never by hardcoding. See context/ui-context.md. */
     --glass-bg: color-mix(in oklab, var(--card) 80%, transparent);
@@ -141,11 +141,10 @@
 
 /* ---- Ledger theme (minimalist-ui direction) --------------------------
    Warm monochrome paper, editorial serif headings, soft borders and
-   shadows, rounded corners. Selectable from the sidebar theme toggle;
-   Vault stays the default (no `data-theme` attribute). Adding another
-   theme means another block just like this one — nothing in the
-   components changes. See context/ui-context.md's Theming section and
-   the "Goldsmith's Ledger" mockup. */
+   shadows, rounded corners. Selectable from the sidebar theme toggle.
+   Adding another theme means another block just like this one — nothing
+   in the components changes. See context/ui-context.md's Theming
+   section and the "Goldsmith's Ledger" mockup. */
 :root[data-theme="ledger"],
 [data-theme="ledger"] {
     --background: #f7f6f3;
@@ -200,7 +199,7 @@
 
 /* ---- Midnight theme — "soft glass" -------------------------------
    Deep cool blue-black, a bright indigo accent, and a completely
-   different elevation language from Vault: no visible card borders,
+   different elevation language from the base: no visible card borders,
    large soft blue GLOW instead of a hard plate, generously rounded
    corners. Headings are airy — sans, sentence-case, LIGHT weight,
    positive tracking. Labels drop to sans too. No bracket framing.
@@ -261,7 +260,7 @@
    Deep forest green, a vivid emerald accent, very round corners and
    a soft green-tinted shadow. Headings are the opposite of Midnight's:
    sans, UPPERCASE, HEAVY (800), tightly tracked — a stout, confident
-   voice. Labels stay mono. No bracket framing (that stays Vault's).
+   voice. Labels stay mono. No bracket framing.
    See context/ui-context.md's Theming section. */
 :root[data-theme="emerald"],
 [data-theme="emerald"] {
@@ -531,17 +530,6 @@
     }
 }
 
-/* Hard-edged offset shadows, no blur — brutalism rejects soft drop
-   shadows, so elevation reads as a flat plate stacked on the page
-   instead of a glow. `-lg` (hero, chart) casts further than `-sm`
-   (stat/transaction cards) to keep the same hierarchy the blurred
-   versions had. See context/ui-context.md. */
-.shadow-vault-lg {
-  box-shadow: var(--shadow-lg);
-}
-.shadow-vault-sm {
-  box-shadow: var(--shadow-sm);
-}
 
 /* ─── Liquid Glass surfaces ──────────────────────────────────────────
    `.glass-surface` — scrolling cards. NO backdrop-filter (it visibly
@@ -654,7 +642,7 @@
 
 /* A faint fixed grain so the near-black background reads as a surface
    rather than a flat fill. Pointer-events-none, decorative only. */
-.vault-grain::before {
+.app-grain::before {
   content: "";
   position: fixed;
   inset: 0;
@@ -667,18 +655,18 @@
 
 /* Overlay grain reads as light-on-dark; on the light themes' paper it
    needs to darken instead, and more faintly. */
-:root[data-theme="ledger"] .vault-grain::before,
-:root[data-theme="porcelain"] .vault-grain::before {
+:root[data-theme="ledger"] .app-grain::before,
+:root[data-theme="porcelain"] .app-grain::before {
   opacity: 0.03;
   mix-blend-mode: multiply;
 }
 
 /* Terminal leans into the CRT look — a touch more visible grain plus
    horizontal scanlines from a second fixed layer. Decorative, inert. */
-:root[data-theme="terminal"] .vault-grain::before {
+:root[data-theme="terminal"] .app-grain::before {
   opacity: 0.08;
 }
-:root[data-theme="terminal"] .vault-grain::after {
+:root[data-theme="terminal"] .app-grain::after {
   content: "";
   position: fixed;
   inset: 0;
@@ -714,9 +702,9 @@
   font-weight: var(--heading-weight);
 }
 
-/* The one hero price headline. Vault keeps it on the mono tabular face
-   (ui-context.md's numbers rule); a theme may point --display-font at a
-   serif. tabular-nums stays on either way so digits still align. */
+/* The one hero price headline. The base keeps it on the mono tabular
+   face (ui-context.md's numbers rule); a theme may point --display-font
+   at a serif. tabular-nums stays on either way so digits still align. */
 .tt-display {
   font-family: var(--display-font);
   font-variant-numeric: tabular-nums;
@@ -738,29 +726,6 @@
 .tt-eyebrow::before {
   content: var(--eyebrow-glyph);
   color: var(--primary);
-}
-
-/* One authored entrance: dashboard sections cascade in rather than
-   mounting all at once. Applied via `.vault-enter` + a `--enter-delay`
-   custom property per section (see dashboard-content.tsx). */
-@keyframes vault-enter {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-.vault-enter {
-  animation: vault-enter 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
-  animation-delay: var(--enter-delay, 0ms);
-}
-@media (prefers-reduced-motion: reduce) {
-  .vault-enter {
-    animation: none;
-  }
 }
 
 /* Financial-figure change cue. A figure that changed on a data update
@@ -789,7 +754,7 @@
    while a post-mutation router.refresh() reconciles in a transition.
    Compositor-only (transform). Reduced-motion callers render a static
    full-width dimmed bar instead — see TransactionHistory. */
-@keyframes vault-indeterminate {
+@keyframes sync-indeterminate {
   0% {
     transform: translateX(-100%);
   }
@@ -867,7 +832,7 @@
 }
 
 /* Paint the page ground behind the wrapper so a rubber-band overscroll
-   doesn't reveal the dark vault body underneath the light landing. */
+   doesn't reveal the dark `:root` body underneath the light landing. */
 html:has([data-landing-theme="light"]) body {
   background-color: #f7f6f3;
 }

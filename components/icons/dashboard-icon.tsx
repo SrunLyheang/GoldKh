@@ -1,4 +1,4 @@
-// Custom Vault-theme nav icon: 2×2 grid of squares, top-left filled.
+// Custom dashboard nav icon: 2×2 grid of squares, top-left filled.
 // 24×24, square caps + miter joins to match the 0-radius brutalist
 // language. The filled square is the deliberate `fill="currentColor"`
 // exception across the custom set (see context/design-specs).

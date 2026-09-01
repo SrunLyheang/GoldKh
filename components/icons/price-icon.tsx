@@ -1,4 +1,4 @@
-// Custom Vault-theme nav icon: a stepped line climbing over a
+// Custom dashboard nav icon: a stepped line climbing over a
 // baseline — deliberately blocky, not a smooth swoosh. 24×24,
 // square caps + miter joins, stroke only.
 export function PriceIcon({ className }: { className?: string }) {

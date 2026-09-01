@@ -1,4 +1,4 @@
-// Custom Vault-theme nav icon: two horizontal arrows crossing —
+// Custom dashboard nav icon: two horizontal arrows crossing —
 // a buy flowing one way, a sell the other. 24×24, square caps +
 // miter joins, stroke only.
 export function TransactionsIcon({ className }: { className?: string }) {

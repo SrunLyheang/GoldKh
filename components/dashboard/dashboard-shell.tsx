@@ -25,7 +25,7 @@ export function DashboardShell({ children }: { children: ReactNode }) {
     <LocaleProvider>
       <ThemeProvider>
         <PrefsProvider>
-        <div className="vault-grain relative flex min-h-screen bg-background">
+        <div className="app-grain relative flex min-h-screen bg-background">
           {/* Ambient dual-glow ground — a fixed radial wash built from
               the theme's --glow-color, behind the z-10 content column.
               Pure paint, pointer-transparent, still under any motion. */}
