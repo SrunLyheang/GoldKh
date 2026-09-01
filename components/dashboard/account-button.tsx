@@ -13,8 +13,11 @@ import { UserButton } from "@clerk/nextjs";
 //    apparently frozen until a manual refresh. Render <SignOutButton>
 //    (which hard-navigates) somewhere alongside this instead.
 //
-// `showName` is forwarded (the sidebar shows it, the mobile top bar
-// doesn't).
+// `showName` is forwarded but currently unused at every call site: the
+// sidebar renders the identifier itself as a full-width truncating line
+// (Clerk's inline `showName` label has no width cap and overflowed the
+// ~236px sidebar into the settings gear), and the mobile top bar never
+// showed it. Kept on the prop so a future call site can opt back in.
 export function AccountButton({ showName }: { showName?: boolean }) {
   return (
     <UserButton

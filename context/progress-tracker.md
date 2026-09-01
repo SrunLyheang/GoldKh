@@ -3331,3 +3331,29 @@ login`, then `clerk link --app app_3IPmnrB8WJNqRcixFjjf3stYS87`
      `components/auth/auth-shell.test.tsx`. tsc + eslint clean, 392 tests
      pass, `npm run build` green, verified in browser. Branch
      `feat/auth-split-card`.
+
+- **2026-09-01:** fixed the sidebar footer account row overflow — the
+  email identifier (`Srunlyheang07@gmail.com`) in the ~236px sidebar was
+  painting over the settings gear + avatar beside it. Clerk's inline
+  `<UserButton showName>` label (`.cl-userButtonOuterIdentifier`) has
+  `white-space: nowrap` and no width cap, and fighting it with
+  `appearance` overrides still left it competing for horizontal space on
+  the same row. Final fix: stop using Clerk's `showName` in the sidebar.
+  `Sidebar` now reads the identifier itself via `useUser()`
+  (`primaryEmailAddress?.emailAddress ?? username`) and renders it as its
+  own **full-width** line (`truncate text-[12px] text-muted-foreground`,
+  `title={identifier}`) above the avatar / gear / sign-out row, so it
+  truncates against the whole sidebar width and nothing overlaps.
+  `AccountButton` reverted to avatar-only (`showName` prop kept but
+  unused). Mobile top bar unaffected. tsc clean, 83 dashboard component
+  tests pass.
+
+- **2026-09-01:** mounted the scroll-following gold bar on the landing
+  page. `components/welcome/scroll-gold-bar.tsx` (`ScrollGoldBar` — a
+  fixed, full-viewport, scroll-progress-driven wireframe gold bar behind
+  all content, `aria-hidden` + `pointer-events-none`) had existed with
+  tests since commit `a3ca884` but was never imported anywhere except its
+  own test — so it never rendered on the site. `LiquidGlassLanding` now
+  imports it and renders `<ScrollGoldBar />` right after `<GoldCursor />`.
+  Distinct from `GoldBarDiorama` (interactive parallax bar lower on the
+  page), which was already wired. tsc clean.

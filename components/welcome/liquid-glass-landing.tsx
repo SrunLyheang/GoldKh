@@ -19,6 +19,7 @@ import { GoldBarDiorama } from "./gold-bar-diorama";
 import { GoldCursor } from "./gold-cursor";
 import { HeroToDashboard } from "./hero-to-dashboard";
 import { Magnetic } from "./magnetic";
+import { ScrollGoldBar } from "./scroll-gold-bar";
 import { SectionProgressNav } from "./section-progress-nav";
 import { SpotlightCard } from "./spotlight-card";
 import { SpotSparkline } from "./spot-sparkline";
@@ -54,6 +55,7 @@ export function LiquidGlassLanding() {
   return (
     <div className="landing-root liquid-glass-landing-root relative min-h-screen bg-black text-white font-sans selection:bg-white selection:text-black">
       <GoldCursor />
+      <ScrollGoldBar />
 
       {/* ── 1. Hero Section (Animated Looping Orb Video + Parallax + Particles) ─ */}
       <section className="relative w-full h-screen overflow-hidden">

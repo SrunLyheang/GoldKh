@@ -193,7 +193,7 @@ export function AnimatedHeroImage() {
         <div
           className="w-full h-full"
           style={{
-            transform: `rotateX(${tilt.x}deg) rotateY(${tilt.y}deg) scale(1.02)`,
+            transform: `rotateX(${tilt.x}deg) rotateY(${tilt.y}deg) scale(0.95)`,
             transformStyle: "preserve-3d",
           }}
         >
