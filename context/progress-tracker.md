@@ -14,6 +14,25 @@ Update this file after every meaningful implementation change.
 
 ## Recent changes
 
+- **2026-09-01:** Readability pass on the auth + sign-out code
+  (codebase-design / deep-module review). Two deepenings, no behaviour
+  change:
+  1. New `components/dashboard/account-button.tsx` — `<AccountButton>`
+     wraps Clerk's `<UserButton>` with the app's `appearance` (avatar
+     order + hiding the built-in "Sign out"). Removes the duplicated
+     `appearance` override and the `userButtonPopoverActionButton__signOut`
+     internal-key knowledge from `sidebar.tsx` and `dashboard-shell.tsx`;
+     both now just render `<AccountButton />` + `<SignOutButton />`.
+  2. `<AuthShell>` now renders its own `<BackToWelcome>` footer, so
+     `sign-in` / `sign-up` pages drop the duplicated
+     `<div className="mt-6 flex justify-center">` wrapper and are down to
+     `<AuthShell><SignIn appearance={authAppearance} /></AuthShell>`.
+  3. `SparkleField`'s inline `<style>` block moved to `app/globals.css`
+     under `.sparkle-field__*` (next to the existing `.auth-aurora-*`
+     set); the component is now pure markup. No duplicate `<style>` in
+     the DOM if it ever mounts more than once.
+  tsc + eslint clean, auth tests pass.
+
 - **2026-09-01:** Merged `feat/auth-split-card` into `main`. Three
   conflicts resolved: `progress-tracker.md` (both log blocks kept),
   and the sign-in / sign-up pages. The split-card `<AuthShell>`
@@ -3312,3 +3331,29 @@ login`, then `clerk link --app app_3IPmnrB8WJNqRcixFjjf3stYS87`
      `components/auth/auth-shell.test.tsx`. tsc + eslint clean, 392 tests
      pass, `npm run build` green, verified in browser. Branch
      `feat/auth-split-card`.
+
+- **2026-09-01:** fixed the sidebar footer account row overflow — the
+  email identifier (`Srunlyheang07@gmail.com`) in the ~236px sidebar was
+  painting over the settings gear + avatar beside it. Clerk's inline
+  `<UserButton showName>` label (`.cl-userButtonOuterIdentifier`) has
+  `white-space: nowrap` and no width cap, and fighting it with
+  `appearance` overrides still left it competing for horizontal space on
+  the same row. Final fix: stop using Clerk's `showName` in the sidebar.
+  `Sidebar` now reads the identifier itself via `useUser()`
+  (`primaryEmailAddress?.emailAddress ?? username`) and renders it as its
+  own **full-width** line (`truncate text-[12px] text-muted-foreground`,
+  `title={identifier}`) above the avatar / gear / sign-out row, so it
+  truncates against the whole sidebar width and nothing overlaps.
+  `AccountButton` reverted to avatar-only (`showName` prop kept but
+  unused). Mobile top bar unaffected. tsc clean, 83 dashboard component
+  tests pass.
+
+- **2026-09-01:** mounted the scroll-following gold bar on the landing
+  page. `components/welcome/scroll-gold-bar.tsx` (`ScrollGoldBar` — a
+  fixed, full-viewport, scroll-progress-driven wireframe gold bar behind
+  all content, `aria-hidden` + `pointer-events-none`) had existed with
+  tests since commit `a3ca884` but was never imported anywhere except its
+  own test — so it never rendered on the site. `LiquidGlassLanding` now
+  imports it and renders `<ScrollGoldBar />` right after `<GoldCursor />`.
+  Distinct from `GoldBarDiorama` (interactive parallax bar lower on the
+  page), which was already wired. tsc clean.

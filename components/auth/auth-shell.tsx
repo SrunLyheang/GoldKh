@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { UserRound } from "lucide-react";
 import { SparkleField } from "@/components/effects/sparkle-field";
 import { AuthMascot } from "./auth-mascot";
+import { BackToWelcome } from "./back-to-welcome";
 
 export function AuthShell({
   heading,
@@ -44,6 +45,9 @@ export function AuthShell({
             {subheading}
           </p>
           <div className="w-full min-w-0 max-w-[400px]">{children}</div>
+          <div className="mt-6 flex justify-center">
+            <BackToWelcome />
+          </div>
         </div>
       </div>
     </main>

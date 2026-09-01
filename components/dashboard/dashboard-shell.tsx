@@ -1,6 +1,5 @@
 "use client";
 
-import { UserButton } from "@clerk/nextjs";
 import { Menu } from "lucide-react";
 import Image from "next/image";
 import { useState, type ReactNode } from "react";
@@ -8,6 +7,7 @@ import { LocaleProvider } from "@/lib/i18n/locale-context";
 import { PrefsProvider } from "@/lib/prefs/prefs-context";
 import { ThemeProvider } from "@/lib/theme/theme-context";
 import { Toaster } from "@/components/ui/sonner";
+import { AccountButton } from "./account-button";
 import { Sidebar } from "./sidebar";
 import { SignOutButton } from "./sign-out-button";
 import { ThemeToggle } from "./theme-toggle";
@@ -50,18 +50,7 @@ export function DashboardShell({ children }: { children: ReactNode }) {
               </span>
               <div className="flex shrink-0 items-center gap-2.5">
                 <ThemeToggle />
-                <UserButton
-                  appearance={{
-                    elements: {
-                      userButtonBox: "flex-row-reverse",
-                      // See sign-out-button.tsx — the built-in sign out is
-                      // hidden in favour of <SignOutButton>.
-                      userButtonPopoverActionButton__signOut: {
-                        display: "none",
-                      },
-                    },
-                  }}
-                />
+                <AccountButton />
                 <SignOutButton />
               </div>
             </header>

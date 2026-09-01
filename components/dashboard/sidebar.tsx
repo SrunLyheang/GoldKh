@@ -1,6 +1,6 @@
 "use client";
 
-import { UserButton } from "@clerk/nextjs";
+import { useUser } from "@clerk/nextjs";
 import { Settings, X } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -13,6 +13,7 @@ import {
 } from "@/components/icons";
 import { useLocale } from "@/lib/i18n/locale-context";
 import { cn } from "@/lib/utils";
+import { AccountButton } from "./account-button";
 import { SignOutButton } from "./sign-out-button";
 import { ThemeToggle } from "./theme-toggle";
 
@@ -47,7 +48,10 @@ export function Sidebar({
 }) {
   const pathname = usePathname();
   const { t } = useLocale();
+  const { user } = useUser();
   const settingsActive = pathname === "/dashboard/settings";
+  const identifier =
+    user?.primaryEmailAddress?.emailAddress ?? user?.username ?? "";
 
   return (
     <>
@@ -116,21 +120,18 @@ export function Sidebar({
             );
           })}
         </nav>
-        <div className="flex flex-col gap-4 border-t border-border px-4 py-5">
+        <div className="flex flex-col gap-3 border-t border-border px-4 py-5">
           <ThemeToggle className="self-start" />
+          {identifier && (
+            <p
+              className="truncate text-[12px] text-muted-foreground"
+              title={identifier}
+            >
+              {identifier}
+            </p>
+          )}
           <div className="flex items-center justify-between gap-2">
-            <UserButton
-              appearance={{
-                elements: {
-                  userButtonBox: "flex-row-reverse",
-                  // The built-in sign out does a soft client-side nav that
-                  // leaves the dashboard frozen until a refresh — replaced
-                  // by <SignOutButton> below. See sign-out-button.tsx.
-                  userButtonPopoverActionButton__signOut: { display: "none" },
-                },
-              }}
-              showName
-            />
+            <AccountButton />
             <div className="flex shrink-0 items-center gap-1.5">
               <Link
                 href="/dashboard/settings"
