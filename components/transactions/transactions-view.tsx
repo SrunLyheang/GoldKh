@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
 import { cn } from "@/lib/utils";
-import { useReveal } from "@/components/motion/use-reveal";
+import { useSectionEnter } from "@/components/motion/use-section-enter";
 import { formatQuantity, formatUsd } from "@/lib/format/money";
 import { notify } from "@/lib/ui/toast";
 import {
@@ -368,7 +368,7 @@ export function TransactionsView({
   const { t } = useLocale();
   const router = useRouter();
   const { ref: revealRef, revealClass, style: revealStyle } =
-    useReveal<HTMLDivElement>(0);
+    useSectionEnter<HTMLDivElement>(0);
   const [, startSync] = useTransition();
   const [form, setForm] = useState<FilterFormState>(EMPTY_FILTERS);
   const [expandedId, setExpandedId] = useState<string | null>(null);

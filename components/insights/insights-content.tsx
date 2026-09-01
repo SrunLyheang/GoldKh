@@ -13,7 +13,7 @@ import {
   type PriceSnapshotPoint,
 } from "@/lib/calc/portfolioSeries";
 import { useLocale } from "@/lib/i18n/locale-context";
-import { useReveal } from "@/components/motion/use-reveal";
+import { useSectionEnter } from "@/components/motion/use-section-enter";
 import { cn } from "@/lib/utils";
 import { Panel } from "@/components/dashboard/panel";
 import { Readouts } from "./readouts";
@@ -42,15 +42,15 @@ export function InsightsContent({
   // entrance the main dashboard uses. Hooks run unconditionally; the
   // wrappers below attach ref + class + delay.
   const { ref: titleRef, revealClass: titleCls, style: titleStyle } =
-    useReveal<HTMLHeadingElement>(0);
+    useSectionEnter<HTMLHeadingElement>(0);
   const { ref: readoutsRef, revealClass: readoutsCls, style: readoutsStyle } =
-    useReveal<HTMLDivElement>(60);
+    useSectionEnter<HTMLDivElement>(60);
   const { ref: valueRef, revealClass: valueCls, style: valueStyle } =
-    useReveal<HTMLDivElement>(120);
+    useSectionEnter<HTMLDivElement>(120);
   const { ref: buyHistoryRef, revealClass: buyHistoryCls, style: buyHistoryStyle } =
-    useReveal<HTMLDivElement>(160);
+    useSectionEnter<HTMLDivElement>(160);
   const { ref: whatIfRef, revealClass: whatIfCls, style: whatIfStyle } =
-    useReveal<HTMLDivElement>(200);
+    useSectionEnter<HTMLDivElement>(200);
 
   // Newest-first from the server; the replay-based aggregates below need
   // it oldest-first (see toChronological).

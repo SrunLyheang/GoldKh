@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { useReveal } from "@/components/motion/use-reveal";
+import { useSectionEnter } from "@/components/motion/use-section-enter";
 import { notify } from "@/lib/ui/toast";
 import { computeGainLoss } from "@/lib/calc/gainLoss";
 import { computeHoldings } from "@/lib/calc/holdings";
@@ -59,15 +59,15 @@ export function DashboardContent({
   // Sections glide in on scroll-into-view, staggered. Hooks are called
   // unconditionally; the wrappers below attach ref + class + delay.
   const { ref: heroRef, revealClass: heroCls, style: heroStyle } =
-    useReveal<HTMLDivElement>(0);
+    useSectionEnter<HTMLDivElement>(0);
   const { ref: statRef, revealClass: statCls, style: statStyle } =
-    useReveal<HTMLDivElement>(80);
+    useSectionEnter<HTMLDivElement>(80);
   const { ref: realizedRef, revealClass: realizedCls, style: realizedStyle } =
-    useReveal<HTMLDivElement>(140);
+    useSectionEnter<HTMLDivElement>(140);
   const { ref: historyRef, revealClass: historyCls, style: historyStyle } =
-    useReveal<HTMLDivElement>(180);
+    useSectionEnter<HTMLDivElement>(180);
   const { ref: chartRef, revealClass: chartCls, style: chartStyle } =
-    useReveal<HTMLDivElement>(200);
+    useSectionEnter<HTMLDivElement>(200);
   const { rows, addOptimistic, settleAdd, markRemoved, unmarkRemoved } =
     useOptimisticTransactions(transactions);
 

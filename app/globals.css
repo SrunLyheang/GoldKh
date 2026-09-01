@@ -910,6 +910,33 @@ html:has([data-landing-theme="dark"]) body {
   }
 }
 
+/* Dashboard section entrance. A cheap, JS-independent fade-up: a
+   keyframe with `both` fill that plays at first paint (SSR markup
+   included), staggered by a per-section `--enter-delay`. No
+   IntersectionObserver and no hidden resting state, so a section is
+   never blank waiting on hydration — the price is readable as soon as
+   the HTML lands. Compositor-only (opacity + transform), no blur.
+   Driven by `useSectionEnter`. */
+@keyframes dash-enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.dash-enter {
+  animation: dash-enter 0.5s var(--ease-glide) both;
+  animation-delay: var(--enter-delay, 0ms);
+}
+@media (prefers-reduced-motion: reduce) {
+  .dash-enter {
+    animation: none;
+  }
+}
+
 /* Nav bar: one authored entrance on first paint — the header eases
    down from -10px and unblurs as the page loads, then never moves. */
 @keyframes landing-nav-enter {
