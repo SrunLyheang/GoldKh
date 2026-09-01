@@ -8,7 +8,7 @@ GoldKh is a **multi-user web app**, not an exchange. No money moves through it:
 you record transactions you made elsewhere, and the dashboard does the math
 against a cached live gold price. Anyone can sign up.
 
-- **Units** — you enter and view holdings in *chi* and *damlung*. Prices are
+- **Units** — you enter and view holdings in _chi_ and _damlung_. Prices are
   stored canonically as USD per troy ounce and converted for display.
 - **Cost basis** — weighted average, not FIFO. Selling reduces your quantity and
   leaves the average cost per unit unchanged.
@@ -39,35 +39,35 @@ against a cached live gold price. Anyone can sign up.
 
 ## Screens
 
-| Route | What it shows |
-| --- | --- |
-| `/` · `/welcome` | Marketing landing (redirects to the dashboard once you're signed in) |
-| `/dashboard` | Live price, your position stats, realized gains, transaction history, price chart |
-| `/dashboard/price` | Full-screen interactive spot-price chart with range presets and drag-to-zoom |
-| `/dashboard/insights` | Plain-language readouts, portfolio value over time, per-buy quality, a what-if calculator |
-| `/dashboard/transactions` | Full filterable and sortable table, row detail, CSV import/export |
-| `/dashboard/settings` | Account management, display preferences (unit, theme), data actions |
+| Route                     | What it shows                                                                             |
+| ------------------------- | ----------------------------------------------------------------------------------------- |
+| `/` · `/welcome`          | Marketing landing (redirects to the dashboard once you're signed in)                      |
+| `/dashboard`              | Live price, your position stats, realized gains, transaction history, price chart         |
+| `/dashboard/price`        | Full-screen interactive spot-price chart with range presets and drag-to-zoom              |
+| `/dashboard/insights`     | Plain-language readouts, portfolio value over time, per-buy quality, a what-if calculator |
+| `/dashboard/transactions` | Full filterable and sortable table, row detail, CSV import/export                         |
+| `/dashboard/settings`     | Account management, display preferences (unit, theme), data actions                       |
 
-Every route except the landing and auth pages is private.
+Every **page** route except the landing and auth pages is private. Exception: server-to-server webhooks like `/api/webhooks/clerk` are public and verified by Svix signature, not Clerk authentication.
 
 ---
 
 ## Stack
 
-| Layer | Choice |
-| --- | --- |
-| Framework | [Next.js](https://nextjs.org) 16 (App Router) + [React](https://react.dev) 19 |
-| Language | TypeScript 5 (`strict`) |
-| Styling | [Tailwind CSS](https://tailwindcss.com) v4, [shadcn/ui](https://ui.shadcn.com) on [Base UI](https://base-ui.com), [Lucide](https://lucide.dev) icons, Geist fonts |
-| Auth | [Clerk](https://clerk.com) |
-| Database | [Neon](https://neon.tech) serverless Postgres + [Drizzle ORM](https://orm.drizzle.team) |
-| Charts | [Recharts](https://recharts.org) 3 |
-| Motion | [`motion`](https://motion.dev) 13 |
-| Money math | [`decimal.js`](https://mikemcl.github.io/decimal.js/) — no floating point |
-| Validation | [Zod](https://zod.dev) 4 |
-| Errors | [Sentry](https://sentry.io) (optional) |
-| Tests | [Vitest](https://vitest.dev) 4 + Testing Library |
-| Hosting | [Vercel](https://vercel.com) |
+| Layer      | Choice                                                                                                                                                            |
+| ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Framework  | [Next.js](https://nextjs.org) 16 (App Router) + [React](https://react.dev) 19                                                                                     |
+| Language   | TypeScript 5 (`strict`)                                                                                                                                           |
+| Styling    | [Tailwind CSS](https://tailwindcss.com) v4, [shadcn/ui](https://ui.shadcn.com) on [Base UI](https://base-ui.com), [Lucide](https://lucide.dev) icons, Geist fonts |
+| Auth       | [Clerk](https://clerk.com)                                                                                                                                        |
+| Database   | [Neon](https://neon.tech) serverless Postgres + [Drizzle ORM](https://orm.drizzle.team)                                                                           |
+| Charts     | [Recharts](https://recharts.org) 3                                                                                                                                |
+| Motion     | [`motion`](https://motion.dev) 13                                                                                                                                 |
+| Money math | [`decimal.js`](https://mikemcl.github.io/decimal.js/) — no floating point                                                                                         |
+| Validation | [Zod](https://zod.dev) 4                                                                                                                                          |
+| Errors     | [Sentry](https://sentry.io) (optional)                                                                                                                            |
+| Tests      | [Vitest](https://vitest.dev) 4 + Testing Library                                                                                                                  |
+| Hosting    | [Vercel](https://vercel.com)                                                                                                                                      |
 
 ---
 
@@ -75,13 +75,13 @@ Every route except the landing and auth pages is private.
 
 One Next.js repo, split into modules that each own a single concern:
 
-| Module | Responsibility |
-| --- | --- |
-| `app/` | Routes, pages, and API handlers — request parsing, auth, and response shaping only |
-| `lib/db/` | Database schema, migrations, and every query |
-| `lib/price/` | The price layer: provider modules (goldapi.io, Binance PAXG), rotation, staleness, and caching, behind a single `getPrice()` |
-| `lib/calc/` | Pure functions for cost basis, holdings, gain/loss, and unit conversion — no I/O |
-| `components/` | UI — receives already-computed values as props |
+| Module        | Responsibility                                                                                                               |
+| ------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `app/`        | Routes, pages, and API handlers — request parsing, auth, and response shaping only                                           |
+| `lib/db/`     | Database schema, migrations, and every query                                                                                 |
+| `lib/price/`  | The price layer: provider modules (goldapi.io, Binance PAXG), rotation, staleness, and caching, behind a single `getPrice()` |
+| `lib/calc/`   | Pure functions for cost basis, holdings, gain/loss, and unit conversion — no I/O                                             |
+| `components/` | UI — receives already-computed values as props                                                                               |
 
 **Request flow:** a server component reads the database directly, hands plain
 data to one client component per route, and changes are saved through `/api/*`
@@ -123,11 +123,11 @@ CONTEXT.md              Domain glossary
 Three Postgres tables (`lib/db/schema.ts`). Every money and quantity column is
 `numeric` — never a float.
 
-| Table | Purpose |
-| --- | --- |
-| `transactions` | One row per buy/sell: type, quantity, unit (`chi` / `damlung`), price per unit, currency (`USD` / `KHR`), date, notes. Belongs to one signed-in user. |
-| `price_snapshots` | Append-only price cache: USD per troy ounce, source, manual flag, capture time. Shared by everyone. |
-| `rate_limit_counters` | Per-user throttling for manual price refreshes. |
+| Table                 | Purpose                                                                                                                                               |
+| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `transactions`        | One row per buy/sell: type, quantity, unit (`chi` / `damlung`), price per unit, currency (`USD` / `KHR`), date, notes. Belongs to one signed-in user. |
+| `price_snapshots`     | Append-only price cache: USD per troy ounce, source, manual flag, capture time. Shared by everyone.                                                   |
+| `rate_limit_counters` | Per-user throttling for manual price refreshes.                                                                                                       |
 
 Your holdings, average cost, and gain/loss are recalculated on every load from
 your transactions — never stored as their own row.
@@ -156,14 +156,14 @@ Open <http://localhost:3000>.
 Validated at startup — a missing or malformed **required** value stops the
 process before it serves a request.
 
-| Variable | Required | Notes |
-| --- | --- | --- |
-| `DATABASE_URL` | ✅ | Neon **pooled** connection string |
-| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | ✅ | Clerk frontend key |
-| `CLERK_SECRET_KEY` | ✅ | Clerk backend key |
-| `GOLDAPI_IO_API_KEY` | ✅ | Price provider key |
-| `CLERK_WEBHOOK_SIGNING_SECRET` | — | Needed only for the Clerk webhook endpoint |
-| `NEXT_PUBLIC_SENTRY_DSN` | — | Leave unset to turn off error tracking |
+| Variable                            | Required | Notes                                      |
+| ----------------------------------- | -------- | ------------------------------------------ |
+| `DATABASE_URL`                      | ✅       | Neon **pooled** connection string          |
+| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | ✅       | Clerk frontend key                         |
+| `CLERK_SECRET_KEY`                  | ✅       | Clerk backend key                          |
+| `GOLDAPI_IO_API_KEY`                | ✅       | Price provider key                         |
+| `CLERK_WEBHOOK_SIGNING_SECRET`      | —        | Needed only for the Clerk webhook endpoint |
+| `NEXT_PUBLIC_SENTRY_DSN`            | —        | Leave unset to turn off error tracking     |
 
 ---
 
@@ -181,14 +181,14 @@ npx drizzle-kit migrate       # apply pending migrations to $DATABASE_URL
 
 ## Scripts
 
-| Command | Description |
-| --- | --- |
-| `npm run dev` | Start the dev server |
-| `npm run build` | Production build |
-| `npm run start` | Start the production server |
-| `npm run lint` | Lint with ESLint |
-| `npm run test` | Run the test suite once |
-| `npm run test:watch` | Run tests in watch mode |
+| Command              | Description                 |
+| -------------------- | --------------------------- |
+| `npm run dev`        | Start the dev server        |
+| `npm run build`      | Production build            |
+| `npm run start`      | Start the production server |
+| `npm run lint`       | Lint with ESLint            |
+| `npm run test`       | Run the test suite once     |
+| `npm run test:watch` | Run tests in watch mode     |
 
 ---
 
@@ -255,7 +255,7 @@ Issues and discussion:
 
 ## Documentation
 
-| Path | Contents |
-| --- | --- |
-| [`context/`](context) | Product scope, architecture, UI conventions, and coding standards |
-| [`CONTEXT.md`](CONTEXT.md) | Domain glossary — the terms the project uses and what they mean |
+| Path                       | Contents                                                          |
+| -------------------------- | ----------------------------------------------------------------- |
+| [`context/`](context)      | Product scope, architecture, UI conventions, and coding standards |
+| [`CONTEXT.md`](CONTEXT.md) | Domain glossary — the terms the project uses and what they mean   |
