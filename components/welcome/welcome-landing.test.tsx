@@ -92,7 +92,7 @@ describe("WelcomeLanding / LiquidGlassLanding", () => {
   it("renders the interactive Try It simulator", () => {
     render(<WelcomeLanding />);
     expect(
-      screen.getByRole("heading", { name: /build a ledger/i }),
+      screen.getByRole("heading", { name: /drag the price and watch your position/i }),
     ).toBeInTheDocument();
     expect(screen.getByLabelText(/Drag today's price/i)).toBeInTheDocument();
     expect(
