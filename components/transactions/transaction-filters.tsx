@@ -239,17 +239,17 @@ export function TransactionFilters({
   const chips = activeChips(value, t);
 
   return (
-    <div className="border-b border-border pb-4">
+    <div className="border-b border-(--glass-border-to) pb-4">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
         <button
           type="button"
           onClick={() => setOpen((v) => !v)}
           aria-expanded={open}
           className={cn(
-            "tt-label inline-flex items-center gap-1.5 border px-2.5 py-1.5 text-[10.5px] transition-colors",
+            "tt-label inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1.5 text-[10.5px] transition-colors",
             count > 0 || open
               ? "border-primary/50 text-foreground"
-              : "border-border text-muted-foreground hover:bg-accent hover:text-foreground"
+              : "border-(--glass-border-to) text-muted-foreground hover:bg-(--glow-color) hover:text-foreground"
           )}
         >
           <SlidersHorizontal className="h-3.5 w-3.5" />
@@ -262,7 +262,7 @@ export function TransactionFilters({
               key={chip.key}
               type="button"
               onClick={() => onChange({ ...value, ...chip.clear })}
-              className="tt-label inline-flex items-center gap-1 border border-border bg-accent/50 py-1 pr-1 pl-2 text-[10px] text-foreground hover:bg-accent"
+              className="tt-label inline-flex items-center gap-1 rounded-full border border-(--glass-border-to) bg-(--glow-color) py-1 pr-1 pl-2 text-[10px] text-foreground transition-[filter] hover:brightness-125"
             >
               {chip.label}
               <X className="h-3 w-3 text-muted-foreground" />

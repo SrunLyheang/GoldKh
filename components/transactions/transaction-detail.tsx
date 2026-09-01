@@ -68,7 +68,7 @@ export function TransactionDetail({
     valuation.pnlUsd !== null && Number(valuation.pnlUsd) >= 0;
 
   return (
-    <div className="grid grid-cols-2 gap-x-6 gap-y-3.5 border-t border-border bg-muted/20 px-4 py-3.5 sm:grid-cols-3">
+    <div className="grid grid-cols-2 gap-x-6 gap-y-3.5 border-t border-(--glass-border-to) bg-(--glass-bg) px-4 py-3.5 sm:grid-cols-3">
       <Field label={t.transactions.date}>{formatFullDate(row.transactionDate)}</Field>
       <Field label={`${t.dialog.perUnitEquiv(unit)}`}>
         <MonoValue className="text-[12.5px]">
