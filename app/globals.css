@@ -851,17 +851,25 @@ html:has(.liquid-glass-landing-root) {
    applied to the landing root itself — GoldCursor / ScrollGoldBar sit
    outside this wrapper so their pointer- and scroll-driven fixed layers
    keep working in real viewport pixels. `zoom` (not transform: scale)
-   keeps layout flow, scrolling, and viewport units correct. */
-.liquid-glass-landing-zoom {
-  zoom: 0.67;
-}
+   keeps layout flow, scrolling, and viewport units correct.
 
-/* The hero sits inside the 0.67-zoom wrapper, so a plain `h-screen`
-   (100vh) would only cover 67% of the viewport. Dividing by the zoom
-   factor makes it render back to a full screen height on entry. */
-.liquid-glass-landing-zoom .liquid-glass-hero-fill {
-  height: calc(100vh / 0.67);
-  height: calc(100dvh / 0.67);
+   Desktop only: on mobile the layout is already single-column so the
+   "see more" zoom-out buys nothing, and a `zoom` other than 1 makes
+   mobile engines fall off the compositor-driven fast scroll path —
+   scrolling from the hero into the page stutters. Below md we leave
+   zoom at 1 and the hero keeps its plain Tailwind `h-screen`. */
+@media (min-width: 768px) {
+  .liquid-glass-landing-zoom {
+    zoom: 0.67;
+  }
+
+  /* The hero sits inside the 0.67-zoom wrapper, so a plain `h-screen`
+     (100vh) would only cover 67% of the viewport. Dividing by the zoom
+     factor makes it render back to a full screen height on entry. */
+  .liquid-glass-landing-zoom .liquid-glass-hero-fill {
+    height: calc(100vh / 0.67);
+    height: calc(100dvh / 0.67);
+  }
 }
 
 /* backdrop-filter is unsupported or disabled in some browsers/contexts;
