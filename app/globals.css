@@ -472,7 +472,9 @@
     --heading-tracking: -0.02em;
     --heading-weight: 600;
     --display-font: var(--font-mono);
-    --bracket-open: "";
+    /* The ✦ eyebrow rides the existing bracket mechanism, so every
+       `.tt-bracket` section heading gets it with no JSX change. */
+    --bracket-open: "✦  ";
     --bracket-close: "";
     --shadow-lg: 0 28px 64px -28px rgb(0 0 0 / 0.8), 0 6px 20px -10px rgb(0 0 0 / 0.6);
     --shadow-sm: 0 16px 40px -22px rgb(0 0 0 / 0.7);
@@ -728,6 +730,14 @@
 }
 .tt-bracket::after {
   content: var(--bracket-close);
+}
+
+/* Standalone ✦ eyebrow for headings that don't carry `.tt-bracket`
+   (empty states, sub-section titles). Renders nothing on themes whose
+   `--eyebrow-glyph` is "". */
+.tt-eyebrow::before {
+  content: var(--eyebrow-glyph);
+  color: var(--primary);
 }
 
 /* One authored entrance: dashboard sections cascade in rather than

@@ -4,8 +4,9 @@ import { formatUsd } from "@/lib/format/money";
 import { useLocale } from "@/lib/i18n/locale-context";
 import { unitLabels } from "@/lib/i18n/unit-labels";
 import { COUNT_UP_MS, useCountUp } from "@/lib/ui/use-count-up";
+import { SparkleField } from "@/components/effects/sparkle-field";
 import { MonoValue } from "./mono-value";
-import { Panel } from "./panel";
+import { Surface } from "./surface";
 import { RefreshButton } from "./refresh-button";
 import { UnitToggle } from "./unit-toggle";
 
@@ -51,9 +52,13 @@ export function HeroPriceCard({
   });
 
   return (
-    <Panel size="lg" className="relative overflow-hidden">
+    <Surface size="lg" variant="accent" tilt className="relative overflow-hidden">
       <div className="absolute inset-x-0 top-0 h-1 bg-primary" />
-      <div className="relative flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between sm:gap-8">
+      <SparkleField
+        className="pointer-events-none absolute inset-0"
+        style={{ opacity: "calc(var(--sparkle-opacity) * 0.6)" }}
+      />
+      <div className="relative z-10 flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between sm:gap-8">
         <div>
           <div className="flex flex-wrap items-center gap-2.5">
             <p className="tt-label text-[11px] text-muted-foreground">
@@ -98,9 +103,9 @@ export function HeroPriceCard({
           />
         </div>
       </div>
-      <p className="mt-5 border-t border-border pt-4 text-[11.5px] text-muted-foreground">
+      <p className="relative z-10 mt-5 border-t border-(--glass-border-to) pt-4 text-[11.5px] text-muted-foreground">
         {t.hero.disclaimer}
       </p>
-    </Panel>
+    </Surface>
   );
 }

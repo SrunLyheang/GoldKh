@@ -10,11 +10,11 @@ import { useLocale } from "@/lib/i18n/locale-context";
 export function EmptyState({ onAddClick }: { onAddClick: () => void }) {
   const { t } = useLocale();
   return (
-    <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border px-6 py-16 text-center">
-      <div className="flex h-10 w-10 items-center justify-center rounded-md bg-muted">
+    <div className="glass-surface flex flex-col items-center justify-center px-6 py-16 text-center">
+      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-(--glow-color)">
         <Coins className="h-5 w-5 text-primary" />
       </div>
-      <p className="tt-heading mt-5 text-[15px] text-foreground">{t.empty.title}</p>
+      <p className="tt-heading tt-eyebrow mt-5 text-[15px] text-foreground">{t.empty.title}</p>
       <p className="mt-1.5 max-w-xs text-[13.5px] text-muted-foreground">
         {t.empty.description}
       </p>

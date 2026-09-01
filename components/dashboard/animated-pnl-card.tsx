@@ -7,7 +7,7 @@ import { toneFromAmount } from "@/lib/format/tone";
 import { COUNT_UP_MS, SMOOTH_EASE } from "@/lib/ui/use-count-up";
 import { cn } from "@/lib/utils";
 import { MonoValue } from "./mono-value";
-import { Panel } from "./panel";
+import { Surface } from "./surface";
 
 // Unlike the other stat cards (which roll up from zero), the Unrealized
 // Gain/Loss figure rolls from the value the user last saw — persisted in
@@ -84,7 +84,7 @@ export function AnimatedPnlCard({
   const display = rolling ?? formatUsd(gainLossUsd);
 
   return (
-    <Panel
+    <Surface
       className={cn(
         tone === "gain" && "bg-state-gain/6 border-l-2 border-l-state-gain",
         tone === "loss" && "bg-destructive/6 border-l-2 border-l-destructive"
@@ -97,6 +97,6 @@ export function AnimatedPnlCard({
       <MonoValue tone={tone} signed className="mt-1 block text-[12px]">
         {formatPercent(gainLossPercent)}
       </MonoValue>
-    </Panel>
+    </Surface>
   );
 }

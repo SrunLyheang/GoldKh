@@ -1,6 +1,10 @@
+import type { CSSProperties } from "react";
+
 type SparkleFieldProps = {
   /** Positioning classes. Defaults to a fixed, full-viewport layer. */
   className?: string;
+  /** Inline style — typically an `opacity` override off `--sparkle-opacity`. */
+  style?: CSSProperties;
 };
 
 /**
@@ -13,12 +17,12 @@ type SparkleFieldProps = {
  * `aria-hidden`, pointer-transparent, and fully still under
  * `prefers-reduced-motion`.
  */
-export function SparkleField({ className }: SparkleFieldProps) {
+export function SparkleField({ className, style }: SparkleFieldProps) {
   return (
     <div
       aria-hidden
       className={className ?? "pointer-events-none fixed inset-0"}
-      style={{ overflow: "hidden" }}
+      style={{ overflow: "hidden", ...style }}
     >
       <div className="sparkle-field__layer sparkle-field__layer--a" />
       <div className="sparkle-field__layer sparkle-field__layer--b" />

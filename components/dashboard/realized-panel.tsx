@@ -8,7 +8,7 @@ import { useLocale } from "@/lib/i18n/locale-context";
 import { cn } from "@/lib/utils";
 import { COUNT_UP_MS, useCountUp } from "@/lib/ui/use-count-up";
 import { MonoValue } from "./mono-value";
-import { Panel } from "./panel";
+import { Surface } from "./surface";
 
 interface RealizedPanelProps {
   realizedUsd: string;
@@ -77,7 +77,7 @@ export function RealizedPanel({
   });
 
   return (
-    <Panel size="lg">
+    <Surface size="lg">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between sm:gap-8">
         <div className="min-w-0">
           <button
@@ -124,6 +124,6 @@ export function RealizedPanel({
           </p>
         )}
       </div>
-    </Panel>
+    </Surface>
   );
 }

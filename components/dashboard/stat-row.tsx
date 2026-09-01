@@ -7,7 +7,7 @@ import { unitLabels } from "@/lib/i18n/unit-labels";
 import { COUNT_UP_MS, useCountUp } from "@/lib/ui/use-count-up";
 import { AnimatedPnlCard } from "./animated-pnl-card";
 import { MonoValue } from "./mono-value";
-import { Panel } from "./panel";
+import { Surface } from "./surface";
 
 interface StatRowProps {
   totalChi: string;
@@ -37,7 +37,7 @@ function StatCard({
 }) {
   const value = useCountUp(amount, { from: 0, durationMs: COUNT_UP_MS, format });
   return (
-    <Panel>
+    <Surface>
       <p className="tt-label text-[11px] text-muted-foreground">{label}</p>
       <MonoValue
         tone="foreground"
@@ -48,7 +48,7 @@ function StatCard({
       <MonoValue tone="muted" className="mt-1 block text-[12px]">
         {subLine}
       </MonoValue>
-    </Panel>
+    </Surface>
   );
 }
 

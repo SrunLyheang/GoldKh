@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useTransition, type CSSProperties } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useReveal } from "@/components/motion/use-reveal";
 import { notify } from "@/lib/ui/toast";
 import { computeGainLoss } from "@/lib/calc/gainLoss";
 import { computeHoldings } from "@/lib/calc/holdings";
@@ -54,6 +55,19 @@ export function DashboardContent({
   const [addOpen, setAddOpen] = useState(false);
   const [displayUnit, setDisplayUnit] = useState<GoldUnit>(prefs.displayUnit);
   const [isSyncing, startSync] = useTransition();
+
+  // Sections glide in on scroll-into-view, staggered. Hooks are called
+  // unconditionally; the wrappers below attach ref + class + delay.
+  const { ref: heroRef, revealClass: heroCls, style: heroStyle } =
+    useReveal<HTMLDivElement>(0);
+  const { ref: statRef, revealClass: statCls, style: statStyle } =
+    useReveal<HTMLDivElement>(80);
+  const { ref: realizedRef, revealClass: realizedCls, style: realizedStyle } =
+    useReveal<HTMLDivElement>(140);
+  const { ref: historyRef, revealClass: historyCls, style: historyStyle } =
+    useReveal<HTMLDivElement>(180);
+  const { ref: chartRef, revealClass: chartCls, style: chartStyle } =
+    useReveal<HTMLDivElement>(200);
   const { rows, addOptimistic, settleAdd, markRemoved, unmarkRemoved } =
     useOptimisticTransactions(transactions);
 
@@ -143,7 +157,7 @@ export function DashboardContent({
 
   return (
     <div className="flex flex-col gap-7 md:gap-9">
-      <div className="vault-enter">
+      <div ref={heroRef} className={heroCls} style={heroStyle}>
         <HeroPriceCard
           pricePerTroyOz={pricePerTroyOz}
           pricePerChi={pricePerChi}
@@ -170,7 +184,7 @@ export function DashboardContent({
         <EmptyState onAddClick={() => setAddOpen(true)} />
       ) : (
         <>
-          <div className="vault-enter" style={{ "--enter-delay": "80ms" } as CSSProperties}>
+          <div ref={statRef} className={statCls} style={statStyle}>
             <StatRow
               totalChi={fromTroyOz(holdings.totalTroyOz, "chi")}
               totalDamlung={fromTroyOz(holdings.totalTroyOz, "damlung")}
@@ -189,10 +203,7 @@ export function DashboardContent({
             />
           </div>
           {realized.saleCount > 0 && (
-            <div
-              className="vault-enter"
-              style={{ "--enter-delay": "140ms" } as CSSProperties}
-            >
+            <div ref={realizedRef} className={realizedCls} style={realizedStyle}>
               <RealizedPanel
                 realizedUsd={realized.realizedUsd}
                 realizedPercent={realized.realizedPercent}
@@ -200,7 +211,7 @@ export function DashboardContent({
               />
             </div>
           )}
-          <div className="vault-enter" style={{ "--enter-delay": "180ms" } as CSSProperties}>
+          <div ref={historyRef} className={historyCls} style={historyStyle}>
             <TransactionHistory
               rows={rows}
               currentPricePerTroyOz={pricePerTroyOz}
@@ -217,7 +228,7 @@ export function DashboardContent({
         </>
       )}
 
-      <div className="vault-enter" style={{ "--enter-delay": "200ms" } as CSSProperties}>
+      <div ref={chartRef} className={chartCls} style={chartStyle}>
         <PriceHistoryChart
           points={chartPoints}
           marketOpen={marketOpen}
