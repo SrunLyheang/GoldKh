@@ -57,14 +57,14 @@ export function Sidebar({
     <>
       {open && (
         <div
-          className="fixed inset-0 z-40 bg-black/60 md:hidden"
+          className="fixed inset-0 z-40 bg-(--glass-scrim) backdrop-blur-sm md:hidden"
           onClick={onClose}
           aria-hidden="true"
         />
       )}
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-50 flex w-64 shrink-0 flex-col border-r border-border bg-card transition-transform duration-200 ease-out md:w-59 md:translate-x-0",
+          "glass-chrome fixed inset-y-0 left-0 z-50 flex w-64 shrink-0 flex-col border-r border-(--glass-border-to) transition-transform duration-200 ease-out md:w-59 md:translate-x-0",
           open ? "translate-x-0" : "-translate-x-full"
         )}
       >
@@ -104,8 +104,8 @@ export function Sidebar({
                 className={cn(
                   "relative flex items-center gap-2.5 rounded-md px-3 py-2.5 text-[13.5px] font-medium transition-all duration-150",
                   active
-                    ? "bg-accent text-accent-foreground"
-                    : "text-muted-foreground hover:translate-x-0.5 hover:bg-accent/60 hover:text-accent-foreground"
+                    ? "bg-(--glow-color) text-foreground"
+                    : "text-muted-foreground hover:translate-x-0.5 hover:bg-(--glow-color) hover:text-foreground"
                 )}
               >
                 {active && (
@@ -120,7 +120,7 @@ export function Sidebar({
             );
           })}
         </nav>
-        <div className="flex flex-col gap-3 border-t border-border px-4 py-5">
+        <div className="flex flex-col gap-3 border-t border-(--glass-border-to) px-4 py-5">
           <ThemeToggle className="self-start" />
           {identifier && (
             <p
@@ -139,7 +139,7 @@ export function Sidebar({
                 aria-label={t.nav.settings}
                 aria-current={settingsActive ? "page" : undefined}
                 className={cn(
-                  "inline-flex shrink-0 items-center justify-center rounded-md border border-border bg-accent/60 p-1.5 transition-colors hover:text-foreground",
+                  "inline-flex shrink-0 items-center justify-center rounded-full border border-(--glass-border-to) bg-accent/60 p-1.5 transition-colors hover:bg-(--glow-color) hover:text-foreground",
                   settingsActive ? "text-primary" : "text-muted-foreground"
                 )}
               >

@@ -26,9 +26,21 @@ export function DashboardShell({ children }: { children: ReactNode }) {
       <ThemeProvider>
         <PrefsProvider>
         <div className="vault-grain relative flex min-h-screen bg-background">
+          {/* Ambient dual-glow ground — a fixed radial wash built from
+              the theme's --glow-color, behind the z-10 content column.
+              Pure paint, pointer-transparent, still under any motion. */}
+          <div
+            aria-hidden="true"
+            className="pointer-events-none fixed inset-0 z-0"
+            style={{
+              background:
+                "radial-gradient(60% 50% at 15% 0%, var(--glow-color) 0%, transparent 60%), radial-gradient(50% 45% at 100% 100%, var(--glow-color) 0%, transparent 55%)",
+              opacity: 0.5,
+            }}
+          />
           <Sidebar open={open} onClose={() => setOpen(false)} />
           <div className="relative z-10 flex min-w-0 flex-1 flex-col md:ml-59">
-            <header className="flex items-center justify-between gap-3 border-b border-border px-4 py-3.5 md:hidden">
+            <header className="glass-chrome sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-(--glass-border-to) px-4 py-3.5 md:hidden">
               <button
                 type="button"
                 onClick={() => setOpen(true)}
