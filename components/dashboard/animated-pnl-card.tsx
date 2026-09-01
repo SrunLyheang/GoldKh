@@ -4,10 +4,17 @@ import { animate, useReducedMotion } from "motion/react";
 import { useEffect, useState } from "react";
 import { formatPercent, formatUsd } from "@/lib/format/money";
 import { toneFromAmount } from "@/lib/format/tone";
+import type { CSSProperties } from "react";
 import { COUNT_UP_MS, SMOOTH_EASE } from "@/lib/ui/use-count-up";
+import { useValuePulse } from "@/lib/ui/use-value-pulse";
 import { cn } from "@/lib/utils";
 import { MonoValue } from "./mono-value";
 import { Surface } from "./surface";
+
+const PULSE_TONE: Record<string, string> = {
+  gain: "var(--state-gain)",
+  loss: "var(--destructive)",
+};
 
 // Unlike the other stat cards (which roll up from zero), the Unrealized
 // Gain/Loss figure rolls from the value the user last saw — persisted in
@@ -82,6 +89,7 @@ export function AnimatedPnlCard({
   }, [gainLossUsd, current, reduceMotion]);
 
   const display = rolling ?? formatUsd(gainLossUsd);
+  const pulsing = useValuePulse(gainLossUsd);
 
   return (
     <Surface
@@ -91,9 +99,14 @@ export function AnimatedPnlCard({
       )}
     >
       <p className="tt-label text-[11px] text-muted-foreground">{label}</p>
-      <MonoValue tone={tone} signed className="mt-1.5 block text-[19px] font-semibold">
-        {display}
-      </MonoValue>
+      <span
+        className={cn("mt-1.5 block", pulsing && "value-pulse-active")}
+        style={{ "--pulse-tone": PULSE_TONE[tone] ?? "var(--primary)" } as CSSProperties}
+      >
+        <MonoValue tone={tone} signed className="block text-[19px] font-semibold">
+          {display}
+        </MonoValue>
+      </span>
       <MonoValue tone={tone} signed className="mt-1 block text-[12px]">
         {formatPercent(gainLossPercent)}
       </MonoValue>

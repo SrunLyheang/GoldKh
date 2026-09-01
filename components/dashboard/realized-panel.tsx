@@ -1,14 +1,20 @@
 "use client";
 
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useState, type CSSProperties } from "react";
 import { ChevronDown } from "lucide-react";
 import { formatPercent, formatUsd } from "@/lib/format/money";
 import { toneFromAmount } from "@/lib/format/tone";
 import { useLocale } from "@/lib/i18n/locale-context";
 import { cn } from "@/lib/utils";
 import { COUNT_UP_MS, useCountUp } from "@/lib/ui/use-count-up";
+import { useValuePulse } from "@/lib/ui/use-value-pulse";
 import { MonoValue } from "./mono-value";
 import { Surface } from "./surface";
+
+const PULSE_TONE: Record<string, string> = {
+  gain: "var(--state-gain)",
+  loss: "var(--destructive)",
+};
 
 interface RealizedPanelProps {
   realizedUsd: string;
@@ -75,6 +81,7 @@ export function RealizedPanel({
     durationMs: COUNT_UP_MS,
     format: (value) => formatUsd(String(value)),
   });
+  const pulsing = useValuePulse(realizedUsd);
 
   return (
     <Surface size="lg">
@@ -101,13 +108,18 @@ export function RealizedPanel({
           </button>
           {!collapsed && (
             <div id={bodyId}>
-              <MonoValue
-                tone={tone}
-                signed
-                className="mt-1.5 block text-[34px] font-semibold tracking-tight leading-tight sm:text-[40px]"
+              <span
+                className={cn("mt-1.5 block", pulsing && "value-pulse-active")}
+                style={{ "--pulse-tone": PULSE_TONE[tone] ?? "var(--primary)" } as CSSProperties}
               >
-                {valueDisplay}
-              </MonoValue>
+                <MonoValue
+                  tone={tone}
+                  signed
+                  className="block text-[34px] font-semibold tracking-tight leading-tight sm:text-[40px]"
+                >
+                  {valueDisplay}
+                </MonoValue>
+              </span>
               <MonoValue
                 tone={isBreakEven ? "muted" : tone}
                 signed

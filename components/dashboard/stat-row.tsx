@@ -1,10 +1,13 @@
 "use client";
 
+import type { CSSProperties } from "react";
 import type { GoldUnit } from "@/lib/calc/units";
 import { formatQuantity, formatUsd } from "@/lib/format/money";
 import { useLocale } from "@/lib/i18n/locale-context";
 import { unitLabels } from "@/lib/i18n/unit-labels";
 import { COUNT_UP_MS, useCountUp } from "@/lib/ui/use-count-up";
+import { useValuePulse } from "@/lib/ui/use-value-pulse";
+import { cn } from "@/lib/utils";
 import { AnimatedPnlCard } from "./animated-pnl-card";
 import { MonoValue } from "./mono-value";
 import { Surface } from "./surface";
@@ -36,15 +39,18 @@ function StatCard({
   subLine: string;
 }) {
   const value = useCountUp(amount, { from: 0, durationMs: COUNT_UP_MS, format });
+  const pulsing = useValuePulse(amount);
   return (
     <Surface>
       <p className="tt-label text-[11px] text-muted-foreground">{label}</p>
-      <MonoValue
-        tone="foreground"
-        className="mt-1.5 block text-[19px] font-semibold"
+      <span
+        className={cn("mt-1.5 block", pulsing && "value-pulse-active")}
+        style={{ "--pulse-tone": "var(--primary)" } as CSSProperties}
       >
-        {value}
-      </MonoValue>
+        <MonoValue tone="foreground" className="block text-[19px] font-semibold">
+          {value}
+        </MonoValue>
+      </span>
       <MonoValue tone="muted" className="mt-1 block text-[12px]">
         {subLine}
       </MonoValue>

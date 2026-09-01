@@ -3,7 +3,10 @@ import { formatClockTime } from "@/lib/format/datetime";
 import { formatUsd } from "@/lib/format/money";
 import { useLocale } from "@/lib/i18n/locale-context";
 import { unitLabels } from "@/lib/i18n/unit-labels";
+import type { CSSProperties } from "react";
 import { COUNT_UP_MS, useCountUp } from "@/lib/ui/use-count-up";
+import { useValuePulse } from "@/lib/ui/use-value-pulse";
+import { cn } from "@/lib/utils";
 import { SparkleField } from "@/components/effects/sparkle-field";
 import { MonoValue } from "./mono-value";
 import { Surface } from "./surface";
@@ -50,6 +53,8 @@ export function HeroPriceCard({
     durationMs: COUNT_UP_MS,
     format: (value) => formatUsd(String(value)),
   });
+  // Trigger on the unit-independent spot so a unit toggle doesn't pulse.
+  const pulsing = useValuePulse(pricePerTroyOz);
 
   return (
     <Surface size="lg" variant="accent" tilt className="relative overflow-hidden">
@@ -68,9 +73,14 @@ export function HeroPriceCard({
               <UnitToggle value={displayUnit} onChange={onDisplayUnitChange} />
             )}
           </div>
-          <MonoValue className="tt-display mt-1.5 block text-[34px] font-semibold tracking-tight leading-tight sm:text-[46px]">
-            {headlineDisplay}
-          </MonoValue>
+          <span
+            className={cn("mt-1.5 block", pulsing && "value-pulse-active")}
+            style={{ "--pulse-tone": "var(--primary)" } as CSSProperties}
+          >
+            <MonoValue className="tt-display block text-[34px] font-semibold tracking-tight leading-tight sm:text-[46px]">
+              {headlineDisplay}
+            </MonoValue>
+          </span>
           <MonoValue tone="muted" className="mt-1.5 block text-[12.5px]">
             {formatUsd(pricePerTroyOz)}/oz · {formatUsd(secondaryPrice)}/
             {secondaryUnitLabel}
