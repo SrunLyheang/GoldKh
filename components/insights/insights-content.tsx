@@ -13,6 +13,8 @@ import {
   type PriceSnapshotPoint,
 } from "@/lib/calc/portfolioSeries";
 import { useLocale } from "@/lib/i18n/locale-context";
+import { useReveal } from "@/components/motion/use-reveal";
+import { cn } from "@/lib/utils";
 import { Panel } from "@/components/dashboard/panel";
 import { Readouts } from "./readouts";
 import { ValueOverTime } from "./value-over-time";
@@ -35,6 +37,20 @@ export function InsightsContent({
   pricePerTroyOz,
 }: InsightsContentProps) {
   const { t } = useLocale();
+
+  // Sections glide in on scroll-into-view, staggered — the same quiet
+  // entrance the main dashboard uses. Hooks run unconditionally; the
+  // wrappers below attach ref + class + delay.
+  const { ref: titleRef, revealClass: titleCls, style: titleStyle } =
+    useReveal<HTMLHeadingElement>(0);
+  const { ref: readoutsRef, revealClass: readoutsCls, style: readoutsStyle } =
+    useReveal<HTMLDivElement>(60);
+  const { ref: valueRef, revealClass: valueCls, style: valueStyle } =
+    useReveal<HTMLDivElement>(120);
+  const { ref: buyHistoryRef, revealClass: buyHistoryCls, style: buyHistoryStyle } =
+    useReveal<HTMLDivElement>(160);
+  const { ref: whatIfRef, revealClass: whatIfCls, style: whatIfStyle } =
+    useReveal<HTMLDivElement>(200);
 
   // Newest-first from the server; the replay-based aggregates below need
   // it oldest-first (see toChronological).
@@ -75,43 +91,62 @@ export function InsightsContent({
 
   return (
     <div className="flex flex-col gap-8">
-      <h1 className="tt-heading tt-bracket text-[15px] text-foreground">
+      <h1
+        ref={titleRef}
+        style={titleStyle}
+        className={cn(
+          "tt-heading tt-bracket text-[15px] text-foreground",
+          titleCls,
+        )}
+      >
         {t.insights.title}
       </h1>
 
-      <Panel size="lg">
-        <h2 className="tt-heading tt-bracket mb-4 text-[15px] text-foreground">
-          {t.insights.readoutsTitle}
-        </h2>
-        <Readouts
-          holdings={holdings}
-          gainLoss={gainLoss}
-          realized={realized}
-          aggregates={aggregates}
-          pricePerTroyOz={pricePerTroyOz}
-        />
-      </Panel>
+      <div ref={readoutsRef} style={readoutsStyle} className={readoutsCls}>
+        <Panel size="lg">
+          <h2 className="tt-heading tt-bracket mb-4 text-[15px] text-foreground">
+            {t.insights.readoutsTitle}
+          </h2>
+          <Readouts
+            holdings={holdings}
+            gainLoss={gainLoss}
+            realized={realized}
+            aggregates={aggregates}
+            pricePerTroyOz={pricePerTroyOz}
+          />
+        </Panel>
+      </div>
 
-      <Panel size="lg">
-        <h2 className="tt-heading tt-bracket mb-4 text-[15px] text-foreground">
-          {t.insights.valueOverTimeTitle}
-        </h2>
-        <ValueOverTime points={portfolioSeries} />
-      </Panel>
+      <div ref={valueRef} style={valueStyle} className={valueCls}>
+        <Panel size="lg">
+          <h2 className="tt-heading tt-bracket mb-4 text-[15px] text-foreground">
+            {t.insights.valueOverTimeTitle}
+          </h2>
+          <ValueOverTime points={portfolioSeries} />
+        </Panel>
+      </div>
 
-      <Panel size="lg">
-        <h2 className="tt-heading tt-bracket mb-4 text-[15px] text-foreground">
-          {t.insights.buyHistoryTitle}
-        </h2>
-        <BuyHistory rows={buyQuality} />
-      </Panel>
+      <div
+        ref={buyHistoryRef}
+        style={buyHistoryStyle}
+        className={buyHistoryCls}
+      >
+        <Panel size="lg">
+          <h2 className="tt-heading tt-bracket mb-4 text-[15px] text-foreground">
+            {t.insights.buyHistoryTitle}
+          </h2>
+          <BuyHistory rows={buyQuality} />
+        </Panel>
+      </div>
 
-      <Panel size="lg">
-        <h2 className="tt-heading tt-bracket mb-4 text-[15px] text-foreground">
-          {t.insights.whatIfTitle}
-        </h2>
-        <WhatIf holdings={holdings} pricePerTroyOz={pricePerTroyOz} />
-      </Panel>
+      <div ref={whatIfRef} style={whatIfStyle} className={whatIfCls}>
+        <Panel size="lg">
+          <h2 className="tt-heading tt-bracket mb-4 text-[15px] text-foreground">
+            {t.insights.whatIfTitle}
+          </h2>
+          <WhatIf holdings={holdings} pricePerTroyOz={pricePerTroyOz} />
+        </Panel>
+      </div>
     </div>
   );
 }

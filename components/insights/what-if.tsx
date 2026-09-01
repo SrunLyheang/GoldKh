@@ -94,7 +94,7 @@ export function WhatIf({ holdings, pricePerTroyOz }: WhatIfProps) {
       <div
         role="tablist"
         aria-label={t.insights.whatIfTitle}
-        className="inline-flex w-fit gap-1 border border-border p-1"
+        className="inline-flex w-fit shrink-0 items-center gap-0.5 rounded-lg border border-(--glass-border-to) bg-(--glass-bg) p-0.5"
       >
         {MODES.map((m) => (
           <button
@@ -104,9 +104,9 @@ export function WhatIf({ holdings, pricePerTroyOz }: WhatIfProps) {
             aria-selected={mode === m}
             onClick={() => setMode(m)}
             className={cn(
-              "tt-label px-3 py-1 text-[11px] transition-colors",
+              "tt-label rounded-md px-2.5 py-1 text-[10.5px] transition-colors",
               mode === m
-                ? "bg-foreground text-background"
+                ? "bg-primary text-primary-foreground"
                 : "text-muted-foreground hover:text-foreground",
             )}
           >
@@ -350,7 +350,7 @@ function WhatIfOutput({ t, result }: { t: Dict; result: WhatIfResult }) {
   const rows = buildRows(result, t);
 
   return (
-    <dl className="flex flex-col divide-y divide-border/60 border-t border-border/60">
+    <dl className="flex flex-col divide-y divide-(--glass-border-to) border-t border-(--glass-border-to)">
       <div className="hidden gap-3 pt-3 pb-1 sm:grid sm:grid-cols-[minmax(9rem,1fr)_repeat(3,minmax(0,1fr))]">
         <span />
         <span className="tt-label text-[9.5px] text-muted-foreground">
