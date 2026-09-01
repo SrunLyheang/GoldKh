@@ -54,11 +54,22 @@ export function LiquidGlassLanding() {
 
   return (
     <div className="landing-root liquid-glass-landing-root relative min-h-screen bg-black text-white font-sans selection:bg-white selection:text-black">
+      {/* GoldCursor and ScrollGoldBar position fixed layers from raw
+          viewport coordinates (pointer clientX/Y, scrollY), so they must
+          stay OUTSIDE the zoomed wrapper below — a `zoom` ancestor would
+          rescale those coordinates and the glow would trail off-pointer. */}
       <GoldCursor />
       <ScrollGoldBar />
 
+      {/* Everything visible is rendered at a 67% "zoom out" (see
+          `.liquid-glass-landing-zoom` in globals.css) so visitors see
+          more of the layout on entry. */}
+      <div className="liquid-glass-landing-zoom">
+
       {/* ── 1. Hero Section (Animated Looping Orb Video + Parallax + Particles) ─ */}
-      <section className="relative w-full h-screen overflow-hidden">
+      {/* `liquid-glass-hero-fill` counteracts the wrapper's 0.67 zoom so
+          the hero still fills the full first screen (see globals.css). */}
+      <section className="liquid-glass-hero-fill relative w-full h-screen overflow-hidden">
         {/* Animated Hero with Looping Orb Video, 3D Tilt, Light Beams & Particles */}
         <AnimatedHeroImage />
 
@@ -532,6 +543,7 @@ export function LiquidGlassLanding() {
           </div>
         </footer>
       </main>
+      </div>
     </div>
   );
 }

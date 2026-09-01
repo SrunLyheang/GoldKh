@@ -845,6 +845,25 @@ html:has(.liquid-glass-landing-root) {
   scroll-behavior: smooth;
 }
 
+/* Render the welcome / landing page as if the browser were at ~67%
+   zoom, so visitors see more of the layout on entry. Scoped to the
+   landing content wrapper only (the dashboard is untouched), and NOT
+   applied to the landing root itself — GoldCursor / ScrollGoldBar sit
+   outside this wrapper so their pointer- and scroll-driven fixed layers
+   keep working in real viewport pixels. `zoom` (not transform: scale)
+   keeps layout flow, scrolling, and viewport units correct. */
+.liquid-glass-landing-zoom {
+  zoom: 0.67;
+}
+
+/* The hero sits inside the 0.67-zoom wrapper, so a plain `h-screen`
+   (100vh) would only cover 67% of the viewport. Dividing by the zoom
+   factor makes it render back to a full screen height on entry. */
+.liquid-glass-landing-zoom .liquid-glass-hero-fill {
+  height: calc(100vh / 0.67);
+  height: calc(100dvh / 0.67);
+}
+
 /* backdrop-filter is unsupported or disabled in some browsers/contexts;
    without it the near-transparent glass surfaces vanish against the
    black page, so raise the fill opacity as a fallback. */
