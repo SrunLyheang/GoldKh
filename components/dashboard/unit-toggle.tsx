@@ -1,7 +1,7 @@
 "use client";
 
 import type { GoldUnit } from "@/lib/calc/units";
-import { useLocale } from "@/lib/i18n/locale-context";
+import { t } from "@/lib/i18n/dictionary";
 import { SegmentedControl } from "./segmented-control";
 
 export function UnitToggle({
@@ -13,7 +13,6 @@ export function UnitToggle({
   onChange: (unit: GoldUnit) => void;
   className?: string;
 }) {
-  const { t } = useLocale();
 
   return (
     <SegmentedControl

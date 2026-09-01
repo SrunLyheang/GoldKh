@@ -1,7 +1,7 @@
 import type { GoldUnit } from "@/lib/calc/units";
 import { formatClockTime } from "@/lib/format/datetime";
 import { formatUsd } from "@/lib/format/money";
-import { useLocale } from "@/lib/i18n/locale-context";
+import { t } from "@/lib/i18n/dictionary";
 import { unitLabels } from "@/lib/i18n/unit-labels";
 import type { CSSProperties } from "react";
 import { COUNT_UP_MS } from "@/lib/ui/use-count-up";
@@ -37,7 +37,6 @@ export function HeroPriceCard({
   displayUnit = "damlung",
   onDisplayUnitChange,
 }: HeroPriceCardProps) {
-  const { t } = useLocale();
   const marketClosed = marketOpen === false;
   const timeLabel = formatClockTime(capturedAt);
 
@@ -67,7 +66,9 @@ export function HeroPriceCard({
               <UnitToggle value={displayUnit} onChange={onDisplayUnitChange} />
             )}
           </div>
-          <span
+          {/* The price readout is the dashboard's page title — the only h1
+              on the route. The small label above names the unit it's in. */}
+          <h1
             className={cn("mt-1.5 block", pulsing && "value-pulse-active")}
             style={{ "--pulse-tone": "var(--primary)" } as CSSProperties}
           >
@@ -82,7 +83,7 @@ export function HeroPriceCard({
               format={(value) => formatUsd(String(value))}
               className="tt-display block text-[34px] font-semibold tracking-tight leading-tight sm:text-[46px]"
             />
-          </span>
+          </h1>
           <MonoValue tone="muted" className="mt-1.5 block text-[12.5px]">
             {formatUsd(pricePerTroyOz)}/oz · {formatUsd(secondaryPrice)}/
             {secondaryUnitLabel}

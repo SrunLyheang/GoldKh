@@ -1,15 +1,31 @@
 import { ClerkProvider } from "@clerk/nextjs";
 import { shadcn } from "@clerk/ui/themes";
 import type { Metadata } from "next";
-import { GeistSans } from "geist/font/sans";
-import { GeistMono } from "geist/font/mono";
-import { Newsreader, Fraunces } from "next/font/google";
+import { IBM_Plex_Sans, IBM_Plex_Mono, Newsreader, Fraunces } from "next/font/google";
 import { cn } from "@/lib/utils";
 import "./globals.css";
 
+// UI / body face. IBM Plex Sans — a humanist grotesque with actual
+// character (the flared terminals, the true-italic), unlike the Geist
+// default it replaces.
+const plexSans = IBM_Plex_Sans({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-plex-sans",
+});
+
+// Every price, quantity and cost-basis figure. IBM Plex Mono has real
+// tabular figures and pairs with Plex Sans as one family, so the number
+// columns read as deliberate typesetting rather than "monospace =
+// technical".
+const plexMono = IBM_Plex_Mono({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  variable: "--font-plex-mono",
+});
+
 // Editorial serif for the Ledger theme's headings and hero price.
-// Referenced only from globals.css's `[data-theme="ledger"]` block —
-// the default Liquid Glass theme never renders it.
+// Referenced only from globals.css's `[data-theme="ledger"]` block.
 const newsreader = Newsreader({
   subsets: ["latin"],
   weight: ["400", "500", "600"],
@@ -17,10 +33,8 @@ const newsreader = Newsreader({
   variable: "--font-newsreader",
 });
 
-// Display face for the marketing / landing page headings. Geist Sans
-// still carries body copy and Geist Mono the eyebrow labels, so the
-// landing runs three distinct typefaces. Referenced only from the
-// `.liquid-glass-landing-root` rules in globals.css.
+// Display face for the marketing / landing page headings. Referenced
+// only from the `.liquid-glass-landing-root` rules in globals.css.
 const fraunces = Fraunces({
   subsets: ["latin"],
   weight: ["400", "500", "600"],
@@ -38,8 +52,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html
       lang="en"
       className={cn(
-        GeistSans.variable,
-        GeistMono.variable,
+        plexSans.variable,
+        plexMono.variable,
         newsreader.variable,
         fraunces.variable
       )}

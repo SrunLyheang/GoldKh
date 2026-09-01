@@ -7,7 +7,7 @@ import type { Realized } from "@/lib/calc/realized";
 import type { InsightsAggregates } from "@/lib/calc/insights";
 import { priceFromTroyOz } from "@/lib/calc/units";
 import { formatQuantity, formatUsd } from "@/lib/format/money";
-import { useLocale } from "@/lib/i18n/locale-context";
+import { t } from "@/lib/i18n/dictionary";
 import { unitLabels } from "@/lib/i18n/unit-labels";
 import { MonoValue } from "@/components/dashboard/mono-value";
 import { Surface } from "@/components/dashboard/surface";
@@ -63,7 +63,6 @@ export function Readouts({
   aggregates,
   pricePerTroyOz,
 }: ReadoutsProps) {
-  const { t } = useLocale();
   const hasHoldings = Number(holdings.totalTroyOz) > 0;
 
   const tiles: ReactNode[] = [];

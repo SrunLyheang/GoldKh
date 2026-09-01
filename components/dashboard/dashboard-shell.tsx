@@ -3,7 +3,6 @@
 import { Menu } from "lucide-react";
 import Image from "next/image";
 import { useState, type ReactNode } from "react";
-import { LocaleProvider } from "@/lib/i18n/locale-context";
 import { PrefsProvider } from "@/lib/prefs/prefs-context";
 import { ThemeProvider } from "@/lib/theme/theme-context";
 import { Toaster } from "@/components/ui/sonner";
@@ -15,16 +14,13 @@ import { ThemeToggle } from "./theme-toggle";
 // Wraps the dashboard route so mobile can have a hamburger-triggered
 // drawer (Sidebar) plus a slim top bar, while desktop keeps the
 // original fixed-sidebar layout untouched (`md:ml-59` reserves the
-// space Sidebar occupies since it's `fixed`, out of flow). LocaleProvider
-// sits at this root so every dashboard descendant (including Sidebar's
-// own toggle) shares one locale.
+// space Sidebar occupies since it's `fixed`, out of flow).
 export function DashboardShell({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
 
   return (
-    <LocaleProvider>
-      <ThemeProvider>
-        <PrefsProvider>
+    <ThemeProvider>
+      <PrefsProvider>
         <div className="app-grain relative flex min-h-screen bg-background">
           {/* Ambient dual-glow ground — a fixed radial wash built from
               the theme's --glow-color, behind the z-10 content column.
@@ -45,7 +41,7 @@ export function DashboardShell({ children }: { children: ReactNode }) {
                 type="button"
                 onClick={() => setOpen(true)}
                 aria-label="Open menu"
-                className="rounded-sm p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+                className="flex min-h-11 min-w-11 items-center justify-center rounded-sm text-muted-foreground hover:bg-(--glow-color) hover:text-foreground"
               >
                 <Menu className="h-5 w-5" />
               </button>
@@ -72,8 +68,7 @@ export function DashboardShell({ children }: { children: ReactNode }) {
           </div>
         </div>
         <Toaster />
-        </PrefsProvider>
-      </ThemeProvider>
-    </LocaleProvider>
+      </PrefsProvider>
+    </ThemeProvider>
   );
 }

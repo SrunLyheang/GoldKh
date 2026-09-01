@@ -4,21 +4,18 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from "
 
 const STORAGE_KEY = "goldkh-theme";
 
-// Adding a theme is one entry here plus one `:root[data-theme="<id>"]`
-// token block in app/globals.css — components never change, they read
-// the tokens. `liquid-glass` is the default. The bare `:root` block is
-// not a selectable theme: it is the pre-hydration fallback and the
-// layer the non-liquid-glass themes derive their `--glass-*` tokens
-// from. SSR markup and the first client paint render from that base for
-// one frame before the provider sets `data-theme="liquid-glass"` (known
-// one-render swap; the dashboard is entirely behind auth + "use
-// client", so there is no SSR consequence).
+// Adding a theme = one entry here + one `:root[data-theme="<id>"]` token
+// block in globals.css; components just read tokens. Default is
+// `liquid-glass`. The bare `:root` block is not selectable — it's the
+// pre-hydration fallback and the base other themes derive `--glass-*` from.
+// One-render swap on mount; dashboard is behind auth + "use client", so no
+// SSR consequence.
 export const THEMES = [
   { id: "liquid-glass", label: "Liquid Glass" },
   { id: "ledger", label: "Ledger" },
   { id: "midnight", label: "Midnight" },
   { id: "emerald", label: "Emerald" },
-  { id: "terminal", label: "Terminal" },
+  { id: "coral", label: "Coral" },
   { id: "porcelain", label: "Porcelain" },
 ] as const;
 
@@ -37,22 +34,16 @@ interface ThemeContextValue {
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
-// Mirrors LocaleProvider: client-only, localStorage-backed, starts on
-// the default ("liquid-glass") every render, then reads the stored
-// preference in an effect. The server markup paints from the `:root`
-// base for one frame before the mount effect sets
-// `data-theme="liquid-glass"` — the same one-render swap that a stored
-// non-default theme already causes. The dashboard is entirely behind
-// auth and "use client", so there is no SSR consequence.
+// Client-only, localStorage-backed: renders the default, then reads the
+// stored preference in a mount effect (one-render swap, no SSR consequence).
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setThemeState] = useState<ThemeId>("liquid-glass");
 
   useEffect(() => {
     const stored = window.localStorage.getItem(STORAGE_KEY);
     if (isThemeId(stored)) {
-      // Synchronous by necessity — see LocaleProvider's matching comment:
-      // a lazy useState initializer reading localStorage would make the
-      // client's first paint disagree with the server-rendered default.
+      // In an effect, not a lazy initializer: reading localStorage there
+      // would make the client's first paint disagree with the server.
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setThemeState(stored);
     }
@@ -61,9 +52,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const root = document.documentElement;
     root.setAttribute("data-theme", theme);
-    // Clear when the theme changes or the provider unmounts, so the
-    // dashboard theme doesn't leak onto routes that render outside this
-    // provider (e.g. the marketing pages) — they fall back to `:root`.
+    // Clear on change/unmount so the dashboard theme doesn't leak onto
+    // routes outside this provider (e.g. marketing pages).
     return () => root.removeAttribute("data-theme");
   }, [theme]);
 

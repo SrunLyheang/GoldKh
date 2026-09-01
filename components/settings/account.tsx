@@ -3,7 +3,7 @@
 import { UserProfile, useClerk, useUser } from "@clerk/nextjs";
 import { useTransition } from "react";
 import { Button } from "@/components/ui/button";
-import { useLocale } from "@/lib/i18n/locale-context";
+import { t } from "@/lib/i18n/dictionary";
 import { Panel } from "@/components/dashboard/panel";
 
 // Clerk's own account UI, embedded (hash routing so it stays on this
@@ -12,7 +12,6 @@ import { Panel } from "@/components/dashboard/panel";
 // A plain session row sits on top: Clerk buries sign-out inside the
 // UserButton dropdown, so Settings gets its own explicit control.
 export function AccountSettings() {
-  const { t } = useLocale();
   const { user } = useUser();
   const { signOut } = useClerk();
   const [signingOut, startSignOut] = useTransition();

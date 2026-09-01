@@ -15,7 +15,7 @@ import {
   formatQuantity,
   formatUsd,
 } from "@/lib/format/money";
-import { useLocale } from "@/lib/i18n/locale-context";
+import { t } from "@/lib/i18n/dictionary";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -41,7 +41,6 @@ const MODES: WhatIfMode[] = ["buy", "sell"];
 // (dashboard-expansion-plan.md §5.4). No persistence, no API — the calc
 // lives in lib/calc/whatIf.ts.
 export function WhatIf({ holdings, pricePerTroyOz }: WhatIfProps) {
-  const { t } = useLocale();
   const [mode, setMode] = useState<WhatIfMode>("buy");
   const [quantity, setQuantity] = useState("");
   const [unit, setUnit] = useState<GoldUnit>("damlung");
@@ -104,7 +103,7 @@ export function WhatIf({ holdings, pricePerTroyOz }: WhatIfProps) {
             aria-selected={mode === m}
             onClick={() => setMode(m)}
             className={cn(
-              "tt-label rounded-md px-2.5 py-1 text-[10.5px] transition-colors",
+              "tt-label rounded-md px-2.5 py-1 text-[11px] transition-colors",
               mode === m
                 ? "bg-primary text-primary-foreground"
                 : "text-muted-foreground hover:text-foreground",
@@ -151,7 +150,7 @@ export function WhatIf({ holdings, pricePerTroyOz }: WhatIfProps) {
               <button
                 type="button"
                 onClick={useSpot}
-                className="tt-label text-[10.5px] text-muted-foreground transition-colors hover:text-foreground"
+                className="tt-label text-[11px] text-muted-foreground transition-colors hover:text-foreground"
               >
                 {t.insights.whatIfUseSpot}
               </button>
@@ -211,7 +210,7 @@ export function WhatIf({ holdings, pricePerTroyOz }: WhatIfProps) {
   );
 }
 
-type Dict = ReturnType<typeof useLocale>["t"];
+type Dict = typeof t;
 
 function vsSpotToneFor(mode: WhatIfMode, percent: string) {
   const n = Number(percent);
@@ -368,7 +367,7 @@ function WhatIfOutput({ t, result }: { t: Dict; result: WhatIfResult }) {
           key={row.label}
           className="grid gap-1 py-3 sm:grid-cols-[minmax(9rem,1fr)_repeat(3,minmax(0,1fr))] sm:items-baseline sm:gap-3"
         >
-          <dt className="tt-label text-[10.5px] text-muted-foreground">
+          <dt className="tt-label text-[11px] text-muted-foreground">
             {row.label}
           </dt>
           {row.kind === "single" ? (

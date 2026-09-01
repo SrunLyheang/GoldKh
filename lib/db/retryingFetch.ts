@@ -1,30 +1,23 @@
 // Transport-level retry for the Neon HTTP driver. The pooled free-tier
-// endpoint suspends when idle; the first query after it wakes can fail with
-// a network error ("fetch failed") or a 5xx before the pool is ready, and a
-// second attempt a few hundred milliseconds later succeeds. Without this,
-// that one-off blip rejects a whole `/dashboard` server render even though
-// cached data is a retry away.
+// endpoint suspends when idle; the first query after wake can fail with a
+// network error or 5xx, and a retry a few hundred ms later succeeds.
+// Without this, that blip rejects a whole `/dashboard` server render.
 //
-// Wired in through `neonConfig.fetchFunction` in ./client, so every request
-// drizzle's neon-http driver makes passes through here. Only transport
-// failures are retried: a thrown fetch error, or a response with status
-// >= 500. A status < 500 (e.g. 400 for a SQL error) is returned untouched
-// so drizzle surfaces it exactly as before. A retry can re-run a statement
-// whose response was lost in flight; every writer in lib/db/queries is a
-// conditional insert or an upsert, so a repeat is a no-op — except
-// insertSnapshot's unconditional manual-refresh insert, where the worst
-// case is one duplicate price row.
+// Wired in via `neonConfig.fetchFunction` in ./client. Only transport
+// failures retry (thrown fetch error, or status >= 500); status < 500 is
+// returned untouched. A retry can re-run a statement whose response was
+// lost; every writer is a conditional insert/upsert (no-op on repeat)
+// except insertSnapshot, where the worst case is one duplicate price row.
 
 type FetchInput = Parameters<typeof fetch>[0];
 type FetchInit = Parameters<typeof fetch>[1];
 
 export interface RetryingFetchOptions {
-  // Total tries, not retries-after-the-first. 3 → up to two retries.
+  // Total tries, not retries. 3 → up to two retries.
   maxAttempts?: number;
   // Backoff before retry N is baseDelayMs * N: 150ms, then 300ms.
   baseDelayMs?: number;
-  // Per-attempt ceiling so a hung cold-start connection can't stall the
-  // render indefinitely.
+  // Per-attempt ceiling so a hung cold-start can't stall the render.
   timeoutMs?: number;
   fetchImpl?: typeof fetch;
   sleep?: (ms: number) => Promise<void>;
@@ -57,8 +50,7 @@ export function createRetryingFetch(
       try {
         const response = await fetchImpl(input, {
           ...init,
-          // Respect a caller-supplied signal if there is one; otherwise our
-          // timeout is the only abort source.
+          // Caller signal wins; otherwise our timeout is the only abort source.
           signal: init?.signal ?? controller.signal,
         });
         if (response.status >= 500 && attempt < maxAttempts) {

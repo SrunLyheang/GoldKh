@@ -1,7 +1,7 @@
 import { Coins, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Magnetic } from "@/components/motion/magnetic";
-import { useLocale } from "@/lib/i18n/locale-context";
+import { t } from "@/lib/i18n/dictionary";
 
 // Trigger-only — the actual dialog is a single shared instance owned by
 // DashboardContent (see transaction-dialog.tsx's header comment for why:
@@ -9,7 +9,6 @@ import { useLocale } from "@/lib/i18n/locale-context";
 // first optimistic add flips DashboardContent from this screen to the
 // real table).
 export function EmptyState({ onAddClick }: { onAddClick: () => void }) {
-  const { t } = useLocale();
   return (
     <div className="glass-surface flex flex-col items-center justify-center px-6 py-16 text-center">
       <div className="flex h-10 w-10 items-center justify-center rounded-full bg-(--glow-color)">

@@ -5,7 +5,7 @@ import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Panel } from "@/components/dashboard/panel";
-import { useLocale } from "@/lib/i18n/locale-context";
+import { t } from "@/lib/i18n/dictionary";
 import { notify } from "@/lib/ui/toast";
 import {
   serializeTransactionsCsv,
@@ -40,7 +40,6 @@ function ConfirmAction({
   pending: boolean;
   onConfirm: () => void;
 }) {
-  const { t } = useLocale();
   const [open, setOpen] = useState(false);
   const [text, setText] = useState("");
 
@@ -49,7 +48,7 @@ function ConfirmAction({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="tt-label shrink-0 rounded-full border border-destructive px-3 py-1.5 text-[10.5px] text-destructive transition-colors hover:bg-destructive/10"
+        className="tt-label shrink-0 rounded-full border border-destructive px-3 py-1.5 text-[11px] text-destructive transition-colors hover:bg-destructive/10"
       >
         {label}
       </button>
@@ -79,7 +78,7 @@ function ConfirmAction({
           setOpen(false);
           setText("");
         }}
-        className="tt-label text-[10.5px] text-muted-foreground hover:text-foreground"
+        className="tt-label text-[11px] text-muted-foreground hover:text-foreground"
       >
         {t.settings.cancel}
       </button>
@@ -115,7 +114,6 @@ export function DataActions({
 }: {
   transactions: SerializableTransaction[];
 }) {
-  const { t } = useLocale();
   const router = useRouter();
   const [deletingAll, startDeleteAll] = useTransition();
   const [deletingAccount, startDeleteAccount] = useTransition();
@@ -173,7 +171,7 @@ export function DataActions({
             type="button"
             onClick={() => downloadCsv(transactions)}
             disabled={transactions.length === 0}
-            className="tt-label shrink-0 rounded-full border border-(--glass-border-to) px-3 py-1.5 text-[10.5px] text-muted-foreground transition-colors hover:bg-(--glow-color) hover:text-foreground disabled:opacity-50"
+            className="tt-label shrink-0 rounded-full border border-(--glass-border-to) px-3 py-1.5 text-[11px] text-muted-foreground transition-colors hover:bg-(--glow-color) hover:text-foreground disabled:opacity-50"
           >
             {t.csv.download}
           </button>

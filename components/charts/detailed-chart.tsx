@@ -15,18 +15,15 @@ import {
 } from "recharts";
 import { DISPLAY_TIME_ZONE } from "@/lib/format/datetime";
 import { formatUsd } from "@/lib/format/money";
-import { useLocale } from "@/lib/i18n/locale-context";
+import { t } from "@/lib/i18n/dictionary";
 import { notify } from "@/lib/ui/toast";
 import { cn } from "@/lib/utils";
 import { CHART_DRAW_MS } from "@/components/motion/motion";
 
-// One reusable interactive time-series chart. Three call sites:
-//   - /dashboard/price      — spot price per damlung, full mode
-//   - the dashboard's compact price chart — `compact`, drills in via onExpand
-//   - Insights' portfolio chart — two series, inline, `compact`
-// No new charting dependency: Recharts <Brush> for drag-to-range plus a
-// component-state y-domain recomputed from the visible slice; the range
-// presets are hand-wired off Date.now() and clamp to available history.
+// Reusable interactive time-series chart: /dashboard/price (full), the
+// dashboard compact chart, and Insights' portfolio chart (two series).
+// Recharts <Brush> for drag-to-range; y-domain recomputed from the visible
+// slice; range presets hand-wired off Date.now(), clamped to history.
 
 export interface ChartSeries {
   key: string;
@@ -37,23 +34,21 @@ export interface ChartSeries {
 
 export interface ChartReferenceLine {
   value: number;
-  // Drawn as `${label} ↑` / `${label} ↓` only when the line is off-scale;
-  // an on-scale line is unlabelled (the caller writes its own caption).
+  // `${label} ↑`/`↓` only when the line is off-scale; on-scale lines are
+  // unlabelled (caller writes its own caption).
   label: string;
   color?: string;
 }
 
 interface DetailedChartProps {
   series: ChartSeries[];
-  // `compact` controls layout only — reduced height, and (with onExpand)
-  // a plot-area drill-in target. It does NOT by itself decide whether the
-  // range presets / caption / hover tooltip show; that's `richControls`,
-  // which defaults to `!compact` but can be forced on for an inline chart
-  // that still wants the full toolset (the Insights portfolio chart).
+  // `compact` is layout only (height + drill-in target). Whether presets /
+  // caption / tooltip show is `richControls` (defaults to `!compact`, but
+  // forceable on for an inline chart like the Insights portfolio chart).
   compact?: boolean;
   richControls?: boolean;
-  // Draw the line(s) on once, on first mount only (range/preset changes
-  // never re-draw). Defaults on; forced off under `prefers-reduced-motion`.
+  // Draw-on animation, first mount only. Defaults on; off under
+  // `prefers-reduced-motion`.
   animate?: boolean;
   onExpand?: () => void;
   referenceLines?: ChartReferenceLine[];
@@ -68,9 +63,8 @@ export interface MergedRow {
   [seriesKey: string]: number;
 }
 
-// Collapse N series (each its own sparse {t,value} list) onto one array of
-// rows keyed by timestamp, so a single <LineChart> can draw them all and
-// the <Brush> has one index space to work in.
+// Collapse N sparse {t,value} series onto one timestamp-keyed row array so a
+// single <LineChart> draws them all and <Brush> has one index space.
 export function mergeSeries(series: ChartSeries[]): MergedRow[] {
   const byT = new Map<number, MergedRow>();
   for (const s of series) {
@@ -98,12 +92,9 @@ function niceStep(range: number): number {
   );
 }
 
-// Domain sized from the visible series values ALONE — reference lines are
-// deliberately excluded. A single fat-fingered transaction can push an
-// average-cost line orders of magnitude off the real price; folding that
-// into the domain flattened the actual line into an unreadable sliver
-// (dashboard-expansion-plan.md §D, carried over from issue #4). Off-scale
-// reference lines are clamped by placeReferenceLine instead.
+// Domain sized from visible series values alone — reference lines excluded,
+// since a fat-fingered average-cost line would otherwise flatten the real
+// line to a sliver. Off-scale reference lines are clamped by placeReferenceLine.
 export function computeSeriesYAxis(
   rows: MergedRow[],
   keys: string[],
@@ -164,9 +155,8 @@ export type PresetKey = keyof typeof PRESET_WINDOWS_MS | "All";
 
 const PRESET_ORDER: PresetKey[] = ["1W", "1M", "3M", "All"];
 
-// [startIndex, endIndex] into `rows` for a preset window ending now. "All",
-// or any window that reaches past the earliest datum, clamps to the full
-// range — "go fully left and stop", no backfill (dashboard-expansion-plan.md §2).
+// [startIndex, endIndex] into `rows` for a preset window ending now. "All" or
+// any window past the earliest datum clamps to the full range — no backfill.
 export function presetRange(
   rows: MergedRow[],
   preset: PresetKey,
@@ -184,8 +174,8 @@ export function presetRange(
   return [start < 0 ? lastIndex : start, lastIndex];
 }
 
-// True when a preset's window already spans the whole dataset, so it would
-// behave identically to "All" — the full-mode UI disables that button.
+// True when a preset's window already spans the whole dataset (same as
+// "All") — the full-mode UI disables that button.
 export function presetCoversAll(
   rows: MergedRow[],
   preset: PresetKey,
@@ -264,16 +254,14 @@ export function DetailedChart({
   emptyLabel,
   className,
 }: DetailedChartProps) {
-  const { t } = useLocale();
   const reduceMotion = useReducedMotion();
   const showControls = richControls ?? !compact;
 
-  // Draw-on runs on the first mount only. After the initial paint the
-  // flag flips, so range/preset re-renders redraw instantly.
+  // Draw-on runs on first mount only; the flag then flips so later
+  // range/preset re-renders redraw instantly.
   const [hasDrawn, setHasDrawn] = useState(false);
   useEffect(() => {
-    // One-shot: after the first paint, range/preset re-renders redraw
-    // instantly. Same settle-once-in-an-effect pattern as ThemeProvider.
+    // One-shot settle-in-effect (same pattern as ThemeProvider).
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setHasDrawn(true);
   }, []);
@@ -281,6 +269,12 @@ export function DetailedChart({
 
   const rows = useMemo(() => mergeSeries(series), [series]);
   const keys = useMemo(() => series.map((s) => s.key), [series]);
+
+  // Recharts 3's <Brush> divides by the plot width to place its travellers;
+  // on first mount ResponsiveContainer briefly reports width 0 before its
+  // ResizeObserver fires, so that math yields NaN and React warns about a
+  // NaN `x` on the traveller <rect>. Gate the Brush on a sane width.
+  const [plotWidth, setPlotWidth] = useState(0);
 
   const lastIndex = Math.max(0, rows.length - 1);
   const [range, setRange] = useState<[number, number] | null>(null);
@@ -296,11 +290,10 @@ export function DetailedChart({
     [visibleRows, rows, keys],
   );
 
-  // Inline charts with the full toolset get a bit more plot height than a
-  // bare glanceable preview, but stay short of the standalone route.
+  // Inline charts with the full toolset get more plot height than a bare
+  // preview, but stay short of the standalone route.
   const height = compact ? (showControls ? 280 : 220) : 360;
-  // Taller strip whenever the presets are shown, so the drag handles read
-  // as a real control rather than a hairline.
+  // Taller strip when presets show, so the drag handles read as a control.
   const brushHeight = showControls ? 28 : 16;
 
   if (rows.length < 2) {
@@ -352,10 +345,9 @@ export function DetailedChart({
               className="inline-flex shrink-0 items-center gap-0.5 rounded-lg border border-border bg-accent/60 p-0.5"
             >
               {PRESET_ORDER.map((preset) => {
-                // A window longer than the stored history has nothing extra
-                // to show (no backfill — dashboard-expansion-plan.md §2), so
-                // it reads as disabled and explains itself via a toast
-                // rather than silently doing the same thing as "All".
+                // A window longer than stored history shows nothing extra
+                // (no backfill), so it reads as disabled and explains itself
+                // via a toast rather than silently mirroring "All".
                 const outOfRange =
                   preset !== "All" && presetCoversAll(rows, preset);
                 const active = activePreset === preset;
@@ -419,8 +411,8 @@ export function DetailedChart({
 
       <div className="relative w-full" style={{ height }}>
         {compact && onExpand && (
-          // Transparent click target over the plot only — the Brush strip
-          // at the bottom stays uncovered so drag-to-zoom still works.
+          // Transparent click target over the plot only — leaves the Brush
+          // strip uncovered so drag-to-zoom still works.
           <button
             type="button"
             aria-label={t.chart.openDetailed}
@@ -429,7 +421,11 @@ export function DetailedChart({
             style={{ bottom: brushHeight }}
           />
         )}
-        <ResponsiveContainer width="100%" height="100%">
+        <ResponsiveContainer
+          width="100%"
+          height="100%"
+          onResize={(w) => setPlotWidth(w)}
+        >
           <LineChart data={rows} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
             <CartesianGrid
               stroke="var(--glass-border-to)"
@@ -521,25 +517,34 @@ export function DetailedChart({
                 animationEasing="ease-out"
               />
             ))}
-            <Brush
-              dataKey="t"
-              height={brushHeight}
-              stroke="var(--glass-border-to)"
-              fill="var(--glass-bg)"
-              travellerWidth={8}
-              tickFormatter={formatAxisTime}
-              startIndex={startIndex}
-              endIndex={endIndex}
-              onChange={(next: { startIndex?: number; endIndex?: number }) => {
-                if (
-                  typeof next.startIndex === "number" &&
-                  typeof next.endIndex === "number"
-                ) {
-                  setRange([next.startIndex, next.endIndex]);
-                  setActivePreset(null);
-                }
-              }}
-            />
+            {plotWidth > 120 && (
+              // Keyed on row count: when a new snapshot lands mid-session
+              // and `rows` grows, Brush's own state (built for the old
+              // length) briefly evaluates the new startIndex/endIndex
+              // outside its stale domain and renders NaN travellers. A
+              // fresh key forces a clean remount instead of patching that
+              // reconciliation gap in recharts itself.
+              <Brush
+                key={rows.length}
+                dataKey="t"
+                height={brushHeight}
+                stroke="var(--glass-border-to)"
+                fill="var(--glass-bg)"
+                travellerWidth={8}
+                tickFormatter={formatAxisTime}
+                startIndex={startIndex}
+                endIndex={endIndex}
+                onChange={(next: { startIndex?: number; endIndex?: number }) => {
+                  if (
+                    typeof next.startIndex === "number" &&
+                    typeof next.endIndex === "number"
+                  ) {
+                    setRange([next.startIndex, next.endIndex]);
+                    setActivePreset(null);
+                  }
+                }}
+              />
+            )}
           </LineChart>
         </ResponsiveContainer>
       </div>

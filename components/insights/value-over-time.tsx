@@ -5,7 +5,7 @@ import {
   type ChartSeries,
 } from "@/components/charts/detailed-chart";
 import type { PortfolioSeriesPoint } from "@/lib/calc/portfolioSeries";
-import { useLocale } from "@/lib/i18n/locale-context";
+import { t } from "@/lib/i18n/dictionary";
 
 interface ValueOverTimeProps {
   points: PortfolioSeriesPoint[];
@@ -17,7 +17,6 @@ interface ValueOverTimeProps {
 // (dashboard-expansion-plan.md §5.2). Fewer than 2 points falls through
 // to DetailedChart's own empty state.
 export function ValueOverTime({ points }: ValueOverTimeProps) {
-  const { t } = useLocale();
 
   const series: ChartSeries[] = [
     {

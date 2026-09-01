@@ -4,7 +4,7 @@ import { computeRowValuation } from "@/lib/calc/transactionRow";
 import { classifyEntry } from "@/lib/calc/ledgerEntry";
 import type { GoldUnit } from "@/lib/calc/units";
 import { formatUsd } from "@/lib/format/money";
-import { useLocale } from "@/lib/i18n/locale-context";
+import { t } from "@/lib/i18n/dictionary";
 import { unitLabels } from "@/lib/i18n/unit-labels";
 import { MonoValue } from "@/components/dashboard/mono-value";
 import type { TransactionRow } from "@/components/dashboard/transaction-history";
@@ -24,7 +24,7 @@ function formatFullDate(dateKey: string): string {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <p className="tt-label text-[10px] text-muted-foreground">{label}</p>
+      <p className="tt-label text-[11px] text-muted-foreground">{label}</p>
       <div className="mt-1 text-[12.5px] text-foreground">{children}</div>
     </div>
   );
@@ -46,7 +46,6 @@ export function TransactionDetail({
   displayUnit: GoldUnit;
   spotPerDamlungOnDate: number | null;
 }) {
-  const { t } = useLocale();
   const kind = classifyEntry(row);
   const valuation = computeRowValuation(row, currentPricePerTroyOz);
   const unit = unitLabels(t, displayUnit).primaryLower;

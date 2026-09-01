@@ -11,7 +11,7 @@ import {
   PriceIcon,
   TransactionsIcon,
 } from "@/components/icons";
-import { useLocale } from "@/lib/i18n/locale-context";
+import { t } from "@/lib/i18n/dictionary";
 import { cn } from "@/lib/utils";
 import { AccountButton } from "./account-button";
 import { SignOutButton } from "./sign-out-button";
@@ -47,7 +47,6 @@ export function Sidebar({
   onClose: () => void;
 }) {
   const pathname = usePathname();
-  const { t } = useLocale();
   const { user } = useUser();
   const settingsActive = pathname === "/dashboard/settings";
   const identifier =
@@ -84,12 +83,15 @@ export function Sidebar({
             type="button"
             onClick={onClose}
             aria-label="Close menu"
-            className="rounded-sm p-1 text-muted-foreground hover:bg-accent hover:text-foreground md:hidden"
+            className="flex min-h-11 min-w-11 items-center justify-center rounded-sm text-muted-foreground hover:bg-(--glow-color) hover:text-foreground md:hidden"
           >
             <X className="h-4 w-4" />
           </button>
         </div>
-        <nav className="flex flex-1 flex-col gap-1.5 px-3.5 pt-1">
+        <nav
+          aria-label="Primary"
+          className="flex flex-1 flex-col gap-1.5 px-3.5 pt-1"
+        >
           {NAV_ITEMS.map(({ labelKey, href, icon: Icon }) => {
             // Exact match, not startsWith: child routes like
             // /dashboard/transactions must not also light up Dashboard.
@@ -139,7 +141,7 @@ export function Sidebar({
                 aria-label={t.nav.settings}
                 aria-current={settingsActive ? "page" : undefined}
                 className={cn(
-                  "inline-flex shrink-0 items-center justify-center rounded-full border border-(--glass-border-to) bg-accent/60 p-1.5 transition-colors hover:bg-(--glow-color) hover:text-foreground",
+                  "inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-full border border-(--glass-border-to) bg-accent/60 transition-colors hover:bg-(--glow-color) hover:text-foreground",
                   settingsActive ? "text-primary" : "text-muted-foreground"
                 )}
               >

@@ -7,8 +7,8 @@
 
 @theme inline {
     --font-heading: var(--font-sans);
-    --font-sans: var(--font-geist-sans);
-    --font-mono: var(--font-geist-mono);
+    --font-sans: var(--font-plex-sans), ui-sans-serif, system-ui, sans-serif;
+    --font-mono: var(--font-plex-mono), ui-monospace, "SF Mono", monospace;
     --color-state-gain: var(--state-gain);
     --color-sidebar-ring: var(--sidebar-ring);
     --color-sidebar-border: var(--sidebar-border);
@@ -127,7 +127,11 @@
     --glass-bg: color-mix(in oklab, var(--card) 80%, transparent);
     --glass-blur: 14px;
     --glass-border-from: color-mix(in oklab, var(--foreground) 30%, transparent);
-    --glass-border-to: color-mix(in oklab, var(--foreground) 5%, transparent);
+    /* Also the hairline-divider colour everywhere (row separators, field
+       dividers, in-card rules). Kept low, but high enough to actually
+       register against the near-black ground — 5% was effectively
+       invisible. See context/ui-context.md. */
+    --glass-border-to: color-mix(in oklab, var(--foreground) 11%, transparent);
     --glass-highlight: color-mix(in oklab, var(--foreground) 8%, transparent);
     --glass-shadow: 0 24px 60px -30px rgb(0 0 0 / 0.7), 0 4px 14px -8px rgb(0 0 0 / 0.5);
     --glass-radius: var(--radius);
@@ -312,60 +316,63 @@
     --sidebar-ring: #34d17e;
 }
 
-/* ---- Terminal theme — "CRT" ----------------------------------
-   Pure black, phosphor green, everything mono and WIDE-tracked with
-   heavy [ … ] bracket framing and zero radius. Hard offset shadow.
-   The grain rule below adds scanlines on top. Pushed further than
-   before — wider tracking, blacker ground, brighter phosphor.
+/* ---- Coral theme — "fresh / airy" ----------------------------
+   Warm blush-white paper, a punchy coral primary with a teal
+   counter-accent, generous rounding and a soft coral-tinted
+   shadow. Headings are sans, sentence-case, semibold, tight —
+   friendly and modern, the opposite of Ledger's editorial serif.
+   Grain darkens faintly (multiply), set below.
    See context/ui-context.md's Theming section. */
-:root[data-theme="terminal"],
-[data-theme="terminal"] {
-    --background: #020604;
-    --foreground: #b8ffd8;
-    --card: #050c08;
-    --card-foreground: #b8ffd8;
-    --popover: #050c08;
-    --popover-foreground: #b8ffd8;
-    --primary: #2bff88;
-    --primary-foreground: #02150a;
-    --secondary: #08150f;
-    --secondary-foreground: #b8ffd8;
-    --muted: #08150f;
-    --muted-foreground: #4f9c78;
-    --accent: #0b1f16;
-    --accent-foreground: #b8ffd8;
-    --destructive: #ff5a5a;
-    --state-gain: #2bff88;
-    --border: #123324;
-    --input: #123324;
-    --ring: #2bff88;
-    --chart-1: #2bff88;
-    --chart-2: #4f9c78;
-    --chart-3: #7ee0a4;
-    --chart-4: #ff5a5a;
-    --chart-5: #b8ffd8;
+:root[data-theme="coral"],
+[data-theme="coral"] {
+    --background: #fff7f4;
+    --foreground: #2a1a15;
+    --card: #ffffff;
+    --card-foreground: #2a1a15;
+    --popover: #ffffff;
+    --popover-foreground: #2a1a15;
+    --primary: #e14b45;
+    --primary-foreground: #ffffff;
+    --secondary: #ffe9e2;
+    --secondary-foreground: #2a1a15;
+    --muted: #f8ece7;
+    --muted-foreground: #8a6f66;
+    --accent: #ffe0d6;
+    --accent-foreground: #2a1a15;
+    --destructive: #b91c1c;
+    --state-gain: #0f9d8f;
+    --border: #f2ddd4;
+    --input: #e6cabd;
+    --ring: #e14b45;
+    --chart-1: #e14b45;
+    --chart-2: #f0a24b;
+    --chart-3: #0f9d8f;
+    --chart-4: #b91c1c;
+    --chart-5: #2a1a15;
 
-    --radius: 0px;
+    --radius: 14px;
 
-    --label-tracking: 0.18em;
-    --heading-font: var(--font-mono);
-    --heading-transform: uppercase;
-    --heading-tracking: 0.18em;
-    --heading-weight: 400;
+    --label-font: var(--font-sans);
+    --label-transform: uppercase;
+    --label-tracking: 0.1em;
+    --heading-font: var(--font-sans);
+    --heading-transform: none;
+    --heading-tracking: -0.02em;
+    --heading-weight: 600;
     --display-font: var(--font-mono);
-    --bracket-open: "[ ";
-    --bracket-close: " ]";
-    --shadow-lg: 5px 5px 0 0 var(--border);
-    --shadow-sm: 3px 3px 0 0 var(--border);
+    --bracket-open: "";
+    --bracket-close: "";
+    --shadow-lg: 0 24px 50px -22px rgb(225 75 69 / 0.22), 0 4px 14px -8px rgb(42 26 21 / 0.12);
+    --shadow-sm: 0 10px 24px -14px rgb(225 75 69 / 0.2);
 
-    --sidebar: #050c08;
-    --sidebar-foreground: #b8ffd8;
-    --sidebar-primary: #2bff88;
-    --sidebar-primary-foreground: #02150a;
-    --sidebar-accent: #0b1f16;
-    --sidebar-accent-foreground: #b8ffd8;
-    --sidebar-border: #123324;
-    --sidebar-ring: #2bff88;
+    --sidebar: #ffffff;
+    --sidebar-foreground: #2a1a15;
+    --sidebar-primary: #e14b45;
+    --sidebar-primary-foreground: #ffffff;
+    --sidebar-accent: #ffe0d6;
+    --sidebar-accent-foreground: #2a1a15;
+    --sidebar-border: #f2ddd4;
+    --sidebar-ring: #e14b45;
 }
 
 /* ---- Porcelain theme — "Swiss / flat" -------------------------
@@ -491,7 +498,9 @@
     --glass-bg: rgba(255, 255, 255, 0.045);
     --glass-blur: 14px;
     --glass-border-from: rgba(255, 255, 255, 0.42);
-    --glass-border-to: rgba(255, 255, 255, 0.02);
+    /* Doubles as the hairline divider colour — raised from 0.02 (which
+       read as no border at all) to a faint but present hairline. */
+    --glass-border-to: rgba(255, 255, 255, 0.09);
     --glass-highlight: rgba(255, 255, 255, 0.14);
     --glass-shadow: 0 8px 32px 0 rgb(0 0 0 / 0.45);
     --glass-radius: 20px;
@@ -507,10 +516,11 @@
    as glass on paper, and the ambient sparkle field is off — it only
    registers on a dark ground. */
 :root[data-theme="ledger"], [data-theme="ledger"],
-:root[data-theme="porcelain"], [data-theme="porcelain"] {
+:root[data-theme="porcelain"], [data-theme="porcelain"],
+:root[data-theme="coral"], [data-theme="coral"] {
     --glass-bg: color-mix(in oklab, var(--card) 68%, transparent);
     --glass-border-from: color-mix(in oklab, var(--foreground) 16%, transparent);
-    --glass-border-to: color-mix(in oklab, var(--foreground) 4%, transparent);
+    --glass-border-to: color-mix(in oklab, var(--foreground) 10%, transparent);
     --glass-highlight: rgb(255 255 255 / 0.55);
     --glass-shadow: 0 1px 2px rgb(15 23 41 / 0.06), 0 16px 40px -22px rgb(15 23 41 / 0.14);
     --glass-scrim: rgb(15 23 41 / 0.28);
@@ -518,15 +528,40 @@
     --sparkle-opacity: 0;
 }
 
+/* Dark idiom themes (Midnight, Emerald) render the same `.glass-*`
+   classes as Liquid Glass but were inheriting the warm-base `--glass-*`
+   values, which composite to a muddy opaque plate — worst at swatch
+   size. Give them Liquid Glass's subtle white frost so each card's own
+   colour shows through as tinted glass instead. */
+:root[data-theme="midnight"], [data-theme="midnight"],
+:root[data-theme="emerald"], [data-theme="emerald"] {
+    --glass-bg: rgba(255, 255, 255, 0.05);
+    --glass-border-from: color-mix(in oklab, var(--foreground) 38%, transparent);
+    --glass-border-to: color-mix(in oklab, var(--foreground) 10%, transparent);
+    --glass-highlight: rgba(255, 255, 255, 0.12);
+    --glass-fallback-bg: color-mix(in oklab, var(--card) 92%, var(--foreground));
+}
+
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-border;
     }
   body {
     @apply bg-background text-foreground;
     }
   html {
     @apply font-sans;
+    }
+  /* One token-driven keyboard focus ring for every focusable element.
+     Components that ship their own focus-visible treatment (shadcn
+     Button, the Base UI primitives) set `focus-visible:outline-none`
+     and win on specificity, so this only fills the gap left by the
+     bespoke dashboard controls — the segmented control, sidebar nav,
+     theme picker, icon buttons — which previously fell back to the
+     inconsistent UA outline. See context/ui-context.md. */
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
     }
 }
 
@@ -558,13 +593,21 @@
     ),
     var(--glass-bg);
 }
-.glass-overlay {
-  position: relative;
-  background: color-mix(in oklab, var(--glass-bg) 72%, transparent);
-  border-radius: var(--glass-radius);
-  box-shadow: inset 0 1px 0 var(--glass-highlight), var(--glass-shadow);
-  backdrop-filter: blur(var(--glass-blur));
-  -webkit-backdrop-filter: blur(var(--glass-blur));
+/* In `components` so a positioning utility on the same element (the
+   dialog's `fixed`) still wins — an unlayered rule would beat it and
+   drop the dialog back into document flow. */
+@layer components {
+  .glass-overlay {
+    position: relative;
+    /* Same fill as `.glass-surface` (no extra dilution) — overlays sit
+       over arbitrary content and were too see-through, worst on the
+       light themes. The frost comes from `backdrop-filter` below. */
+    background: var(--glass-bg);
+    border-radius: var(--glass-radius);
+    box-shadow: inset 0 1px 0 var(--glass-highlight), var(--glass-shadow);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+  }
 }
 .glass-surface::before,
 .glass-overlay::before {
@@ -641,45 +684,30 @@
 }
 
 /* A faint fixed grain so the near-black background reads as a surface
-   rather than a flat fill. Pointer-events-none, decorative only. */
+   rather than a flat fill. Pointer-events-none, decorative only.
+   No `mix-blend-mode` here on purpose: a blended full-viewport fixed
+   layer forces the compositor to re-blend the whole screen every
+   scroll frame (the mobile-scroll-jank root cause from the landing —
+   see progress-tracker.md). Plain low-opacity noise on its own layer
+   just stays put. */
 .app-grain::before {
   content: "";
   position: fixed;
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  opacity: 0.05;
-  mix-blend-mode: overlay;
+  opacity: 0.035;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
-/* Overlay grain reads as light-on-dark; on the light themes' paper it
-   needs to darken instead, and more faintly. */
+/* On the light themes' paper the white noise needs to darken instead.
+   `multiply` is confined to these two opt-in themes rather than the
+   always-on default. */
 :root[data-theme="ledger"] .app-grain::before,
-:root[data-theme="porcelain"] .app-grain::before {
+:root[data-theme="porcelain"] .app-grain::before,
+:root[data-theme="coral"] .app-grain::before {
   opacity: 0.03;
   mix-blend-mode: multiply;
-}
-
-/* Terminal leans into the CRT look — a touch more visible grain plus
-   horizontal scanlines from a second fixed layer. Decorative, inert. */
-:root[data-theme="terminal"] .app-grain::before {
-  opacity: 0.08;
-}
-:root[data-theme="terminal"] .app-grain::after {
-  content: "";
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  opacity: 0.5;
-  background-image: repeating-linear-gradient(
-    0deg,
-    rgb(0 0 0 / 0.18) 0px,
-    rgb(0 0 0 / 0.18) 1px,
-    transparent 1px,
-    transparent 3px
-  );
 }
 
 /* Brutalist micro-typography — every label, nav item, table header, and
@@ -974,7 +1002,13 @@ html:has([data-landing-theme="dark"]) body {
   }
 }
 
-/* ─── Liquid Glass Aesthetic ─────────────────────────────────────────────────── */
+/* ─── Liquid Glass Aesthetic (marketing tree only) ───────────────────────────
+   NOTE: this is a second, parallel glass implementation kept for the
+   welcome/landing pages (components/welcome/*). The signed-in app uses
+   the token-driven `.glass-surface` / `.glass-overlay` / `.glass-glow`
+   classes defined above instead. A change to the glass language may need
+   to be mirrored in both places until they are consolidated — see
+   context/glass-consolidation-plan.md. */
 .liquid-glass {
   background: rgba(255, 255, 255, 0.03);
   backdrop-filter: blur(12px);
@@ -1432,7 +1466,11 @@ html:has(.liquid-glass-landing-root) {
   top: -320px;
   bottom: -320px;
   background-repeat: repeat;
-  will-change: transform, opacity;
+  /* No `will-change` at rest: the infinite transform/opacity animation
+     already promotes these to their own layer while running, and
+     SparkleField pauses the animation (animation-play-state) when the
+     field scrolls out of view — a resting `will-change` would keep the
+     GPU memory reserved through that pause for nothing. */
 }
 .sparkle-field__layer--a {
   background-image:
@@ -1475,7 +1513,6 @@ html:has(.liquid-glass-landing-root) {
     rgba(232, 184, 75, 0.1) 50%,
     transparent 58%
   );
-  will-change: transform;
   animation: sparkle-field-shimmer 9s ease-in-out infinite;
 }
 @keyframes sparkle-field-rise-a {
@@ -1524,5 +1561,107 @@ html:has(.liquid-glass-landing-root) {
   .sparkle-field__layer,
   .sparkle-field__shimmer {
     animation: none;
+  }
+}
+
+/* SparkleField adds this class via an IntersectionObserver when its
+   wrapper scrolls out of view, so the three rise/twinkle loops stop
+   costing compositor work while the user is reading further down the
+   dashboard. The fixed full-viewport uses (auth, landing) never leave
+   the viewport, so they never pause. */
+.sparkle-field--paused .sparkle-field__layer,
+.sparkle-field--paused .sparkle-field__shimmer {
+  animation-play-state: paused;
+}
+/* ─── Sonner toasts ──────────────────────────────────────────────────
+   The default sonner chrome (flat fill + hairline) read as a foreign
+   object on top of the liquid-glass system. This rebuilds the toast
+   with the same recipe as `.glass-overlay`: masked gradient-border
+   ring, inset top highlight, real ambient shadow, `--glass-radius`.
+   Success stays neutral glass (the check icon already reads as
+   success); error is the one variant that gets a colour treatment —
+   see the red-tint rules below — so a coloured side-tab never appears
+   on a routine confirmation. */
+[data-sonner-toaster] {
+  --width: 384px;
+  --gap: 12px;
+}
+[data-sonner-toaster] [data-sonner-toast] {
+  --toast-close-button-transform: scale(0.9);
+  padding: 14px 16px 14px 18px;
+  gap: 12px;
+  border: none;
+  border-radius: var(--glass-radius);
+  background: color-mix(in oklab, var(--glass-bg) 82%, transparent);
+  color: var(--card-foreground);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  box-shadow:
+    inset 0 1px 0 var(--glass-highlight),
+    var(--glass-shadow);
+}
+[data-sonner-toaster] [data-sonner-toast]::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    160deg,
+    var(--glass-border-from) 0%,
+    var(--glass-border-to) 45%,
+    var(--glass-border-from) 100%
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+/* Success stays neutral frosted glass — the green check icon carries it.
+   Errors demand attention: the whole surface goes red-tinted glass, the
+   gradient-border ring turns red, and the title picks up the red. */
+[data-sonner-toaster] [data-sonner-toast][data-type="error"] {
+  background:
+    linear-gradient(
+      160deg,
+      color-mix(in oklab, var(--destructive) 24%, transparent),
+      color-mix(in oklab, var(--destructive) 7%, transparent) 72%
+    ),
+    color-mix(in oklab, var(--glass-bg) 82%, transparent);
+}
+[data-sonner-toaster] [data-sonner-toast][data-type="error"]::before {
+  background: linear-gradient(
+    160deg,
+    color-mix(in oklab, var(--destructive) 60%, var(--glass-border-from)) 0%,
+    color-mix(in oklab, var(--destructive) 34%, var(--glass-border-to)) 45%,
+    color-mix(in oklab, var(--destructive) 60%, var(--glass-border-from)) 100%
+  );
+}
+[data-sonner-toaster] [data-sonner-toast][data-type="error"] [data-title] {
+  color: color-mix(in oklab, var(--destructive) 78%, var(--card-foreground));
+}
+[data-sonner-toaster] [data-sonner-toast] [data-icon] {
+  margin-top: 1px;
+  align-self: flex-start;
+}
+[data-sonner-toaster] [data-sonner-toast] [data-title] {
+  font-size: 13px;
+  font-weight: 550;
+  letter-spacing: -0.006em;
+  line-height: 1.4;
+}
+[data-sonner-toaster] [data-sonner-toast] [data-description] {
+  margin-top: 3px;
+  color: var(--muted-foreground);
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  [data-sonner-toaster] [data-sonner-toast] {
+    background: var(--glass-fallback-bg);
+  }
+  [data-sonner-toaster] [data-sonner-toast][data-type="error"] {
+    background: color-mix(in oklab, var(--destructive) 16%, var(--glass-fallback-bg));
   }
 }

@@ -35,14 +35,14 @@ export function BulkActionsBar({
         <button
           type="button"
           onClick={onClear}
-          className="tt-label text-[10.5px] text-muted-foreground transition-colors hover:text-foreground"
+          className="tt-label text-[11px] text-muted-foreground transition-colors hover:text-foreground"
         >
           Clear
         </button>
         <button
           type="button"
           onClick={onDelete}
-          className="tt-label inline-flex items-center gap-1 rounded-full border border-destructive px-2.5 py-1.5 text-[10.5px] text-destructive transition-colors hover:bg-destructive/10"
+          className="tt-label inline-flex items-center gap-1 rounded-full border border-destructive px-2.5 py-1.5 text-[11px] text-destructive transition-colors hover:bg-destructive/10"
         >
           <Trash2 className="h-3 w-3" />
           Delete

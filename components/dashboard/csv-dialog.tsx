@@ -9,7 +9,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { useLocale } from "@/lib/i18n/locale-context";
+import { t } from "@/lib/i18n/dictionary";
 import { notify } from "@/lib/ui/toast";
 import { cn } from "@/lib/utils";
 import { formatQuantity } from "@/lib/format/money";
@@ -60,7 +60,6 @@ export function CsvDialog({
   rows: SerializableTransaction[];
   onImported: () => void;
 }) {
-  const { t } = useLocale();
   const [mode, setMode] = useState<Mode>("export");
   const [parsed, setParsed] = useState<ParsedCsvRow[] | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
@@ -225,7 +224,7 @@ export function CsvDialog({
                 <div className="max-h-64 overflow-auto rounded-lg border border-border">
                   <table className="w-full border-collapse text-[12px]">
                     <thead className="sticky top-0 bg-card">
-                      <tr className="tt-label border-b border-border text-[10px] text-muted-foreground">
+                      <tr className="tt-label border-b border-border text-[11px] text-muted-foreground">
                         <th className="px-3 py-2 text-left font-medium">#</th>
                         <th className="py-2 pr-3 text-left font-medium">
                           {t.csv.preview}

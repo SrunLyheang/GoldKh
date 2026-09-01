@@ -3,7 +3,7 @@
 import type { CSSProperties } from "react";
 import type { GoldUnit } from "@/lib/calc/units";
 import { formatQuantity, formatUsd } from "@/lib/format/money";
-import { useLocale } from "@/lib/i18n/locale-context";
+import { t } from "@/lib/i18n/dictionary";
 import { unitLabels } from "@/lib/i18n/unit-labels";
 import { COUNT_UP_MS } from "@/lib/ui/use-count-up";
 import { useValuePulse } from "@/lib/ui/use-value-pulse";
@@ -73,7 +73,6 @@ export function StatRow({
   gainLossPercent,
   displayUnit = "damlung",
 }: StatRowProps) {
-  const { t } = useLocale();
   const isChi = displayUnit === "chi";
   // Lowercase to match this row's pre-i18n convention ("1 damlung", "per
   // chi") — unlike the hero card's dropdown-style "Chi"/"Damlung" labels.

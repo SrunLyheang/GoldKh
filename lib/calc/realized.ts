@@ -8,23 +8,17 @@ export interface Realized {
   saleCount: number;
 }
 
-// Realized gain/loss on gold the user has already sold — the "what I paid
-// minus what I sold it for" figure.
+// Realized gain/loss on gold already sold.
 //
-// Same weighted-average basis as computeHoldings (NOT FIFO — see
-// project-overview.md): each sell is
-// valued at the running average cost of the position at the moment of
-// that sell, and proceeds are the recorded sale price.
+// Weighted-average basis like computeHoldings (NOT FIFO): each sell is
+// valued at the running average cost at that moment; proceeds are the
+// recorded sale price. realized = Σ proceeds − Σ (cost basis of sold qty).
 //
-//   realized = Σ proceeds − Σ (cost basis of the sold quantity)
+// Requires `entries` in chronological order — the running average only
+// means anything if buys/sells replay in order.
 //
-// Depends on `entries` being in chronological order, exactly like
-// computeHoldings — the running average is only meaningful if buys and
-// sells are replayed in the order they happened.
-//
-// KHR rows are skipped, not converted (architecture.md invariant 4), so
-// saleCount counts USD sells only. realizedPercent is against the cost
-// basis of the sold gold, and is "0" until something comparable is sold.
+// KHR rows are skipped, so saleCount is USD sells only. realizedPercent is
+// against the sold gold's cost basis; "0" until something is sold.
 export function computeRealized(entries: LedgerEntry[]): Realized {
   let totalQtyOz = new Decimal(0);
   let totalCostUsd = new Decimal(0);
@@ -45,8 +39,7 @@ export function computeRealized(entries: LedgerEntry[]): Realized {
       continue;
     }
 
-    // sale — value it at the average cost of the position right now,
-    // then draw the position down by the sold quantity and its basis.
+    // sale — value at current average cost, then draw the position down.
     const avgCost = totalQtyOz.isZero()
       ? new Decimal(0)
       : totalCostUsd.div(totalQtyOz);

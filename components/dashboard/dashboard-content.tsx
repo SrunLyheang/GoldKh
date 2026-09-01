@@ -103,6 +103,7 @@ export function DashboardContent({
       return;
     }
 
+    notify.success("Transaction deleted.");
     startSync(() => router.refresh());
   }
 

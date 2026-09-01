@@ -11,8 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { SegmentedControl } from "@/components/dashboard/segmented-control";
-import { useLocale } from "@/lib/i18n/locale-context";
-import type { Dictionary } from "@/lib/i18n/dictionary";
+import { t, type Dictionary } from "@/lib/i18n/dictionary";
 import { cn } from "@/lib/utils";
 import type { FilterCriteria } from "@/lib/calc/filterTransactions";
 import type { GoldUnit } from "@/lib/calc/units";
@@ -126,7 +125,6 @@ function Fields({
   value: FilterFormState;
   onChange: (next: FilterFormState) => void;
 }) {
-  const { t } = useLocale();
   const set = (patch: Partial<FilterFormState>) =>
     onChange({ ...value, ...patch });
 
@@ -233,7 +231,6 @@ export function TransactionFilters({
   onChange: (next: FilterFormState) => void;
   resultCount: number;
 }) {
-  const { t } = useLocale();
   const count = activeFilterCount(value);
   const [open, setOpen] = useState(false);
   const chips = activeChips(value, t);
@@ -246,7 +243,7 @@ export function TransactionFilters({
           onClick={() => setOpen((v) => !v)}
           aria-expanded={open}
           className={cn(
-            "tt-label inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1.5 text-[10.5px] transition-colors",
+            "tt-label inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1.5 text-[11px] transition-colors",
             count > 0 || open
               ? "border-primary/50 text-foreground"
               : "border-(--glass-border-to) text-muted-foreground hover:bg-(--glow-color) hover:text-foreground"
@@ -262,7 +259,7 @@ export function TransactionFilters({
               key={chip.key}
               type="button"
               onClick={() => onChange({ ...value, ...chip.clear })}
-              className="tt-label inline-flex items-center gap-1 rounded-full border border-(--glass-border-to) bg-(--glow-color) py-1 pr-1 pl-2 text-[10px] text-foreground transition-[filter] hover:brightness-125"
+              className="tt-label inline-flex items-center gap-1 rounded-full border border-(--glass-border-to) bg-(--glow-color) py-1 pr-1 pl-2 text-[11px] text-foreground transition-[filter] hover:brightness-125"
             >
               {chip.label}
               <X className="h-3 w-3 text-muted-foreground" />
@@ -273,13 +270,13 @@ export function TransactionFilters({
           <button
             type="button"
             onClick={() => onChange(EMPTY_FILTERS)}
-            className="tt-label text-[10px] text-muted-foreground hover:text-foreground"
+            className="tt-label text-[11px] text-muted-foreground hover:text-foreground"
           >
             {t.filters.clear}
           </button>
         )}
 
-        <span className="tt-label ml-auto text-[10.5px] text-muted-foreground">
+        <span className="tt-label ml-auto text-[11px] text-muted-foreground">
           {t.filters.resultCount(resultCount)}
         </span>
       </div>

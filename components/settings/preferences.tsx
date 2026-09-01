@@ -4,7 +4,7 @@ import { SegmentedControl } from "@/components/dashboard/segmented-control";
 import { ThemeToggle } from "@/components/dashboard/theme-toggle";
 import { Panel } from "@/components/dashboard/panel";
 import { usePrefs } from "@/lib/prefs/prefs-context";
-import { useLocale } from "@/lib/i18n/locale-context";
+import { t } from "@/lib/i18n/dictionary";
 import type { GoldUnit } from "@/lib/calc/units";
 
 function Field({
@@ -29,7 +29,6 @@ function Field({
 // (dashboard-expansion-plan.md §6.2). Currency is stored but only USD is
 // honoured anywhere today; KHR display is deferred project-wide.
 export function PreferencesSettings() {
-  const { t } = useLocale();
   const { prefs, setPrefs } = usePrefs();
 
   return (

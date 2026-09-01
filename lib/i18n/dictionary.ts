@@ -1,10 +1,8 @@
-export type Locale = "en";
-
 // Flat-ish nested dictionary, one entry per user-facing string. Only
-// English ships right now — the Khmer locale and its toggle were removed
-// 2026-08-29 pending a translation review. `Dictionary` is derived from
-// `en`; re-adding a second locale means restoring a `const km: typeof en`
-// object plus a toggle.
+// English ships — the Khmer locale and its toggle were removed
+// 2026-08-29 pending a translation review. Re-adding a second locale
+// means a `const km: typeof en` object plus a locale switch; until then
+// `t` is imported directly and there is no runtime locale plumbing.
 const en = {
   nav: {
     dashboard: "Dashboard",
@@ -143,7 +141,7 @@ const en = {
     zoomHint:
       "Drag the strip below to zoom into a date range, or pick a preset.",
     historyShorterThanRange:
-      "Your history doesn't go back that far yet — showing everything instead.",
+      "That range is longer than your saved price history — showing all of it.",
   },
   filters: {
     title: "Filters",
@@ -361,3 +359,7 @@ const en = {
 
 export const dictionary = { en } as const;
 export type Dictionary = typeof en;
+
+// The single shipping dictionary. Import this directly wherever UI copy
+// is needed — `const { t } = useLocale()` used to hand back exactly this.
+export const t = en;

@@ -29,5 +29,12 @@ export function Surface({ glow = true, tilt = false, ...panelProps }: SurfacePro
   ) : (
     panel
   );
-  return glow ? <GlassGlow>{inner}</GlassGlow> : inner;
+  // Round the glow wrapper to the card radius so the `.glass-glow::after`
+  // bloom (border-radius: inherit) and the hover lift don't show square
+  // corners over the rounded Panel.
+  return glow ? (
+    <GlassGlow className="rounded-[var(--glass-radius)]">{inner}</GlassGlow>
+  ) : (
+    inner
+  );
 }

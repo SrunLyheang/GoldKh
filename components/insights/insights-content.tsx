@@ -12,7 +12,7 @@ import {
   type DatedLedgerEntry,
   type PriceSnapshotPoint,
 } from "@/lib/calc/portfolioSeries";
-import { useLocale } from "@/lib/i18n/locale-context";
+import { t } from "@/lib/i18n/dictionary";
 import { useSectionEnter } from "@/components/motion/use-section-enter";
 import { cn } from "@/lib/utils";
 import { Panel } from "@/components/dashboard/panel";
@@ -36,7 +36,6 @@ export function InsightsContent({
   snapshots,
   pricePerTroyOz,
 }: InsightsContentProps) {
-  const { t } = useLocale();
 
   // Sections glide in on scroll-into-view, staggered — the same quiet
   // entrance the main dashboard uses. Hooks run unconditionally; the

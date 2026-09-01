@@ -41,7 +41,7 @@ export function SegmentedControl<T extends string>({
           onClick={() => onChange(option.value)}
           aria-pressed={value === option.value}
           className={cn(
-            "tt-label px-2.5 py-1 text-[10.5px] transition-colors",
+            "tt-label inline-flex min-h-8 items-center rounded-md px-2.5 py-1 text-[11px] transition-colors",
             value === option.value
               ? "bg-primary text-primary-foreground"
               : "text-muted-foreground hover:text-foreground"

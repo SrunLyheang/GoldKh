@@ -41,6 +41,12 @@ function PnlRollingFigure({
   // Non-null only while a roll is in flight.
   const [rolling, setRolling] = useState<string | null>(null);
 
+  // Hidden-sizer text. Normally the settled string; while rolling from a
+  // wider previous value (e.g. -$1,234.56 -> +$50.00) the early frames
+  // are wider than settled, so the sizer widens to the wider endpoint
+  // for the duration of the roll and the live figure isn't clipped.
+  const [sizerText, setSizerText] = useState(() => formatUsd(gainLossUsd));
+
   useEffect(() => {
     let previous: number | null = null;
     try {
@@ -65,6 +71,8 @@ function PnlRollingFigure({
       }
     };
 
+    const settledStr = formatUsd(gainLossUsd);
+
     if (
       previous === null ||
       previous === current ||
@@ -74,8 +82,14 @@ function PnlRollingFigure({
       persist();
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setRolling(null);
+      setSizerText(settledStr);
       return;
     }
+
+    // The roll is monotonic between the endpoints, so the widest frame is
+    // one of them. Reserve the box at whichever is wider for the roll.
+    const previousStr = formatUsd(String(previous));
+    setSizerText(previousStr.length > settledStr.length ? previousStr : settledStr);
 
     const controls = animate(previous, current, {
       duration: COUNT_UP_MS / 1000,
@@ -83,18 +97,41 @@ function PnlRollingFigure({
       onUpdate: (v) => setRolling(formatUsd(String(v))),
       onComplete: () => {
         setRolling(null);
+        setSizerText(settledStr);
         persist();
       },
     });
     return () => controls.stop();
   }, [gainLossUsd, current, reduceMotion]);
 
-  const display = rolling ?? formatUsd(gainLossUsd);
+  const settled = formatUsd(gainLossUsd);
+  const display = rolling ?? settled;
+  const figureClass = "block text-[19px] font-semibold";
 
+  // Hidden sizer holds `sizerText` so the box keeps a constant width
+  // while the figure rolls (see CountUpValue for the rationale).
   return (
-    <MonoValue tone={tone} signed className="block text-[19px] font-semibold">
-      {display}
-    </MonoValue>
+    <span className="grid">
+      <MonoValue
+        aria-hidden
+        data-count-up-sizer
+        tone={tone}
+        signed
+        className={cn(figureClass, "invisible [grid-area:1/1] whitespace-nowrap")}
+      >
+        {sizerText}
+      </MonoValue>
+      <MonoValue
+        tone={tone}
+        signed
+        className={cn(
+          figureClass,
+          "[grid-area:1/1] min-w-0 overflow-hidden whitespace-nowrap"
+        )}
+      >
+        {display}
+      </MonoValue>
+    </span>
   );
 }
 

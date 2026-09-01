@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { ChevronDown } from "lucide-react";
 import type { BuyQualityRow } from "@/lib/calc/buyQuality";
 import { formatPercent, formatQuantity, formatUsd } from "@/lib/format/money";
-import { useLocale } from "@/lib/i18n/locale-context";
+import { t } from "@/lib/i18n/dictionary";
 import { unitLabels } from "@/lib/i18n/unit-labels";
 import { cn } from "@/lib/utils";
 import { MonoValue } from "@/components/dashboard/mono-value";
@@ -51,7 +51,6 @@ function SortButton({
 // §5.3). Sortable by date or by `vs spot`; rows with no old-enough
 // snapshot show "—" and sort last on the vs-spot key.
 export function BuyHistory({ rows }: BuyHistoryProps) {
-  const { t } = useLocale();
   const [sortKey, setSortKey] = useState<SortKey>("date");
   const [desc, setDesc] = useState(true);
 
@@ -93,7 +92,7 @@ export function BuyHistory({ rows }: BuyHistoryProps) {
     <div className="overflow-x-auto rounded-lg border border-(--glass-border-to)">
       <table className="w-full border-collapse text-[13px]">
         <thead className="glass-chrome sticky top-0 z-10">
-          <tr className="tt-label border-b border-(--glass-border-to) text-left text-[10.5px] text-muted-foreground">
+          <tr className="tt-label border-b border-(--glass-border-to) text-left text-[11px] text-muted-foreground">
             <th className="py-2 pr-3 pl-3 font-normal">
               <SortButton
                 label={t.insights.sortDate}
