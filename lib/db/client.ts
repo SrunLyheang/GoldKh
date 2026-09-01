@@ -1,6 +1,13 @@
-import { neon } from "@neondatabase/serverless";
+import { neon, neonConfig } from "@neondatabase/serverless";
 import { drizzle, type NeonHttpDatabase } from "drizzle-orm/neon-http";
 import * as schema from "./schema";
+import { createRetryingFetch } from "./retryingFetch";
+
+// Every Neon HTTP request drizzle issues goes through a transport-level
+// retry — see ./retryingFetch for the why. Assigned once at module load;
+// client.ts is the sole owner of the Neon connection, so mutating the
+// global config here has no reach beyond it.
+neonConfig.fetchFunction = createRetryingFetch();
 
 // Constructed on first use, not at import time. Route modules are evaluated
 // during `next build`'s page-data collection, where DATABASE_URL is absent;

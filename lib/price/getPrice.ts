@@ -39,7 +39,17 @@ const defaultDeps: GetPriceDeps = {
 export async function getPrice(
   deps: GetPriceDeps = defaultDeps
 ): Promise<PriceSnapshot> {
-  const latest = await deps.getLatestSnapshot();
+  // A transient failure reading the cache (Neon cold start, network blip —
+  // ./db/retryingFetch already retries these at the transport layer) must
+  // not take down the page. Treat it as "no cache": fall through to the
+  // provider list below, and if that also fails with nothing cached, the
+  // final throw stands.
+  let latest: PriceSnapshot | undefined;
+  try {
+    latest = await deps.getLatestSnapshot();
+  } catch {
+    latest = undefined;
+  }
   // When the spot market is closed the price cannot have moved, so any
   // cached snapshot is served as-is however stale — no goldapi.io request
   // is spent on a weekend. With no cache at all we still fall through to

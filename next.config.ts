@@ -1,27 +1,15 @@
 import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
 
-// Origins the browser is allowed to load code/data from, kept as named
-// groups so each directive below reads as a list, not a wall of URLs.
-//   - Clerk serves its Frontend API + hosted UI from *.clerk.accounts.dev
-//     (dev/preview) and *.clerk.com. A production instance on a custom
-//     domain serves clerk-js + the Frontend API from clerk.<prod-domain>
-//     instead; that host is encoded in the publishable key, so we decode
-//     it (see clerkFrontendApiOrigin) rather than hardcoding it.
-//   - Cloudflare Turnstile (challenges.cloudflare.com) backs Clerk's bot
-//     protection and renders in an iframe.
-//   - Sentry posts events straight to one ingest host encoded in the DSN
-//     (`https://<key>@<host>/<project>`); we allow exactly that origin,
-//     nothing wildcard. No DSN set -> no Sentry origin (and Sentry.init
-//     is a no-op anyway).
-//   - Clerk also serves user / OAuth avatar images from img.clerk.com;
-//     that is the only remote image host the app loads.
+// CSP origin groups. Clerk: *.clerk.accounts.dev + *.clerk.com, plus the
+// custom-domain Frontend API host decoded from the publishable key.
+// Turnstile: challenges.cloudflare.com (Clerk bot protection iframe).
+// Sentry: the single ingest host from the DSN, exact origin, no wildcard.
+// Images: img.clerk.com only (Clerk avatars).
 
-// The Frontend API host is base64url-encoded in the publishable key:
-// `pk_(test|live)_<base64url("<host>$")>`. Clerk's own SDK derives its
-// script/API origin this way, so a production custom domain
-// (clerk.goldkh.xyz) needs no extra env var — decode the same value the
-// browser will call and add it to the allowlist.
+// The Frontend API host is base64url-encoded in the publishable key
+// (`pk_(test|live)_<base64url("<host>$")>`). Decoding it here means a
+// production custom domain needs no extra env var.
 function clerkFrontendApiOrigin(): string {
   const key = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
   if (!key) return "";
@@ -52,20 +40,15 @@ function sentryIngestOrigin(): string {
 }
 const sentryOrigins = sentryIngestOrigin();
 
-// `next dev` (Turbopack HMR + React dev-mode stack reconstruction) evaluates
-// code with eval(), which CSP blocks unless 'unsafe-eval' is present. Scope it
-// to development only so the production policy stays eval-free.
+// `next dev` uses eval() (Turbopack HMR, dev stack traces), which CSP blocks
+// without 'unsafe-eval'. Dev-only so production stays eval-free.
 const devScriptSrc =
   process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : "";
 
-// KNOWN GAP — script-src still allows 'unsafe-inline'. Next.js injects
-// inline bootstrap/hydration scripts and no per-request nonce is plumbed
-// through the app yet, so with 'unsafe-inline' present an injected inline
-// <script> is NOT blocked and most of this policy's XSS value is lost.
-// Tracked in context/progress-tracker.md ("CSP nonce"). Until it is
-// closed, `report-uri` below routes every violation to /api/csp-report so
-// the blind spot is at least observable. Everything except inline script
-// is locked to 'self' + the allowlist above.
+// KNOWN GAP — script-src still allows 'unsafe-inline' (Next.js inline
+// bootstrap scripts, no nonce plumbed yet), so injected inline <script> is
+// not blocked. Tracked as "CSP nonce". Until then `report-uri` routes every
+// violation to /api/csp-report. Everything else is 'self' + the allowlist.
 const cspReportUri = "/api/csp-report";
 const contentSecurityPolicy = [
   "default-src 'self'",
@@ -98,10 +81,8 @@ export const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
-  // Pin the Turbopack workspace root to this project. Without it,
-  // Turbopack walks up and finds a stray package-lock.json in the
-  // home directory, making root inference ambiguous (it warns and
-  // guesses). __dirname is this file's directory = the repo root.
+  // Pin the Turbopack workspace root; otherwise it walks up to a stray
+  // package-lock.json in the home directory and warns.
   turbopack: {
     root: __dirname,
   },
@@ -117,9 +98,8 @@ const nextConfig: NextConfig = {
   },
 };
 
-// No org/project/authToken set — source-map upload is skipped until
-// SENTRY_AUTH_TOKEN etc. are configured after the Sentry project exists.
-// `silent: true` avoids Sentry's build-time console noise until then.
+// No org/project/authToken yet — source-map upload is skipped; `silent`
+// suppresses Sentry's build-time console noise until it's configured.
 export default withSentryConfig(nextConfig, {
   silent: true,
 });

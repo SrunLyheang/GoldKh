@@ -5,7 +5,7 @@ import { LogOut } from "lucide-react";
 import { useState } from "react";
 import { createPortal } from "react-dom";
 import { Spinner } from "@/components/ui/loading";
-import { useLocale } from "@/lib/i18n/locale-context";
+import { t } from "@/lib/i18n/dictionary";
 import { notify } from "@/lib/ui/toast";
 import { cn } from "@/lib/utils";
 
@@ -22,7 +22,6 @@ import { cn } from "@/lib/utils";
 // intentional rather than a hang.
 export function SignOutButton({ className }: { className?: string }) {
   const { signOut } = useClerk();
-  const { t } = useLocale();
   const [pending, setPending] = useState(false);
 
   async function handleSignOut() {
@@ -51,7 +50,7 @@ export function SignOutButton({ className }: { className?: string }) {
         aria-label={t.nav.signOut}
         title={t.nav.signOut}
         className={cn(
-          "inline-flex shrink-0 items-center justify-center rounded-md border border-border bg-accent/60 p-1.5 text-muted-foreground transition-colors hover:text-foreground disabled:opacity-60",
+          "inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-full border border-(--glass-border-to) bg-accent/60 text-muted-foreground transition-colors hover:bg-(--glow-color) hover:text-foreground disabled:opacity-60",
           className
         )}
       >
@@ -63,7 +62,6 @@ export function SignOutButton({ className }: { className?: string }) {
           <div
             className="fixed inset-0 z-60 flex flex-col items-center justify-center gap-3 bg-background/90 backdrop-blur-sm"
             role="status"
-            aria-live="assertive"
           >
             <Spinner size="lg" />
             <p className="tt-label text-[11px] text-muted-foreground">

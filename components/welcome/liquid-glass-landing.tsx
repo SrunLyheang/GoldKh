@@ -18,7 +18,7 @@ import { FeatureCoverflow } from "./feature-coverflow";
 import { GoldBarDiorama } from "./gold-bar-diorama";
 import { GoldCursor } from "./gold-cursor";
 import { HeroToDashboard } from "./hero-to-dashboard";
-import { Magnetic } from "./magnetic";
+import { Magnetic } from "@/components/motion/magnetic";
 import { ScrollGoldBar } from "./scroll-gold-bar";
 import { SectionProgressNav } from "./section-progress-nav";
 import { SpotlightCard } from "./spotlight-card";

@@ -7,14 +7,14 @@ import { toast } from "sonner";
 // long enough to read and act on.
 export const notify = {
   success(message: string): void {
-    toast.success(message, { id: message, duration: 3000 });
+    toast.success(message, { id: message, duration: 2000 });
   },
   error(message: string): void {
-    toast.error(message, { id: message, duration: 6000 });
+    toast.error(message, { id: message, duration: 4000 });
   },
   // Neutral notice — neither a success confirmation nor a failure. Used
   // for "here's why that control didn't do what you expected" messages.
   info(message: string): void {
-    toast(message, { id: message, duration: 4500 });
+    toast(message, { id: message, duration: 3000 });
   },
 };

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
 import { cn } from "@/lib/utils";
+import { useSectionEnter } from "@/components/motion/use-section-enter";
 import { formatQuantity, formatUsd } from "@/lib/format/money";
 import { notify } from "@/lib/ui/toast";
 import {
@@ -14,7 +15,7 @@ import {
 import type { ChartPoint } from "@/lib/calc/priceHistory";
 import { spotPerDamlungOnDate } from "@/lib/calc/priceHistory";
 import type { GoldUnit } from "@/lib/calc/units";
-import { useLocale } from "@/lib/i18n/locale-context";
+import { t } from "@/lib/i18n/dictionary";
 import { CsvDialog } from "@/components/dashboard/csv-dialog";
 import { MonoValue } from "@/components/dashboard/mono-value";
 import { Panel } from "@/components/dashboard/panel";
@@ -71,7 +72,7 @@ function SortHeader({
         type="button"
         onClick={onClick}
         className={cn(
-          "tt-label inline-flex items-center gap-1 text-[10.5px] font-medium transition-colors hover:text-foreground",
+          "tt-label inline-flex items-center gap-1 text-[11px] font-medium transition-colors hover:text-foreground",
           active ? "text-foreground" : "text-muted-foreground"
         )}
       >
@@ -111,7 +112,6 @@ function ViewRow({
   onDelete: (row: TransactionRow) => void;
   onEditSuccess: () => void;
 }) {
-  const { t } = useLocale();
   const d = getRowDisplay(row, currentPricePerTroyOz, displayUnit, t);
 
   return (
@@ -128,9 +128,9 @@ function ViewRow({
           }
         }}
         className={cn(
-          "cursor-pointer border-b border-border last:border-0 hover:bg-accent/40 focus:outline-none focus-visible:bg-accent/50",
+          "cursor-pointer border-b border-(--glass-border-to) last:border-0 hover:bg-(--glow-color) focus:outline-none focus-visible:bg-(--glow-color)",
           d.isPending && "opacity-60",
-          (expanded || selected) && "bg-accent/40"
+          (expanded || selected) && "bg-(--glow-color)"
         )}
       >
         {selectMode && (
@@ -213,7 +213,7 @@ function ViewRow({
         </td>
       </tr>
       {expanded && (
-        <tr className="border-b border-border last:border-0">
+        <tr className="border-b border-(--glass-border-to) last:border-0">
           <td colSpan={selectMode ? 8 : 7} className="p-0">
             <TransactionDetail
               row={row}
@@ -253,7 +253,6 @@ function ViewCard({
   onDelete: (row: TransactionRow) => void;
   onEditSuccess: () => void;
 }) {
-  const { t } = useLocale();
   const d = getRowDisplay(row, currentPricePerTroyOz, displayUnit, t);
 
   return (
@@ -275,7 +274,7 @@ function ViewCard({
             onToggle();
           }
         }}
-        className="flex min-h-11 cursor-pointer items-center justify-between gap-2 px-4 py-3.5 focus:outline-none focus-visible:bg-accent/40"
+        className="flex min-h-11 cursor-pointer items-center justify-between gap-2 px-4 py-3.5 focus:outline-none focus-visible:bg-(--glow-color)"
       >
         <div className="flex min-w-0 items-center gap-2.5">
           {selectMode && !d.isPending && (
@@ -323,11 +322,11 @@ function ViewCard({
       </div>
       <div className="grid grid-cols-2 gap-x-4 gap-y-3.5 px-4 pb-4">
         <div>
-          <p className="tt-label text-[10.5px] text-muted-foreground">{t.transactions.paid}</p>
+          <p className="tt-label text-[11px] text-muted-foreground">{t.transactions.paid}</p>
           <MonoValue className="mt-0.5 block text-[13.5px]">{d.paidAmount}</MonoValue>
         </div>
         <div>
-          <p className="tt-label text-[10.5px] text-muted-foreground">{t.transactions.pnl}</p>
+          <p className="tt-label text-[11px] text-muted-foreground">{t.transactions.pnl}</p>
           {d.valuation.pnlUsd ? (
             <MonoValue signed tone={d.isGain ? "gain" : "loss"} className="mt-0.5 block text-[13.5px]">
               {formatUsd(d.valuation.pnlUsd)}
@@ -364,8 +363,9 @@ export function TransactionsView({
   priceHistory: ChartPoint[];
   displayUnit?: GoldUnit;
 }) {
-  const { t } = useLocale();
   const router = useRouter();
+  const { ref: revealRef, revealClass, style: revealStyle } =
+    useSectionEnter<HTMLDivElement>(0);
   const [, startSync] = useTransition();
   const [form, setForm] = useState<FilterFormState>(EMPTY_FILTERS);
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -469,7 +469,11 @@ export function TransactionsView({
     setExpandedId((cur) => (cur === id ? null : id));
 
   return (
-    <div className="flex flex-col gap-5">
+    <div
+      ref={revealRef}
+      style={revealStyle}
+      className={cn("flex flex-col gap-5", revealClass)}
+    >
       <div className="flex flex-wrap items-center justify-between gap-2">
         <Link
           href="/dashboard"
@@ -488,10 +492,10 @@ export function TransactionsView({
               onClick={selectMode ? exitSelectMode : enterSelectMode}
               aria-pressed={selectMode}
               className={cn(
-                "tt-label border px-2.5 py-1.5 text-[10.5px] transition-colors",
+                "tt-label rounded-full border px-2.5 py-1.5 text-[11px] transition-colors",
                 selectMode
                   ? "border-foreground bg-foreground text-background"
-                  : "border-border text-muted-foreground hover:bg-accent hover:text-foreground"
+                  : "border-(--glass-border-to) text-muted-foreground hover:bg-(--glow-color) hover:text-foreground"
               )}
             >
               {selectMode ? "Cancel" : "Select"}
@@ -500,7 +504,7 @@ export function TransactionsView({
           <button
             type="button"
             onClick={() => setCsvOpen(true)}
-            className="tt-label border border-border px-2.5 py-1.5 text-[10.5px] text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            className="tt-label rounded-full border border-(--glass-border-to) px-2.5 py-1.5 text-[11px] text-muted-foreground transition-colors hover:bg-(--glow-color) hover:text-foreground"
           >
             {t.csv.importExport}
           </button>
@@ -525,10 +529,10 @@ export function TransactionsView({
         ) : (
           <>
             <AllRowsContext.Provider value={transactions}>
-              <div className="hidden overflow-x-auto rounded-lg border border-border bg-card md:block">
+              <div className="hidden overflow-x-auto rounded-lg border border-(--glass-border-to) md:block">
                 <table className="w-full min-w-140 border-collapse">
-                  <thead className="bg-card">
-                    <tr className="border-b border-border">
+                  <thead className="glass-chrome sticky top-0 z-10">
+                    <tr className="border-b border-(--glass-border-to)">
                       {selectMode && (
                         <th className="py-3 pr-1 pl-4">
                           <RowCheckbox
@@ -547,16 +551,16 @@ export function TransactionsView({
                         dir={sortDir}
                         onClick={() => onHeaderClick("date")}
                       />
-                      <th className="py-3 pr-3 text-left tt-label text-[10.5px] font-medium text-muted-foreground">
+                      <th className="py-3 pr-3 text-left tt-label text-[11px] font-medium text-muted-foreground">
                         {t.transactions.quantity}
                       </th>
-                      <th className="py-3 pr-3 text-right tt-label text-[10.5px] font-medium text-muted-foreground">
+                      <th className="py-3 pr-3 text-right tt-label text-[11px] font-medium text-muted-foreground">
                         {t.transactions.paid}
                       </th>
-                      <th className="py-3 pr-3 text-right tt-label text-[10.5px] font-medium text-muted-foreground">
+                      <th className="py-3 pr-3 text-right tt-label text-[11px] font-medium text-muted-foreground">
                         /{displayUnit}
                       </th>
-                      <th className="py-3 pr-3 text-right tt-label text-[10.5px] font-medium text-muted-foreground">
+                      <th className="py-3 pr-3 text-right tt-label text-[11px] font-medium text-muted-foreground">
                         {t.transactions.currentValue}
                       </th>
                       <SortHeader

@@ -101,6 +101,40 @@ describe("getPrice", () => {
     );
   });
 
+  it("falls through to the provider when the initial cache read throws", async () => {
+    const inserted = snapshot({ id: "snap-after-read-failure" });
+    const provider = vi
+      .fn()
+      .mockResolvedValue({ pricePerTroyOz: "2100", source: "goldapi.io" });
+    const deps = makeDeps({
+      getLatestSnapshot: vi
+        .fn()
+        .mockRejectedValueOnce(new Error("Error connecting to database"))
+        .mockResolvedValue(undefined),
+      insertSnapshotIfStale: vi.fn().mockResolvedValue(inserted),
+      providers: [provider],
+    });
+
+    const result = await getPrice(deps);
+
+    expect(provider).toHaveBeenCalledOnce();
+    expect(result).toBe(inserted);
+  });
+
+  it("throws when the initial cache read fails and every provider fails", async () => {
+    const failing = vi.fn().mockRejectedValue(new Error("down"));
+    const deps = makeDeps({
+      getLatestSnapshot: vi
+        .fn()
+        .mockRejectedValue(new Error("Error connecting to database")),
+      providers: [failing],
+    });
+
+    await expect(getPrice(deps)).rejects.toThrow(
+      "All price providers failed"
+    );
+  });
+
   it("serves the cached snapshot without calling a provider when the market is closed", async () => {
     const stale = snapshot({
       capturedAt: new Date(Date.now() - PRICE_STALENESS_MS - 1000),

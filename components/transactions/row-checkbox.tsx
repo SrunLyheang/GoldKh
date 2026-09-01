@@ -19,7 +19,7 @@ export function RowCheckbox({
 }) {
   return (
     <span
-      className={cn("inline-flex items-center", className)}
+      className={cn("-m-1.5 inline-flex items-center p-1.5", className)}
       onClick={(e) => e.stopPropagation()}
     >
       <input

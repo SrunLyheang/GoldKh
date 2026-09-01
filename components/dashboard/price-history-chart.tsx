@@ -11,7 +11,7 @@ import {
 } from "@/components/charts/detailed-chart";
 import { formatUsd } from "@/lib/format/money";
 import type { ChartPoint } from "@/lib/calc/priceHistory";
-import { useLocale } from "@/lib/i18n/locale-context";
+import { t } from "@/lib/i18n/dictionary";
 import { Panel } from "./panel";
 
 interface PriceHistoryChartProps {
@@ -35,7 +35,6 @@ export function PriceHistoryChart({
   breakEvenPerDamlung,
   marketOpen = true,
 }: PriceHistoryChartProps) {
-  const { t } = useLocale();
   const router = useRouter();
   const marketClosed = marketOpen === false;
 
@@ -84,7 +83,7 @@ export function PriceHistoryChart({
           {t.chart.title} →
         </Link>
         {marketClosed && (
-          <span className="tt-bracket tt-label text-[10.5px] text-muted-foreground">
+          <span className="tt-bracket tt-label text-[11px] text-muted-foreground">
             {t.chart.marketClosed}
           </span>
         )}

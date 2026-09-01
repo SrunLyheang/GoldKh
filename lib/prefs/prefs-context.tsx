@@ -48,7 +48,7 @@ interface PrefsContextValue {
 
 const PrefsContext = createContext<PrefsContextValue | null>(null);
 
-// Mirrors ThemeProvider / LocaleProvider: starts on DEFAULT_PREFS every
+// Mirrors ThemeProvider: starts on DEFAULT_PREFS every
 // render, then reads the stored value in an effect so the server-rendered
 // markup and the first client paint agree.
 export function PrefsProvider({ children }: { children: ReactNode }) {

@@ -23,7 +23,7 @@ import {
 import { DateField } from "@/components/ui/date-field";
 import { toDateKey } from "@/components/ui/calendar";
 import { LoadingScreen } from "@/components/ui/loading";
-import { useLocale } from "@/lib/i18n/locale-context";
+import { t } from "@/lib/i18n/dictionary";
 import { notify } from "@/lib/ui/toast";
 import { cn } from "@/lib/utils";
 import { formatQuantity, formatUsd } from "@/lib/format/money";
@@ -48,24 +48,19 @@ export interface EditableTransaction {
   notes?: string | null;
 }
 
-// The dialog reports every add outcome through its own toast; the parent
-// only needs to know whether to reconcile (ok) or leave the rollback
-// alone (not ok).
+// The dialog toasts every add outcome itself; the parent only needs ok
+// (reconcile) vs not-ok (leave the rollback).
 export type AddSettledResult = { ok: boolean };
 
-// A number the user might still be mid-typing ("1.", "", ".5") — cheap
-// shape check before handing it to Decimal, which throws on anything
-// that isn't a complete number.
+// Cheap shape check for a mid-typed number ("1.", "", ".5") before Decimal,
+// which throws on anything incomplete.
 function isParseableNumber(value: string): boolean {
   return /^\d*\.?\d*$/.test(value) && value !== "" && value !== ".";
 }
 
-// The user enters the total they paid for the whole transaction; the
-// ledger stores price per unit. Divide, then round to the schema's 4-dp
-// cap — a stored pricePerUnit × quantity can then differ from the
-// entered total by a sub-cent rounding remainder, which is acceptable at
-// this scale. Returns "" while either input is still mid-typing or the
-// quantity is zero (Decimal.div throws on divide-by-zero).
+// User enters the transaction total; the ledger stores price per unit.
+// Divide, round to the schema's 4-dp cap (a sub-cent round-trip remainder is
+// acceptable). Returns "" while an input is mid-typing or quantity is zero.
 function derivePricePerUnit(totalPaid: string, quantity: string): string {
   if (
     !isParseableNumber(totalPaid) ||
@@ -77,30 +72,18 @@ function derivePricePerUnit(totalPaid: string, quantity: string): string {
   return new Decimal(totalPaid).div(quantity).toDecimalPlaces(4).toString();
 }
 
-// Always fully controlled by the caller (`open`/`onOpenChange`) — no
-// built-in trigger button in either mode. Add's trigger buttons live in
-// EmptyState and TransactionHistory's header, but both open the SAME
-// dialog instance rendered once in DashboardContent: if each caller
-// rendered its own TransactionDialog, the one inside EmptyState would get
-// unmounted mid-request the instant the optimistic row flips `rows` from
-// empty to non-empty (DashboardContent swaps EmptyState out for the real
-// table) — losing this dialog's loading state before the user ever sees
-// it. A single shared instance survives that swap.
+// Fully controlled by the caller (`open`/`onOpenChange`), no built-in
+// trigger. One shared instance lives in DashboardContent: a per-caller
+// instance in EmptyState would unmount mid-request when the optimistic row
+// swaps EmptyState out for the table, losing this dialog's loading state.
 //
-// Every field is controlled state (not `defaultValue`/FormData) — this
-// is what lets a failed submit re-show the form with everything the user
-// typed still in place, since the dialog instance itself never unmounts
-// (only the `submitting ? LoadingScreen : form` branch swaps), and it's
-// the same reason `type` was already state before this: an uncontrolled
-// input remounts fresh from its original default the moment that branch
-// swaps back, discarding whatever was typed.
+// Every field is controlled state (not defaultValue/FormData) so a failed
+// submit can re-show the form with the user's input intact — an uncontrolled
+// input would reset when the LoadingScreen branch swaps back.
 //
-// `onOptimisticAdd` (add-mode only) fires immediately on submit so the
-// dashboard reflects the new row right away, but the dialog itself always
-// stays open showing `LoadingScreen` until the request settles — it does
-// NOT close early. Success closes it; failure rolls the optimistic row
-// back (via `onAddSettled`) and returns to the form with an error, same
-// as the non-optimistic path.
+// `onOptimisticAdd` (add-mode) fires on submit so the dashboard updates
+// right away, but the dialog stays open on LoadingScreen until the request
+// settles: success closes it, failure rolls back and returns to the form.
 export function TransactionDialog({
   transaction,
   open,
@@ -122,7 +105,6 @@ export function TransactionDialog({
 }) {
   const isEdit = transaction !== undefined;
   const isOptimistic = !isEdit && onOptimisticAdd !== undefined;
-  const { t } = useLocale();
   const unitLabel = (u: "chi" | "damlung") => (u === "chi" ? t.unit.chi : t.unit.damlung);
   const typeLabel = (option: "buy" | "sell") =>
     option === "buy" ? t.transactions.buy : t.transactions.sell;
@@ -132,8 +114,7 @@ export function TransactionDialog({
     transaction ? formatQuantity(transaction.quantity) : ""
   );
   const [unit, setUnit] = useState<"chi" | "damlung">(transaction?.unit ?? "chi");
-  // Edit mode seeds the field with total = pricePerUnit × quantity, the
-  // inverse of what happens on submit.
+  // Edit mode seeds total = pricePerUnit × quantity (inverse of submit).
   const [totalPaid, setTotalPaid] = useState(
     transaction
       ? new Decimal(transaction.pricePerUnit).times(transaction.quantity).toString()
@@ -173,9 +154,8 @@ export function TransactionDialog({
 
   const spotPerUnit = priceFromTroyOz(currentPricePerTroyOz, unit);
 
-  // Fat-finger guard: compare the derived per-unit price against the
-  // current spot rate for the selected unit. KHR rows skip it — the rest
-  // of the app treats non-USD prices as un-comparable to the USD spot.
+  // Fat-finger guard: derived per-unit price vs current spot for the unit.
+  // KHR rows skip it (non-USD prices aren't comparable to the USD spot).
   const priceVerdict =
     currency === "USD" && derivedPricePerUnit !== ""
       ? classifyPrice(Number(derivedPricePerUnit), Number(spotPerUnit))
@@ -214,8 +194,7 @@ export function TransactionDialog({
       return;
     }
 
-    // A price wildly off spot (an extra zero, a wrong unit) blocks the
-    // save; the inline message below the summary box explains why.
+    // A price wildly off spot blocks the save; the inline message explains why.
     if (priceIsHard) {
       return;
     }
@@ -417,7 +396,7 @@ export function TransactionDialog({
 
               <div className="rounded-lg border border-border bg-muted/30 px-3.5 py-3 text-[12.5px]">
                 <div className="flex items-center justify-between">
-                  <span className="tt-label text-[10.5px] text-muted-foreground">
+                  <span className="tt-label text-[11px] text-muted-foreground">
                     {t.dialog.perUnitEquiv(unitLabel(unit).toLowerCase())}
                   </span>
                   <span className="font-mono tabular-nums text-foreground">
@@ -429,7 +408,7 @@ export function TransactionDialog({
                   </span>
                 </div>
                 <div className="mt-1.5 flex items-center justify-between">
-                  <span className="tt-label text-[10.5px] text-muted-foreground">{t.dialog.currentSpot}</span>
+                  <span className="tt-label text-[11px] text-muted-foreground">{t.dialog.currentSpot}</span>
                   <span className="font-mono tabular-nums text-muted-foreground">
                     {formatUsd(spotPerUnit)}/{unitLabel(unit).toLowerCase()}
                   </span>

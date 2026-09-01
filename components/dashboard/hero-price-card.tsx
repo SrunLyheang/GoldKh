@@ -1,11 +1,16 @@
 import type { GoldUnit } from "@/lib/calc/units";
 import { formatClockTime } from "@/lib/format/datetime";
 import { formatUsd } from "@/lib/format/money";
-import { useLocale } from "@/lib/i18n/locale-context";
+import { t } from "@/lib/i18n/dictionary";
 import { unitLabels } from "@/lib/i18n/unit-labels";
-import { COUNT_UP_MS, useCountUp } from "@/lib/ui/use-count-up";
+import type { CSSProperties } from "react";
+import { COUNT_UP_MS } from "@/lib/ui/use-count-up";
+import { useValuePulse } from "@/lib/ui/use-value-pulse";
+import { cn } from "@/lib/utils";
+import { SparkleField } from "@/components/effects/sparkle-field";
+import { CountUpValue } from "./count-up-value";
 import { MonoValue } from "./mono-value";
-import { Panel } from "./panel";
+import { Surface } from "./surface";
 import { RefreshButton } from "./refresh-button";
 import { UnitToggle } from "./unit-toggle";
 
@@ -32,7 +37,6 @@ export function HeroPriceCard({
   displayUnit = "damlung",
   onDisplayUnitChange,
 }: HeroPriceCardProps) {
-  const { t } = useLocale();
   const marketClosed = marketOpen === false;
   const timeLabel = formatClockTime(capturedAt);
 
@@ -42,18 +46,17 @@ export function HeroPriceCard({
   const { primary: primaryUnitLabel, secondaryLower: secondaryUnitLabel } =
     unitLabels(t, displayUnit);
 
-  // Rolls from zero to the live price on every page entry. A unit toggle
-  // afterwards snaps (see useCountUp's `from` mode).
-  const headlineDisplay = useCountUp(Number(headlinePrice), {
-    from: 0,
-    durationMs: COUNT_UP_MS,
-    format: (value) => formatUsd(String(value)),
-  });
+  // Trigger on the unit-independent spot so a unit toggle doesn't pulse.
+  const pulsing = useValuePulse(pricePerTroyOz);
 
   return (
-    <Panel size="lg" className="relative overflow-hidden">
+    <Surface size="lg" variant="accent" tilt className="relative overflow-hidden">
       <div className="absolute inset-x-0 top-0 h-1 bg-primary" />
-      <div className="relative flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between sm:gap-8">
+      <SparkleField
+        className="pointer-events-none absolute inset-0"
+        style={{ opacity: "calc(var(--sparkle-opacity) * 0.6)" }}
+      />
+      <div className="relative z-10 flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between sm:gap-8">
         <div>
           <div className="flex flex-wrap items-center gap-2.5">
             <p className="tt-label text-[11px] text-muted-foreground">
@@ -63,9 +66,24 @@ export function HeroPriceCard({
               <UnitToggle value={displayUnit} onChange={onDisplayUnitChange} />
             )}
           </div>
-          <MonoValue className="tt-display mt-1.5 block text-[34px] font-semibold tracking-tight leading-tight sm:text-[46px]">
-            {headlineDisplay}
-          </MonoValue>
+          {/* The price readout is the dashboard's page title — the only h1
+              on the route. The small label above names the unit it's in. */}
+          <h1
+            className={cn("mt-1.5 block", pulsing && "value-pulse-active")}
+            style={{ "--pulse-tone": "var(--primary)" } as CSSProperties}
+          >
+            {/* Rolls from zero to the live price on every page entry. A
+                unit toggle afterwards snaps (see useCountUp's `from`
+                mode). Isolated in CountUpValue so the per-frame roll
+                doesn't re-render the tilting glass hero card. */}
+            <CountUpValue
+              target={Number(headlinePrice)}
+              from={0}
+              durationMs={COUNT_UP_MS}
+              format={(value) => formatUsd(String(value))}
+              className="tt-display block text-[34px] font-semibold tracking-tight leading-tight sm:text-[46px]"
+            />
+          </h1>
           <MonoValue tone="muted" className="mt-1.5 block text-[12.5px]">
             {formatUsd(pricePerTroyOz)}/oz · {formatUsd(secondaryPrice)}/
             {secondaryUnitLabel}
@@ -98,9 +116,9 @@ export function HeroPriceCard({
           />
         </div>
       </div>
-      <p className="mt-5 border-t border-border pt-4 text-[11.5px] text-muted-foreground">
+      <p className="relative z-10 mt-5 border-t border-(--glass-border-to) pt-4 text-[11.5px] text-muted-foreground">
         {t.hero.disclaimer}
       </p>
-    </Panel>
+    </Surface>
   );
 }

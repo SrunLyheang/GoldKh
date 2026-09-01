@@ -19,7 +19,7 @@ import {
   INDICATIVE_SPOT_PER_DAMLUNG,
   type MarketingBuy,
 } from "./marketing-calc";
-import { useInView } from "./use-reveal";
+import { useInView } from "@/components/motion/use-reveal";
 
 // A fixed illustrative ledger — the same weighted-average math the rest
 // of the page uses, so the numbers here agree with the simulator below.

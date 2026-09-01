@@ -14,17 +14,14 @@ export interface WhatIfInput {
   mode: WhatIfMode;
   quantity: string;
   unit: GoldUnit;
-  // The whole hypothetical amount, matching the Add dialog's "Total
-  // amount paid" field — money out for a buy, money in for a sell. Not a
-  // per-unit price.
+  // Whole hypothetical amount (money out for a buy, in for a sell), not
+  // per-unit — matches the Add dialog's "Total amount paid".
   totalPriceUsd: string;
-  // Live spot price per troy oz, used to value the resulting position for
-  // the unrealized P&L rows.
+  // Live spot per troy oz, for valuing the resulting position.
   currentPricePerTroyOz: string;
 }
 
-// A single figure shown as current → projected, with the signed change
-// between them so the UI can render a delta with gain/loss tone.
+// One figure as current → projected, plus the signed delta.
 export interface WhatIfMetric {
   before: string;
   after: string;
@@ -33,15 +30,13 @@ export interface WhatIfMetric {
 
 export interface WhatIfResult {
   mode: WhatIfMode;
-  // Sell mode only: the hypothetical quantity exceeds the current
-  // position. The numeric fields are still filled in, but the UI shows a
-  // guard message instead (dashboard-expansion-plan.md §5.4).
+  // Sell mode only: hypothetical quantity exceeds the position. Numeric
+  // fields are still filled in; the UI shows a guard message instead.
   overSell: boolean;
 
   averageCostPerDamlung: WhatIfMetric;
-  // The spot per damlung at which the resulting position breaks even.
-  // With no fees modelled this equals the resulting average cost; a sell
-  // leaves it unchanged.
+  // Spot per damlung at which the resulting position breaks even. No fees
+  // modelled, so it equals the resulting average cost.
   breakEvenSpotPerDamlung: WhatIfMetric;
 
   holdingsChi: WhatIfMetric;
@@ -51,9 +46,8 @@ export interface WhatIfResult {
   unrealizedUsd: WhatIfMetric;
   unrealizedPercent: WhatIfMetric;
 
-  // Sell mode only ("0" for a buy): cash received and the gain/loss
-  // realized on the sold gold, valued at the current average cost — the
-  // same weighted-average basis as lib/calc/realized.ts.
+  // Sell mode only ("0" for a buy): cash received and gain/loss realized on
+  // the sold gold at current average cost (same basis as lib/calc/realized.ts).
   proceedsUsd: string;
   realizedUsd: string;
   realizedPercent: string;
@@ -83,9 +77,8 @@ function metric(before: Decimal, after: Decimal): WhatIfMetric {
   };
 }
 
-// Value a quantity of gold at the current spot price, in USD — the
-// spot-implied total the calculator offers as a starting point for the
-// "total price" field. A non-positive quantity yields "0".
+// Value a quantity of gold at current spot, in USD — the starting point the
+// calculator offers for the "total price" field. Non-positive quantity → "0".
 export function spotImpliedTotal(
   quantity: string,
   unit: GoldUnit,
@@ -97,12 +90,10 @@ export function spotImpliedTotal(
   return qtyOz.times(currentPricePerTroyOz).toString();
 }
 
-// Fold a hypothetical buy or sell into the current weighted-average
-// position and report the projected average cost, holdings, break-even,
-// and unrealized P&L at today's spot — each as a current → projected
-// pair (dashboard-expansion-plan.md §5.4). Stateless, pure, no
-// persistence. A non-positive hypothetical quantity yields a zeroed
-// result so the calculator can render its empty state.
+// Fold a hypothetical buy/sell into the current weighted-average position
+// and report projected average cost, holdings, break-even, and unrealized
+// P&L, each as a current → projected pair. Pure. Non-positive quantity →
+// zeroed result for the empty state.
 export function computeWhatIf(
   current: Pick<Holdings, "totalTroyOz" | "averageCostPerTroyOz">,
   input: WhatIfInput,
@@ -140,8 +131,8 @@ export function computeWhatIf(
       : currentCost.plus(input.totalPriceUsd).div(newOz);
   } else {
     overSell = tradedOz.greaterThan(currentOz);
-    // A sell leaves the weighted-average cost per unit untouched; it only
-    // draws the position down (see computeHoldings).
+    // A sell leaves average cost per unit untouched, only drawing the
+    // position down (see computeHoldings).
     newOz = currentOz.minus(tradedOz);
     newAvgPerOz = currentAvgPerOz;
 

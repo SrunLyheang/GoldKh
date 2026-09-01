@@ -226,7 +226,7 @@ describe("DetailedChart rendering", () => {
     expect(oneMonth).toHaveAttribute("aria-disabled", "true");
     await userEvent.click(oneMonth);
     expect(notify.info).toHaveBeenCalledWith(
-      expect.stringMatching(/doesn't go back that far/i),
+      expect.stringMatching(/longer than your saved price history/i),
     );
     expect(oneMonth).toHaveAttribute("aria-pressed", "false");
     expect(screen.getByRole("button", { name: "All" })).toHaveAttribute(

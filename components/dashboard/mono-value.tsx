@@ -25,7 +25,12 @@ export function MonoValue({
   children,
   ...props
 }: HTMLAttributes<HTMLSpanElement> & { tone?: Tone; signed?: boolean }) {
-  const base = cn("font-mono tabular-nums break-all", TONE_CLASSES[tone], className);
+  // `break-words`, not `break-all`: a formatted figure ("-$1,234.56") has
+  // no mid-string break opportunities, so it stays on one line and the
+  // parent handles any overflow (CountUpValue / PnlRollingFigure clip it
+  // in a fixed-width grid cell). `break-all` used to let a number wrap
+  // between any two digits in a tight column.
+  const base = cn("font-mono tabular-nums break-words", TONE_CLASSES[tone], className);
 
   if (signed && typeof children === "string") {
     const sign = children[0] === "-" || children[0] === "+" ? children[0] : "";

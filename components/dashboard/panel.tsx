@@ -1,22 +1,34 @@
 import type { HTMLAttributes } from "react";
 import { cn } from "@/lib/utils";
 
-// `lg` panels (hero, chart) carry a border and a tinted shadow so they
-// read as the page's primary surface. `md` panels (stat cards,
-// transaction rows) drop the border and lean on a lighter shadow instead
-// — flat border+shadow on every card was making the dashboard feel like
-// one repeated container rather than a hierarchy. See context/ui-context.md.
+// Every dashboard card is a `.glass-surface` (faux-frost fill +
+// gradient-border ring + ambient shadow — see app/globals.css). `lg`
+// panels (hero, chart) carry more padding so they read as the page's
+// primary surface; `md` panels (stat cards, transaction rows) are
+// tighter. `variant="accent"` tints the frost toward `--primary` for
+// the gold-glass hero look. See context/ui-context.md.
 const SIZE_CLASSES = {
-  lg: "border border-border p-5 shadow-vault-lg sm:p-7",
-  md: "border border-border p-5 shadow-vault-sm",
+  lg: "glass-surface p-6 sm:p-8",
+  md: "glass-surface p-5",
 } as const;
 
 export function Panel({
   className,
   size = "md",
+  variant = "surface",
   ...props
-}: HTMLAttributes<HTMLDivElement> & { size?: keyof typeof SIZE_CLASSES }) {
+}: HTMLAttributes<HTMLDivElement> & {
+  size?: keyof typeof SIZE_CLASSES;
+  variant?: "surface" | "accent";
+}) {
   return (
-    <div className={cn("bg-card", SIZE_CLASSES[size], className)} {...props} />
+    <div
+      className={cn(
+        SIZE_CLASSES[size],
+        variant === "accent" && "glass-surface--accent",
+        className
+      )}
+      {...props}
+    />
   );
 }

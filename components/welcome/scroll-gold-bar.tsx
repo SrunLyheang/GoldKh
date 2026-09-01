@@ -3,26 +3,19 @@
 import { useEffect, useRef } from "react";
 import { useReducedMotion } from "motion/react";
 
-// A thin wireframe outline of a gold bar on a viewport-fixed layer
-// behind all page content. Deliberately a line-art *graphic device*,
-// not a rendered object: single `--primary` stroke, no fill, no gloss,
-// no blur, low opacity — so it fits the Vault language (stroke icons,
-// hard edges, gold as a restrained accent) instead of reading as a
-// shiny 3-D prop.
+// Thin wireframe gold-bar outline on a viewport-fixed layer behind all
+// content. Line-art device, not a rendered object: single `--primary`
+// stroke, no fill/gloss/blur, low opacity.
 //
-//   - horizontal: a sine of scroll progress glides it left ↔ right
-//     ~1.4 full passes across the length of the page.
-//   - vertical: eases from near the top of the viewport to lower down
-//     as progress runs 0 → 1, with a gentle out-of-phase bob.
-//   - rotation: a slow 2-D turn, ~1.2 revolutions over the whole page.
+//   - horizontal: sine of scroll progress, ~1.4 passes across the page.
+//   - vertical: eases top → lower as progress runs 0 → 1, with a bob.
+//   - rotation: slow 2-D turn, ~1.2 revolutions over the page.
 //
-// A passive scroll listener updates the target; a single rAF eases the
-// rendered pose toward it and writes straight to `style.transform`
-// (no React state per frame), stopping once settled so a stationary
-// page costs nothing. Under `prefers-reduced-motion` — and with no
-// layout (SSR, jsdom) — it stays at the resting pose written inline
-// below, and no listener or loop is attached. Decorative only:
-// aria-hidden and pointer-events-none.
+// A passive scroll listener sets the target; one rAF eases the pose and
+// writes `style.transform` directly (no per-frame React state), stopping
+// once settled. Under `prefers-reduced-motion` / no layout (SSR, jsdom) it
+// parks at the inline resting pose with no listener. Decorative:
+// aria-hidden, pointer-events-none.
 
 const AMPLITUDE_VW = 32; // half the horizontal travel, in viewport widths
 const PASSES = 1.4; // full left-right sweeps across the whole page

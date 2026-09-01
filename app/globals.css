@@ -7,8 +7,8 @@
 
 @theme inline {
     --font-heading: var(--font-sans);
-    --font-sans: var(--font-geist-sans);
-    --font-mono: var(--font-geist-mono);
+    --font-sans: var(--font-plex-sans), ui-sans-serif, system-ui, sans-serif;
+    --font-mono: var(--font-plex-mono), ui-monospace, "SF Mono", monospace;
     --color-state-gain: var(--state-gain);
     --color-sidebar-ring: var(--sidebar-ring);
     --color-sidebar-border: var(--sidebar-border);
@@ -50,16 +50,18 @@
     --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-:root,
-:root[data-theme="vault"],
-[data-theme="vault"] {
-    /* Vault — dark only, no light mode. The `[data-theme="vault"]`
-       selectors are only so the theme picker can preview Vault inside a
-       scoped wrapper; the provider still sets NO attribute on <html> for
-       Vault, so SSR is unaffected. Every theme block below is likewise
-       written as `:root[data-theme="x"], [data-theme="x"]` so a nested
+:root {
+    /* Base token layer — NOT a selectable theme. Two jobs: it is the
+       pre-hydration fallback (the frame before ThemeProvider sets
+       `data-theme="liquid-glass"`), and it is the layer the
+       non-liquid-glass themes derive their `--glass-*` / idiom tokens
+       from (Midnight, Emerald only override colours, then inherit the
+       frosted treatment computed here). Dark, warm-neutral,
+       square — deliberately plain so the fallback frame reads as
+       "loading", not as a distinct theme. Every real theme block below
+       is written `:root[data-theme="x"], [data-theme="x"]` so a nested
        `<div data-theme="x">` (the picker's swatches) gets the full token
-       set, not just the <html> element. See context/ui-context.md. */
+       set, not just <html>. See context/ui-context.md. */
     --background: #0f0c08;
     --foreground: #f5f1e8;
     --card: #151009;
@@ -84,16 +86,14 @@
     --chart-3: #4ade80;
     --chart-4: #f87171;
     --chart-5: #f5f1e8;
-    /* Industrial Brutalism fusion (see context/ui-context.md): sharp 90°
-       corners everywhere. Every rounded-* utility derives from this one
-       token, so zeroing it is the single edit that squares the app. */
+    /* Square by default; every rounded-* utility derives from this one
+       token. Each real theme block below sets its own corner. */
     --radius: 0px;
 
-    /* Theme idiom tokens. These carry the Vault (Industrial Brutalism)
-       values; each `[data-theme]` block below overrides them. Components
-       reach the idiom only through `.tt-label` / `.tt-heading` /
-       `.tt-display` / `.tt-bracket` / `.shadow-vault-*`, never by
-       hardcoding it — that is what makes a new theme one CSS block.
+    /* Theme idiom tokens — plain base values; each `[data-theme]` block
+       below overrides them. Components reach the idiom only through
+       `.tt-label` / `.tt-heading` / `.tt-display` / `.tt-bracket`, never
+       by hardcoding it — that is what makes a new theme one CSS block.
        See context/ui-context.md's Theming section. */
     --label-font: var(--font-mono);
     --label-transform: uppercase;
@@ -116,15 +116,39 @@
     --sidebar-accent-foreground: #f5f1e8;
     --sidebar-border: #2a2013;
     --sidebar-ring: #e8b84b;
+
+    /* Liquid-glass surface tokens. The defaults here are DERIVED from
+       each theme's own --card / --foreground / --primary, so the five
+       non-default themes inherit a coherent frosted treatment for free
+       — only the two light themes (below) and the dedicated
+       `liquid-glass` block override them outright. Components reach glass only
+       through `.glass-surface` / `.glass-overlay` / `.glass-glow`,
+       never by hardcoding. See context/ui-context.md. */
+    --glass-bg: color-mix(in oklab, var(--card) 80%, transparent);
+    --glass-blur: 14px;
+    --glass-border-from: color-mix(in oklab, var(--foreground) 30%, transparent);
+    /* Also the hairline-divider colour everywhere (row separators, field
+       dividers, in-card rules). Kept low, but high enough to actually
+       register against the near-black ground — 5% was effectively
+       invisible. See context/ui-context.md. */
+    --glass-border-to: color-mix(in oklab, var(--foreground) 11%, transparent);
+    --glass-highlight: color-mix(in oklab, var(--foreground) 8%, transparent);
+    --glass-shadow: 0 24px 60px -30px rgb(0 0 0 / 0.7), 0 4px 14px -8px rgb(0 0 0 / 0.5);
+    --glass-radius: var(--radius);
+    --glass-scrim: rgb(0 0 0 / 0.55);
+    --glass-fallback-bg: color-mix(in oklab, var(--card) 94%, var(--background));
+    --glow-color: color-mix(in oklab, var(--primary) 35%, transparent);
+    --glow-radius: 460px;
+    --sparkle-opacity: 0.4;
+    --eyebrow-glyph: "";
 }
 
 /* ---- Ledger theme (minimalist-ui direction) --------------------------
    Warm monochrome paper, editorial serif headings, soft borders and
-   shadows, rounded corners. Selectable from the sidebar theme toggle;
-   Vault stays the default (no `data-theme` attribute). Adding another
-   theme means another block just like this one — nothing in the
-   components changes. See context/ui-context.md's Theming section and
-   the "Goldsmith's Ledger" mockup. */
+   shadows, rounded corners. Selectable from the sidebar theme toggle.
+   Adding another theme means another block just like this one — nothing
+   in the components changes. See context/ui-context.md's Theming
+   section and the "Goldsmith's Ledger" mockup. */
 :root[data-theme="ledger"],
 [data-theme="ledger"] {
     --background: #f7f6f3;
@@ -179,7 +203,7 @@
 
 /* ---- Midnight theme — "soft glass" -------------------------------
    Deep cool blue-black, a bright indigo accent, and a completely
-   different elevation language from Vault: no visible card borders,
+   different elevation language from the base: no visible card borders,
    large soft blue GLOW instead of a hard plate, generously rounded
    corners. Headings are airy — sans, sentence-case, LIGHT weight,
    positive tracking. Labels drop to sans too. No bracket framing.
@@ -240,7 +264,7 @@
    Deep forest green, a vivid emerald accent, very round corners and
    a soft green-tinted shadow. Headings are the opposite of Midnight's:
    sans, UPPERCASE, HEAVY (800), tightly tracked — a stout, confident
-   voice. Labels stay mono. No bracket framing (that stays Vault's).
+   voice. Labels stay mono. No bracket framing.
    See context/ui-context.md's Theming section. */
 :root[data-theme="emerald"],
 [data-theme="emerald"] {
@@ -292,60 +316,63 @@
     --sidebar-ring: #34d17e;
 }
 
-/* ---- Terminal theme — "CRT" ----------------------------------
-   Pure black, phosphor green, everything mono and WIDE-tracked with
-   heavy [ … ] bracket framing and zero radius. Hard offset shadow.
-   The grain rule below adds scanlines on top. Pushed further than
-   before — wider tracking, blacker ground, brighter phosphor.
+/* ---- Coral theme — "fresh / airy" ----------------------------
+   Warm blush-white paper, a punchy coral primary with a teal
+   counter-accent, generous rounding and a soft coral-tinted
+   shadow. Headings are sans, sentence-case, semibold, tight —
+   friendly and modern, the opposite of Ledger's editorial serif.
+   Grain darkens faintly (multiply), set below.
    See context/ui-context.md's Theming section. */
-:root[data-theme="terminal"],
-[data-theme="terminal"] {
-    --background: #020604;
-    --foreground: #b8ffd8;
-    --card: #050c08;
-    --card-foreground: #b8ffd8;
-    --popover: #050c08;
-    --popover-foreground: #b8ffd8;
-    --primary: #2bff88;
-    --primary-foreground: #02150a;
-    --secondary: #08150f;
-    --secondary-foreground: #b8ffd8;
-    --muted: #08150f;
-    --muted-foreground: #4f9c78;
-    --accent: #0b1f16;
-    --accent-foreground: #b8ffd8;
-    --destructive: #ff5a5a;
-    --state-gain: #2bff88;
-    --border: #123324;
-    --input: #123324;
-    --ring: #2bff88;
-    --chart-1: #2bff88;
-    --chart-2: #4f9c78;
-    --chart-3: #7ee0a4;
-    --chart-4: #ff5a5a;
-    --chart-5: #b8ffd8;
+:root[data-theme="coral"],
+[data-theme="coral"] {
+    --background: #fff7f4;
+    --foreground: #2a1a15;
+    --card: #ffffff;
+    --card-foreground: #2a1a15;
+    --popover: #ffffff;
+    --popover-foreground: #2a1a15;
+    --primary: #e14b45;
+    --primary-foreground: #ffffff;
+    --secondary: #ffe9e2;
+    --secondary-foreground: #2a1a15;
+    --muted: #f8ece7;
+    --muted-foreground: #8a6f66;
+    --accent: #ffe0d6;
+    --accent-foreground: #2a1a15;
+    --destructive: #b91c1c;
+    --state-gain: #0f9d8f;
+    --border: #f2ddd4;
+    --input: #e6cabd;
+    --ring: #e14b45;
+    --chart-1: #e14b45;
+    --chart-2: #f0a24b;
+    --chart-3: #0f9d8f;
+    --chart-4: #b91c1c;
+    --chart-5: #2a1a15;
 
-    --radius: 0px;
+    --radius: 14px;
 
-    --label-tracking: 0.18em;
-    --heading-font: var(--font-mono);
-    --heading-transform: uppercase;
-    --heading-tracking: 0.18em;
-    --heading-weight: 400;
+    --label-font: var(--font-sans);
+    --label-transform: uppercase;
+    --label-tracking: 0.1em;
+    --heading-font: var(--font-sans);
+    --heading-transform: none;
+    --heading-tracking: -0.02em;
+    --heading-weight: 600;
     --display-font: var(--font-mono);
-    --bracket-open: "[ ";
-    --bracket-close: " ]";
-    --shadow-lg: 5px 5px 0 0 var(--border);
-    --shadow-sm: 3px 3px 0 0 var(--border);
+    --bracket-open: "";
+    --bracket-close: "";
+    --shadow-lg: 0 24px 50px -22px rgb(225 75 69 / 0.22), 0 4px 14px -8px rgb(42 26 21 / 0.12);
+    --shadow-sm: 0 10px 24px -14px rgb(225 75 69 / 0.2);
 
-    --sidebar: #050c08;
-    --sidebar-foreground: #b8ffd8;
-    --sidebar-primary: #2bff88;
-    --sidebar-primary-foreground: #02150a;
-    --sidebar-accent: #0b1f16;
-    --sidebar-accent-foreground: #b8ffd8;
-    --sidebar-border: #123324;
-    --sidebar-ring: #2bff88;
+    --sidebar: #ffffff;
+    --sidebar-foreground: #2a1a15;
+    --sidebar-primary: #e14b45;
+    --sidebar-primary-foreground: #ffffff;
+    --sidebar-accent: #ffe0d6;
+    --sidebar-accent-foreground: #2a1a15;
+    --sidebar-border: #f2ddd4;
+    --sidebar-ring: #e14b45;
 }
 
 /* ---- Porcelain theme — "Swiss / flat" -------------------------
@@ -407,9 +434,117 @@
     --sidebar-ring: #1d4ed8;
 }
 
+/* ---- Liquid Glass theme — the default -------------------------------
+   The welcome page's aesthetic brought into the signed-in app: a
+   near-black ground, amber #e8b84b accent, frosted white glass cards,
+   soft ambient shadows and an amber cursor glow. This is the only
+   fully hand-tuned glass theme; the other six render the same
+   `.glass-*` classes recoloured from their own palette. Set as the
+   default in lib/theme/theme-context.tsx. See context/ui-context.md. */
+:root[data-theme="liquid-glass"],
+[data-theme="liquid-glass"] {
+    --background: #050505;
+    --foreground: #f4f1ea;
+    --card: #0c0b0a;
+    --card-foreground: #f4f1ea;
+    --popover: #100e0c;
+    --popover-foreground: #f4f1ea;
+    --primary: #e8b84b;
+    --primary-foreground: #1a1207;
+    --secondary: #16140f;
+    --secondary-foreground: #f4f1ea;
+    --muted: #16140f;
+    --muted-foreground: #a99f8c;
+    --accent: #1c1810;
+    --accent-foreground: #f4f1ea;
+    --destructive: #f87171;
+    --state-gain: #4ade80;
+    --border: #241f16;
+    --input: #241f16;
+    --ring: #e8b84b;
+    --chart-1: #e8b84b;
+    --chart-2: #a99f8c;
+    --chart-3: #4ade80;
+    --chart-4: #f87171;
+    --chart-5: #f4f1ea;
+
+    --radius: 16px;
+
+    --label-font: var(--font-mono);
+    --label-transform: uppercase;
+    --label-tracking: 0.08em;
+    --heading-font: var(--font-sans);
+    --heading-transform: none;
+    --heading-tracking: -0.02em;
+    --heading-weight: 600;
+    --display-font: var(--font-mono);
+    /* The ✦ eyebrow rides the existing bracket mechanism, so every
+       `.tt-bracket` section heading gets it with no JSX change. */
+    --bracket-open: "✦  ";
+    --bracket-close: "";
+    --shadow-lg: 0 28px 64px -28px rgb(0 0 0 / 0.8), 0 6px 20px -10px rgb(0 0 0 / 0.6);
+    --shadow-sm: 0 16px 40px -22px rgb(0 0 0 / 0.7);
+
+    --sidebar: #0a0908;
+    --sidebar-foreground: #f4f1ea;
+    --sidebar-primary: #e8b84b;
+    --sidebar-primary-foreground: #1a1207;
+    --sidebar-accent: #1c1810;
+    --sidebar-accent-foreground: #f4f1ea;
+    --sidebar-border: #241f16;
+    --sidebar-ring: #e8b84b;
+
+    /* Hand-tuned to match components/welcome/liquid-glass-landing.tsx. */
+    --glass-bg: rgba(255, 255, 255, 0.045);
+    --glass-blur: 14px;
+    --glass-border-from: rgba(255, 255, 255, 0.42);
+    /* Doubles as the hairline divider colour — raised from 0.02 (which
+       read as no border at all) to a faint but present hairline. */
+    --glass-border-to: rgba(255, 255, 255, 0.09);
+    --glass-highlight: rgba(255, 255, 255, 0.14);
+    --glass-shadow: 0 8px 32px 0 rgb(0 0 0 / 0.45);
+    --glass-radius: 20px;
+    --glass-scrim: rgb(0 0 0 / 0.6);
+    --glass-fallback-bg: rgba(24, 22, 20, 0.92);
+    --glow-color: rgba(232, 184, 75, 0.28);
+    --glow-radius: 460px;
+    --sparkle-opacity: 0.5;
+    --eyebrow-glyph: "✦ ";
+}
+
+/* Light themes: a dark-tinted frost + a soft (not deep) shadow reads
+   as glass on paper, and the ambient sparkle field is off — it only
+   registers on a dark ground. */
+:root[data-theme="ledger"], [data-theme="ledger"],
+:root[data-theme="porcelain"], [data-theme="porcelain"],
+:root[data-theme="coral"], [data-theme="coral"] {
+    --glass-bg: color-mix(in oklab, var(--card) 68%, transparent);
+    --glass-border-from: color-mix(in oklab, var(--foreground) 16%, transparent);
+    --glass-border-to: color-mix(in oklab, var(--foreground) 10%, transparent);
+    --glass-highlight: rgb(255 255 255 / 0.55);
+    --glass-shadow: 0 1px 2px rgb(15 23 41 / 0.06), 0 16px 40px -22px rgb(15 23 41 / 0.14);
+    --glass-scrim: rgb(15 23 41 / 0.28);
+    --glow-color: color-mix(in oklab, var(--primary) 20%, transparent);
+    --sparkle-opacity: 0;
+}
+
+/* Dark idiom themes (Midnight, Emerald) render the same `.glass-*`
+   classes as Liquid Glass but were inheriting the warm-base `--glass-*`
+   values, which composite to a muddy opaque plate — worst at swatch
+   size. Give them Liquid Glass's subtle white frost so each card's own
+   colour shows through as tinted glass instead. */
+:root[data-theme="midnight"], [data-theme="midnight"],
+:root[data-theme="emerald"], [data-theme="emerald"] {
+    --glass-bg: rgba(255, 255, 255, 0.05);
+    --glass-border-from: color-mix(in oklab, var(--foreground) 38%, transparent);
+    --glass-border-to: color-mix(in oklab, var(--foreground) 10%, transparent);
+    --glass-highlight: rgba(255, 255, 255, 0.12);
+    --glass-fallback-bg: color-mix(in oklab, var(--card) 92%, var(--foreground));
+}
+
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-border;
     }
   body {
     @apply bg-background text-foreground;
@@ -417,60 +552,162 @@
   html {
     @apply font-sans;
     }
+  /* One token-driven keyboard focus ring for every focusable element.
+     Components that ship their own focus-visible treatment (shadcn
+     Button, the Base UI primitives) set `focus-visible:outline-none`
+     and win on specificity, so this only fills the gap left by the
+     bespoke dashboard controls — the segmented control, sidebar nav,
+     theme picker, icon buttons — which previously fell back to the
+     inconsistent UA outline. See context/ui-context.md. */
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+    }
 }
 
-/* Hard-edged offset shadows, no blur — brutalism rejects soft drop
-   shadows, so elevation reads as a flat plate stacked on the page
-   instead of a glow. `-lg` (hero, chart) casts further than `-sm`
-   (stat/transaction cards) to keep the same hierarchy the blurred
-   versions had. See context/ui-context.md. */
-.shadow-vault-lg {
-  box-shadow: var(--shadow-lg);
+
+/* ─── Liquid Glass surfaces ──────────────────────────────────────────
+   `.glass-surface` — scrolling cards. NO backdrop-filter (it visibly
+   shivers under scroll/animation); the frost is faked with a near-
+   opaque tinted fill + a masked gradient-border ring + a soft ambient
+   shadow. `.glass-overlay` — non-scrolling overlays only (sidebar,
+   dialogs, popovers, dropdowns, sticky bars): real backdrop blur over
+   a more translucent fill. `.glass-glow` — a token-driven cursor glow,
+   generalised from `.spotlight-card`. All three read the per-theme
+   `--glass-*` / `--glow-*` tokens, so a theme switch recolours them
+   with no JSX change. See context/ui-context.md. */
+.glass-surface {
+  position: relative;
+  background: var(--glass-bg);
+  border-radius: var(--glass-radius);
+  box-shadow: inset 0 1px 0 var(--glass-highlight), var(--glass-shadow);
 }
-.shadow-vault-sm {
-  box-shadow: var(--shadow-sm);
+/* Hero / primary surface — the frost fill is tinted toward the accent
+   for the gold-glass look. */
+.glass-surface--accent {
+  background:
+    linear-gradient(
+      160deg,
+      color-mix(in oklab, var(--primary) 14%, transparent),
+      transparent 60%
+    ),
+    var(--glass-bg);
+}
+/* In `components` so a positioning utility on the same element (the
+   dialog's `fixed`) still wins — an unlayered rule would beat it and
+   drop the dialog back into document flow. */
+@layer components {
+  .glass-overlay {
+    position: relative;
+    /* Same fill as `.glass-surface` (no extra dilution) — overlays sit
+       over arbitrary content and were too see-through, worst on the
+       light themes. The frost comes from `backdrop-filter` below. */
+    background: var(--glass-bg);
+    border-radius: var(--glass-radius);
+    box-shadow: inset 0 1px 0 var(--glass-highlight), var(--glass-shadow);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+  }
+}
+.glass-surface::before,
+.glass-overlay::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    160deg,
+    var(--glass-border-from) 0%,
+    var(--glass-border-to) 45%,
+    var(--glass-border-from) 100%
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass-overlay {
+    background: var(--glass-fallback-bg);
+  }
+}
+
+/* Flush chrome — the sidebar and sticky headers. Real backdrop blur
+   (they don't scroll their own content) but NO gradient-border ring:
+   it would round against the viewport edge. Pair with a single hairline
+   `border-*` on the meeting edge. */
+.glass-chrome {
+  background: color-mix(in oklab, var(--glass-bg) 70%, transparent);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass-chrome {
+    background: var(--glass-fallback-bg);
+  }
+}
+
+.glass-glow {
+  position: relative;
+}
+.glass-glow::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: var(--spot-opacity, 0);
+  transition: opacity 0.4s ease;
+  background: radial-gradient(
+    circle var(--glow-radius) at var(--spot-x, 50%) var(--spot-y, 50%),
+    var(--glow-color) 0%,
+    transparent 78%
+  );
+}
+@media (hover: hover) {
+  .glass-glow:hover::after {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .glass-glow {
+    transition:
+      transform 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+      box-shadow 0.3s ease;
+  }
+  .glass-glow:hover {
+    transform: translateY(-3px);
+  }
 }
 
 /* A faint fixed grain so the near-black background reads as a surface
-   rather than a flat fill. Pointer-events-none, decorative only. */
-.vault-grain::before {
+   rather than a flat fill. Pointer-events-none, decorative only.
+   No `mix-blend-mode` here on purpose: a blended full-viewport fixed
+   layer forces the compositor to re-blend the whole screen every
+   scroll frame (the mobile-scroll-jank root cause from the landing —
+   see progress-tracker.md). Plain low-opacity noise on its own layer
+   just stays put. */
+.app-grain::before {
   content: "";
   position: fixed;
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  opacity: 0.05;
-  mix-blend-mode: overlay;
+  opacity: 0.035;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
-/* Overlay grain reads as light-on-dark; on the light themes' paper it
-   needs to darken instead, and more faintly. */
-:root[data-theme="ledger"] .vault-grain::before,
-:root[data-theme="porcelain"] .vault-grain::before {
+/* On the light themes' paper the white noise needs to darken instead.
+   `multiply` is confined to these two opt-in themes rather than the
+   always-on default. */
+:root[data-theme="ledger"] .app-grain::before,
+:root[data-theme="porcelain"] .app-grain::before,
+:root[data-theme="coral"] .app-grain::before {
   opacity: 0.03;
   mix-blend-mode: multiply;
-}
-
-/* Terminal leans into the CRT look — a touch more visible grain plus
-   horizontal scanlines from a second fixed layer. Decorative, inert. */
-:root[data-theme="terminal"] .vault-grain::before {
-  opacity: 0.08;
-}
-:root[data-theme="terminal"] .vault-grain::after {
-  content: "";
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  opacity: 0.5;
-  background-image: repeating-linear-gradient(
-    0deg,
-    rgb(0 0 0 / 0.18) 0px,
-    rgb(0 0 0 / 0.18) 1px,
-    transparent 1px,
-    transparent 3px
-  );
 }
 
 /* Brutalist micro-typography — every label, nav item, table header, and
@@ -493,9 +730,9 @@
   font-weight: var(--heading-weight);
 }
 
-/* The one hero price headline. Vault keeps it on the mono tabular face
-   (ui-context.md's numbers rule); a theme may point --display-font at a
-   serif. tabular-nums stays on either way so digits still align. */
+/* The one hero price headline. The base keeps it on the mono tabular
+   face (ui-context.md's numbers rule); a theme may point --display-font
+   at a serif. tabular-nums stays on either way so digits still align. */
 .tt-display {
   font-family: var(--display-font);
   font-variant-numeric: tabular-nums;
@@ -511,25 +748,32 @@
   content: var(--bracket-close);
 }
 
-/* One authored entrance: dashboard sections cascade in rather than
-   mounting all at once. Applied via `.vault-enter` + a `--enter-delay`
-   custom property per section (see dashboard-content.tsx). */
-@keyframes vault-enter {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
+/* Standalone ✦ eyebrow for headings that don't carry `.tt-bracket`
+   (empty states, sub-section titles). Renders nothing on themes whose
+   `--eyebrow-glyph` is "". */
+.tt-eyebrow::before {
+  content: var(--eyebrow-glyph);
+  color: var(--primary);
+}
+
+/* Financial-figure change cue. A figure that changed on a data update
+   (refresh, add, sell) flashes its tone once and lands on the new value
+   — it still SNAPS, never re-rolls. Driven by lib/ui/use-value-pulse.ts
+   toggling `.value-pulse-active` and setting `--pulse-tone`. */
+@keyframes value-pulse {
+  0% {
+    background-color: rgb(from var(--pulse-tone, var(--primary)) r g b / 0.2);
   }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+  100% {
+    background-color: rgb(from var(--pulse-tone, var(--primary)) r g b / 0);
   }
 }
-.vault-enter {
-  animation: vault-enter 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
-  animation-delay: var(--enter-delay, 0ms);
+.value-pulse-active {
+  animation: value-pulse 600ms var(--ease-glide) both;
+  border-radius: calc(var(--glass-radius) * 0.4);
 }
 @media (prefers-reduced-motion: reduce) {
-  .vault-enter {
+  .value-pulse-active {
     animation: none;
   }
 }
@@ -538,7 +782,7 @@
    while a post-mutation router.refresh() reconciles in a transition.
    Compositor-only (transform). Reduced-motion callers render a static
    full-width dimmed bar instead — see TransactionHistory. */
-@keyframes vault-indeterminate {
+@keyframes sync-indeterminate {
   0% {
     transform: translateX(-100%);
   }
@@ -616,7 +860,7 @@
 }
 
 /* Paint the page ground behind the wrapper so a rubber-band overscroll
-   doesn't reveal the dark vault body underneath the light landing. */
+   doesn't reveal the dark `:root` body underneath the light landing. */
 html:has([data-landing-theme="light"]) body {
   background-color: #f7f6f3;
 }
@@ -624,38 +868,36 @@ html:has([data-landing-theme="dark"]) body {
   background-color: #171614;
 }
 
-/* Scroll-entry, tuned for an Apple-style glide: a long soft-landing
-   ease with a slow tail, a longer travel than a "pop" would use, plus a
-   sub-pixel scale and a blur burn-off so the element resolves rather
-   than snaps. Toggled by an IntersectionObserver in
-   components/welcome/use-reveal.ts; staggered via --reveal-delay.
-   --ease-glide is easeOutQuint-ish (matches motion-ui's `smooth`
-   token). transform + opacity + filter only — all compositor-friendly. */
+/* --ease-glide is easeOutQuint-ish (matches motion-ui's `smooth` token),
+   shared by the dashboard/nav/stagger entrances below. */
 :root {
   --ease-glide: cubic-bezier(0.16, 1, 0.3, 1);
 }
-.landing-reveal {
-  opacity: 0;
-  transform: translateY(22px) scale(0.985);
-  filter: blur(10px);
-  transition:
-    opacity 1s var(--ease-glide),
-    transform 1.1s var(--ease-glide),
-    filter 1.1s var(--ease-glide);
-  transition-delay: var(--reveal-delay, 0ms);
-  will-change: transform, opacity, filter;
-}
-.landing-reveal.is-visible {
-  opacity: 1;
-  transform: none;
-  filter: blur(0);
-}
-@media (prefers-reduced-motion: reduce) {
-  .landing-reveal {
+
+/* Dashboard section entrance. A cheap, JS-independent fade-up: a
+   keyframe with `both` fill that plays at first paint (SSR markup
+   included), staggered by a per-section `--enter-delay`. No
+   IntersectionObserver and no hidden resting state, so a section is
+   never blank waiting on hydration — the price is readable as soon as
+   the HTML lands. Compositor-only (opacity + transform), no blur.
+   Driven by `useSectionEnter`. */
+@keyframes dash-enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
     opacity: 1;
     transform: none;
-    filter: none;
-    transition: none;
+  }
+}
+.dash-enter {
+  animation: dash-enter 0.5s var(--ease-glide) both;
+  animation-delay: var(--enter-delay, 0ms);
+}
+@media (prefers-reduced-motion: reduce) {
+  .dash-enter {
+    animation: none;
   }
 }
 
@@ -731,7 +973,13 @@ html:has([data-landing-theme="dark"]) body {
   }
 }
 
-/* ─── Liquid Glass Aesthetic ─────────────────────────────────────────────────── */
+/* ─── Liquid Glass Aesthetic (marketing tree only) ───────────────────────────
+   NOTE: this is a second, parallel glass implementation kept for the
+   welcome/landing pages (components/welcome/*). The signed-in app uses
+   the token-driven `.glass-surface` / `.glass-overlay` / `.glass-glow`
+   classes defined above instead. A change to the glass language may need
+   to be mirrored in both places until they are consolidated — see
+   context/glass-consolidation-plan.md. */
 .liquid-glass {
   background: rgba(255, 255, 255, 0.03);
   backdrop-filter: blur(12px);
@@ -1189,7 +1437,11 @@ html:has(.liquid-glass-landing-root) {
   top: -320px;
   bottom: -320px;
   background-repeat: repeat;
-  will-change: transform, opacity;
+  /* No `will-change` at rest: the infinite transform/opacity animation
+     already promotes these to their own layer while running, and
+     SparkleField pauses the animation (animation-play-state) when the
+     field scrolls out of view — a resting `will-change` would keep the
+     GPU memory reserved through that pause for nothing. */
 }
 .sparkle-field__layer--a {
   background-image:
@@ -1232,7 +1484,6 @@ html:has(.liquid-glass-landing-root) {
     rgba(232, 184, 75, 0.1) 50%,
     transparent 58%
   );
-  will-change: transform;
   animation: sparkle-field-shimmer 9s ease-in-out infinite;
 }
 @keyframes sparkle-field-rise-a {
@@ -1281,5 +1532,107 @@ html:has(.liquid-glass-landing-root) {
   .sparkle-field__layer,
   .sparkle-field__shimmer {
     animation: none;
+  }
+}
+
+/* SparkleField adds this class via an IntersectionObserver when its
+   wrapper scrolls out of view, so the three rise/twinkle loops stop
+   costing compositor work while the user is reading further down the
+   dashboard. The fixed full-viewport uses (auth, landing) never leave
+   the viewport, so they never pause. */
+.sparkle-field--paused .sparkle-field__layer,
+.sparkle-field--paused .sparkle-field__shimmer {
+  animation-play-state: paused;
+}
+/* ─── Sonner toasts ──────────────────────────────────────────────────
+   The default sonner chrome (flat fill + hairline) read as a foreign
+   object on top of the liquid-glass system. This rebuilds the toast
+   with the same recipe as `.glass-overlay`: masked gradient-border
+   ring, inset top highlight, real ambient shadow, `--glass-radius`.
+   Success stays neutral glass (the check icon already reads as
+   success); error is the one variant that gets a colour treatment —
+   see the red-tint rules below — so a coloured side-tab never appears
+   on a routine confirmation. */
+[data-sonner-toaster] {
+  --width: 384px;
+  --gap: 12px;
+}
+[data-sonner-toaster] [data-sonner-toast] {
+  --toast-close-button-transform: scale(0.9);
+  padding: 14px 16px 14px 18px;
+  gap: 12px;
+  border: none;
+  border-radius: var(--glass-radius);
+  background: color-mix(in oklab, var(--glass-bg) 82%, transparent);
+  color: var(--card-foreground);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  box-shadow:
+    inset 0 1px 0 var(--glass-highlight),
+    var(--glass-shadow);
+}
+[data-sonner-toaster] [data-sonner-toast]::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    160deg,
+    var(--glass-border-from) 0%,
+    var(--glass-border-to) 45%,
+    var(--glass-border-from) 100%
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+/* Success stays neutral frosted glass — the green check icon carries it.
+   Errors demand attention: the whole surface goes red-tinted glass, the
+   gradient-border ring turns red, and the title picks up the red. */
+[data-sonner-toaster] [data-sonner-toast][data-type="error"] {
+  background:
+    linear-gradient(
+      160deg,
+      color-mix(in oklab, var(--destructive) 24%, transparent),
+      color-mix(in oklab, var(--destructive) 7%, transparent) 72%
+    ),
+    color-mix(in oklab, var(--glass-bg) 82%, transparent);
+}
+[data-sonner-toaster] [data-sonner-toast][data-type="error"]::before {
+  background: linear-gradient(
+    160deg,
+    color-mix(in oklab, var(--destructive) 60%, var(--glass-border-from)) 0%,
+    color-mix(in oklab, var(--destructive) 34%, var(--glass-border-to)) 45%,
+    color-mix(in oklab, var(--destructive) 60%, var(--glass-border-from)) 100%
+  );
+}
+[data-sonner-toaster] [data-sonner-toast][data-type="error"] [data-title] {
+  color: color-mix(in oklab, var(--destructive) 78%, var(--card-foreground));
+}
+[data-sonner-toaster] [data-sonner-toast] [data-icon] {
+  margin-top: 1px;
+  align-self: flex-start;
+}
+[data-sonner-toaster] [data-sonner-toast] [data-title] {
+  font-size: 13px;
+  font-weight: 550;
+  letter-spacing: -0.006em;
+  line-height: 1.4;
+}
+[data-sonner-toaster] [data-sonner-toast] [data-description] {
+  margin-top: 3px;
+  color: var(--muted-foreground);
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  [data-sonner-toaster] [data-sonner-toast] {
+    background: var(--glass-fallback-bg);
+  }
+  [data-sonner-toaster] [data-sonner-toast][data-type="error"] {
+    background: color-mix(in oklab, var(--destructive) 16%, var(--glass-fallback-bg));
   }
 }

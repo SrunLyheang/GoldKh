@@ -1,9 +1,10 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { ChevronDown } from "lucide-react";
 import type { BuyQualityRow } from "@/lib/calc/buyQuality";
 import { formatPercent, formatQuantity, formatUsd } from "@/lib/format/money";
-import { useLocale } from "@/lib/i18n/locale-context";
+import { t } from "@/lib/i18n/dictionary";
 import { unitLabels } from "@/lib/i18n/unit-labels";
 import { cn } from "@/lib/utils";
 import { MonoValue } from "@/components/dashboard/mono-value";
@@ -14,11 +15,42 @@ interface BuyHistoryProps {
 
 type SortKey = "date" | "vsSpot";
 
+// A sort header in the glass idiom — a rotating chevron that shows only
+// on the active key (matches the transactions route's SortHeader).
+function SortButton({
+  label,
+  active,
+  ascending,
+  onClick,
+}: {
+  label: string;
+  active: boolean;
+  ascending: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "tt-label inline-flex items-center gap-1 transition-colors hover:text-foreground",
+        active ? "text-foreground" : "text-muted-foreground",
+      )}
+    >
+      {label}
+      {active && (
+        <ChevronDown
+          className={cn("h-3 w-3 transition-transform", ascending && "rotate-180")}
+        />
+      )}
+    </button>
+  );
+}
+
 // Every buy graded against spot on its date (dashboard-expansion-plan.md
 // §5.3). Sortable by date or by `vs spot`; rows with no old-enough
 // snapshot show "—" and sort last on the vs-spot key.
 export function BuyHistory({ rows }: BuyHistoryProps) {
-  const { t } = useLocale();
   const [sortKey, setSortKey] = useState<SortKey>("date");
   const [desc, setDesc] = useState(true);
 
@@ -56,23 +88,18 @@ export function BuyHistory({ rows }: BuyHistoryProps) {
     }
   }
 
-  const arrow = (key: SortKey) =>
-    key === sortKey ? (desc ? " ↓" : " ↑") : "";
-
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-[13px]">
-        <thead>
-          <tr className="tt-label border-b border-border text-left text-[10.5px] text-muted-foreground">
-            <th className="py-2 pr-3 font-normal">
-              <button
-                type="button"
+    <div className="overflow-x-auto rounded-lg border border-(--glass-border-to)">
+      <table className="w-full border-collapse text-[13px]">
+        <thead className="glass-chrome sticky top-0 z-10">
+          <tr className="tt-label border-b border-(--glass-border-to) text-left text-[11px] text-muted-foreground">
+            <th className="py-2 pr-3 pl-3 font-normal">
+              <SortButton
+                label={t.insights.sortDate}
+                active={sortKey === "date"}
+                ascending={!desc}
                 onClick={() => toggle("date")}
-                className="tt-label transition-colors hover:text-foreground"
-              >
-                {t.insights.sortDate}
-                {arrow("date")}
-              </button>
+              />
             </th>
             <th className="py-2 pr-3 font-normal">{t.insights.quantity}</th>
             <th className="py-2 pr-3 text-right font-normal">
@@ -81,15 +108,13 @@ export function BuyHistory({ rows }: BuyHistoryProps) {
             <th className="py-2 pr-3 text-right font-normal">
               {t.insights.spotOnDate}
             </th>
-            <th className="py-2 text-right font-normal">
-              <button
-                type="button"
+            <th className="py-2 pr-3 text-right font-normal">
+              <SortButton
+                label={t.insights.sortVsSpot}
+                active={sortKey === "vsSpot"}
+                ascending={!desc}
                 onClick={() => toggle("vsSpot")}
-                className="tt-label transition-colors hover:text-foreground"
-              >
-                {t.insights.sortVsSpot}
-                {arrow("vsSpot")}
-              </button>
+              />
             </th>
           </tr>
         </thead>
@@ -101,9 +126,9 @@ export function BuyHistory({ rows }: BuyHistoryProps) {
             return (
               <tr
                 key={`${row.transactionDate}-${i}`}
-                className="border-b border-border/60"
+                className="border-b border-(--glass-border-to) last:border-0"
               >
-                <td className="py-2.5 pr-3 font-mono tabular-nums text-muted-foreground">
+                <td className="py-2.5 pr-3 pl-3 font-mono tabular-nums text-muted-foreground">
                   {row.transactionDate}
                 </td>
                 <td className="py-2.5 pr-3">
@@ -123,7 +148,7 @@ export function BuyHistory({ rows }: BuyHistoryProps) {
                     </MonoValue>
                   )}
                 </td>
-                <td className={cn("py-2.5 text-right")}>
+                <td className={cn("py-2.5 pr-3 text-right")}>
                   {vs === null ? (
                     <span className="text-muted-foreground">—</span>
                   ) : (
