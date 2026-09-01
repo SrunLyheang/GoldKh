@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useLocale } from "@/lib/i18n/locale-context";
 import { AssayStrip } from "./sample-readout";
 import { SectionEyebrow } from "./section-eyebrow";
-import { useReveal, useInView } from "./use-reveal";
+import { useReveal, useInView } from "@/components/motion/use-reveal";
 import { useSignedIn } from "./use-signed-in";
 
 const SERIF = "font-[family-name:var(--font-newsreader)]";

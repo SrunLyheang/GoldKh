@@ -18,8 +18,8 @@ import {
   CheckCircle2,
 } from "lucide-react";
 
-import { Magnetic } from "./magnetic";
-import { useInView } from "./use-reveal";
+import { Magnetic } from "@/components/motion/magnetic";
+import { useInView } from "@/components/motion/use-reveal";
 
 interface Feature {
   icon: ReactNode;

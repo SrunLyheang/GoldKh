@@ -3,7 +3,7 @@
 import type { ReactNode } from "react";
 import { useLocale } from "@/lib/i18n/locale-context";
 import { SectionEyebrow } from "./section-eyebrow";
-import { useReveal, useInView } from "./use-reveal";
+import { useReveal, useInView } from "@/components/motion/use-reveal";
 
 const SERIF = "font-[family-name:var(--font-newsreader)]";
 
