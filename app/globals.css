@@ -557,6 +557,17 @@
   border-radius: var(--glass-radius);
   box-shadow: inset 0 1px 0 var(--glass-highlight), var(--glass-shadow);
 }
+/* Hero / primary surface — the frost fill is tinted toward the accent
+   for the gold-glass look. */
+.glass-surface--accent {
+  background:
+    linear-gradient(
+      160deg,
+      color-mix(in oklab, var(--primary) 14%, transparent),
+      transparent 60%
+    ),
+    var(--glass-bg);
+}
 .glass-overlay {
   position: relative;
   background: color-mix(in oklab, var(--glass-bg) 72%, transparent);

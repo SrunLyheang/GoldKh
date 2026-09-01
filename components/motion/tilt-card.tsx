@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useState, type CSSProperties, type ReactNode } from "react";
 import {
   motion,
   useMotionTemplate,
@@ -15,6 +15,7 @@ import { TILT_DEG, TILT_SPRING } from "@/components/motion/motion";
 interface TiltCardProps {
   children: ReactNode;
   className?: string;
+  style?: CSSProperties;
   // Max rotation in degrees at the card's edges.
   strength?: number;
   // Render the cursor-tracking glare sheen. Default on.
@@ -31,6 +32,7 @@ interface TiltCardProps {
 export function TiltCard({
   children,
   className,
+  style,
   strength = TILT_DEG,
   glare = true,
 }: TiltCardProps) {
@@ -45,7 +47,11 @@ export function TiltCard({
   const [hovered, setHovered] = useState(false);
 
   if (!enabled) {
-    return <div className={className}>{children}</div>;
+    return (
+      <div className={className} style={style}>
+        {children}
+      </div>
+    );
   }
 
   const handleMove = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -66,6 +72,7 @@ export function TiltCard({
       onPointerEnter={() => setHovered(true)}
       onPointerLeave={handleLeave}
       style={{
+        ...style,
         rotateX,
         rotateY,
         transformStyle: "preserve-3d",
