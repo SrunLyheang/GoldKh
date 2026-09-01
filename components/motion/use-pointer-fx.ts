@@ -15,7 +15,11 @@ export function usePointerFx(): boolean {
   const [enabled, setEnabled] = useState(false);
 
   useEffect(() => {
-    if (reduceMotion || typeof window === "undefined") return;
+    if (reduceMotion) {
+      setEnabled(false);
+      return;
+    }
+    if (typeof window === "undefined") return;
     if (typeof window.matchMedia !== "function") return;
     const fine = window.matchMedia("(pointer: fine)");
     const wide = window.matchMedia("(min-width: 768px)");

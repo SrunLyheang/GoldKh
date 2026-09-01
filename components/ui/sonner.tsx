@@ -13,7 +13,7 @@ import { useTheme } from "@/lib/theme/theme-context";
 // `[data-sonner-toaster]` so it matches `.glass-overlay`. `theme` tracks
 // the real theme via `useTheme()` so the light themes (Ledger, Porcelain)
 // render light chrome instead of the previously hardcoded `"dark"`.
-const LIGHT_THEMES = new Set(["ledger", "porcelain"]);
+const LIGHT_THEMES = new Set(["ledger", "porcelain", "coral"]);
 
 const Toaster = ({ ...props }: ToasterProps) => {
   const { theme } = useTheme();

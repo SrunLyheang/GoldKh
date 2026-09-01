@@ -31,15 +31,20 @@ interface StatRowProps {
 function StatCard({
   label,
   amount,
+  pulseKey,
   format,
   subLine,
 }: {
   label: string;
   amount: number;
+  // Unit-independent value to key the pulse off — a unit toggle changes
+  // `amount` numerically without a real update, so it must not be used
+  // here (mirrors HeroPriceCard's pricePerTroyOz).
+  pulseKey: number;
   format: (value: number) => string;
   subLine: string;
 }) {
-  const pulsing = useValuePulse(amount);
+  const pulsing = useValuePulse(pulseKey);
   return (
     <Surface>
       <p className="tt-label text-[11px] text-muted-foreground">{label}</p>
@@ -87,18 +92,21 @@ export function StatRow({
         <StatCard
           label={t.stat.totalHoldings}
           amount={Number(isChi ? totalChi : totalDamlung)}
+          pulseKey={Number(totalDamlung)}
           format={(n) => `${formatQuantity(String(n))} ${primaryUnit}`}
           subLine={`${formatQuantity(isChi ? totalDamlung : totalChi)} ${secondaryUnit}`}
         />
         <StatCard
           label={t.stat.averageCost}
           amount={Number(isChi ? averageCostPerChi : averageCostPerDamlung)}
+          pulseKey={Number(averageCostPerDamlung)}
           format={(n) => formatUsd(String(n))}
           subLine={t.stat.per(primaryUnit)}
         />
         <StatCard
           label={t.stat.marketValue}
           amount={Number(marketValueUsd)}
+          pulseKey={Number(marketValueUsd)}
           format={(n) => formatUsd(String(n))}
           subLine={t.stat.atCurrentSpot}
         />

@@ -14,6 +14,48 @@ type CountUpValueProps = Omit<ComponentProps<typeof MonoValue>, "children"> & {
   format: (value: number) => string;
 };
 
+type SizedFigureProps = Omit<ComponentProps<typeof MonoValue>, "children"> & {
+  // Reserves the box at this width (see width rationale below).
+  sizerText: string;
+  displayText: string;
+};
+
+// A hidden sizer holding `sizerText` overlaid with the live `displayText`
+// in the same grid cell, so the box stays a constant width while the
+// figure changes — the formatted string's length shifts every frame
+// during a roll ("$0" → "$1,234.56"), and in a shrink-to-fit parent (the
+// hero / realized flex rows) that made the whole header jitter sideways.
+// Shared by CountUpValue (rolls target from `from`) and AnimatedPnlCard's
+// PnlRollingFigure (rolls from a localStorage-remembered previous value).
+export function SizedFigure({
+  sizerText,
+  displayText,
+  className,
+  ...monoProps
+}: SizedFigureProps) {
+  return (
+    <span className="grid">
+      <MonoValue
+        {...monoProps}
+        aria-hidden
+        data-count-up-sizer
+        className={cn(className, "invisible [grid-area:1/1] whitespace-nowrap")}
+      >
+        {sizerText}
+      </MonoValue>
+      <MonoValue
+        {...monoProps}
+        className={cn(
+          className,
+          "[grid-area:1/1] min-w-0 overflow-hidden whitespace-nowrap"
+        )}
+      >
+        {displayText}
+      </MonoValue>
+    </span>
+  );
+}
+
 // A leaf wrapper around useCountUp + MonoValue. Two things it isolates:
 //
 //  1. Re-renders. The tween fires setState ~60fps for the whole roll;
@@ -37,24 +79,11 @@ export function CountUpValue({
 }: CountUpValueProps) {
   const value = useCountUp(target, { from, durationMs, format });
   return (
-    <span className="grid">
-      <MonoValue
-        {...monoProps}
-        aria-hidden
-        data-count-up-sizer
-        className={cn(className, "invisible [grid-area:1/1] whitespace-nowrap")}
-      >
-        {format(target)}
-      </MonoValue>
-      <MonoValue
-        {...monoProps}
-        className={cn(
-          className,
-          "[grid-area:1/1] min-w-0 overflow-hidden whitespace-nowrap"
-        )}
-      >
-        {value}
-      </MonoValue>
-    </span>
+    <SizedFigure
+      {...monoProps}
+      sizerText={format(target)}
+      displayText={value}
+      className={className}
+    />
   );
 }

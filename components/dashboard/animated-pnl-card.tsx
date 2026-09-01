@@ -3,18 +3,14 @@
 import { animate, useReducedMotion } from "motion/react";
 import { useEffect, useState } from "react";
 import { formatPercent, formatUsd } from "@/lib/format/money";
-import { toneFromAmount } from "@/lib/format/tone";
+import { PULSE_TONE, toneFromAmount } from "@/lib/format/tone";
 import type { CSSProperties } from "react";
 import { COUNT_UP_MS, SMOOTH_EASE } from "@/lib/ui/use-count-up";
 import { useValuePulse } from "@/lib/ui/use-value-pulse";
 import { cn } from "@/lib/utils";
+import { SizedFigure } from "./count-up-value";
 import { MonoValue } from "./mono-value";
 import { Surface } from "./surface";
-
-const PULSE_TONE: Record<string, string> = {
-  gain: "var(--state-gain)",
-  loss: "var(--destructive)",
-};
 
 // Unlike the other stat cards (which roll up from zero), the Unrealized
 // Gain/Loss figure rolls from the value the user last saw — persisted in
@@ -106,32 +102,15 @@ function PnlRollingFigure({
 
   const settled = formatUsd(gainLossUsd);
   const display = rolling ?? settled;
-  const figureClass = "block text-[19px] font-semibold";
 
-  // Hidden sizer holds `sizerText` so the box keeps a constant width
-  // while the figure rolls (see CountUpValue for the rationale).
   return (
-    <span className="grid">
-      <MonoValue
-        aria-hidden
-        data-count-up-sizer
-        tone={tone}
-        signed
-        className={cn(figureClass, "invisible [grid-area:1/1] whitespace-nowrap")}
-      >
-        {sizerText}
-      </MonoValue>
-      <MonoValue
-        tone={tone}
-        signed
-        className={cn(
-          figureClass,
-          "[grid-area:1/1] min-w-0 overflow-hidden whitespace-nowrap"
-        )}
-      >
-        {display}
-      </MonoValue>
-    </span>
+    <SizedFigure
+      tone={tone}
+      signed
+      sizerText={sizerText}
+      displayText={display}
+      className="block text-[19px] font-semibold"
+    />
   );
 }
 

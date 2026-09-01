@@ -3,7 +3,7 @@
 import { useEffect, useId, useState, type CSSProperties } from "react";
 import { ChevronDown } from "lucide-react";
 import { formatPercent, formatUsd } from "@/lib/format/money";
-import { toneFromAmount } from "@/lib/format/tone";
+import { PULSE_TONE, toneFromAmount } from "@/lib/format/tone";
 import { t } from "@/lib/i18n/dictionary";
 import { cn } from "@/lib/utils";
 import { COUNT_UP_MS } from "@/lib/ui/use-count-up";
@@ -11,11 +11,6 @@ import { useValuePulse } from "@/lib/ui/use-value-pulse";
 import { CountUpValue } from "./count-up-value";
 import { MonoValue } from "./mono-value";
 import { Surface } from "./surface";
-
-const PULSE_TONE: Record<string, string> = {
-  gain: "var(--state-gain)",
-  loss: "var(--destructive)",
-};
 
 interface RealizedPanelProps {
   realizedUsd: string;

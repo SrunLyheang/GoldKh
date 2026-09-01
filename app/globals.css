@@ -55,8 +55,8 @@
        pre-hydration fallback (the frame before ThemeProvider sets
        `data-theme="liquid-glass"`), and it is the layer the
        non-liquid-glass themes derive their `--glass-*` / idiom tokens
-       from (Midnight, Emerald, Terminal only override colours, then
-       inherit the frosted treatment computed here). Dark, warm-neutral,
+       from (Midnight, Emerald only override colours, then inherit the
+       frosted treatment computed here). Dark, warm-neutral,
        square — deliberately plain so the fallback frame reads as
        "loading", not as a distinct theme. Every real theme block below
        is written `:root[data-theme="x"], [data-theme="x"]` so a nested
@@ -868,39 +868,10 @@ html:has([data-landing-theme="dark"]) body {
   background-color: #171614;
 }
 
-/* Scroll-entry, tuned for an Apple-style glide: a long soft-landing
-   ease with a slow tail, a longer travel than a "pop" would use, plus a
-   sub-pixel scale and a blur burn-off so the element resolves rather
-   than snaps. Toggled by an IntersectionObserver in
-   components/welcome/use-reveal.ts; staggered via --reveal-delay.
-   --ease-glide is easeOutQuint-ish (matches motion-ui's `smooth`
-   token). transform + opacity + filter only — all compositor-friendly. */
+/* --ease-glide is easeOutQuint-ish (matches motion-ui's `smooth` token),
+   shared by the dashboard/nav/stagger entrances below. */
 :root {
   --ease-glide: cubic-bezier(0.16, 1, 0.3, 1);
-}
-.landing-reveal {
-  opacity: 0;
-  transform: translateY(22px) scale(0.985);
-  filter: blur(10px);
-  transition:
-    opacity 1s var(--ease-glide),
-    transform 1.1s var(--ease-glide),
-    filter 1.1s var(--ease-glide);
-  transition-delay: var(--reveal-delay, 0ms);
-  will-change: transform, opacity, filter;
-}
-.landing-reveal.is-visible {
-  opacity: 1;
-  transform: none;
-  filter: blur(0);
-}
-@media (prefers-reduced-motion: reduce) {
-  .landing-reveal {
-    opacity: 1;
-    transform: none;
-    filter: none;
-    transition: none;
-  }
 }
 
 /* Dashboard section entrance. A cheap, JS-independent fade-up: a
