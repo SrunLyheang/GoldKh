@@ -51,3 +51,11 @@ redesign/
 
 # local git worktrees
 .worktrees/
+
+# documentation — kept local, not shipped in the public repo (README.md stays)
+/context/
+/docs/
+/AGENTS.md
+/CLAUDE.md
+/CONTEXT.md
+/to-questionnaire-goldkh-end-user.md
