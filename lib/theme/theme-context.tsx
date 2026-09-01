@@ -6,9 +6,14 @@ const STORAGE_KEY = "goldkh-theme";
 
 // Adding a theme is one entry here plus one `:root[data-theme="<id>"]`
 // token block in app/globals.css — components never change, they read
-// the tokens. `vault` is the default (no `data-theme` attribute) so the
-// server-rendered markup and the first client paint always agree.
+// the tokens. `liquid-glass` is the default; `:root` still carries the
+// `vault` tokens as a fallback, so the SSR markup and the first client
+// paint render as vault for one frame before the provider sets
+// `data-theme="liquid-glass"` (known one-render swap, same as a stored
+// non-default theme — the dashboard is entirely behind auth + "use
+// client", so there is no SSR consequence).
 export const THEMES = [
+  { id: "liquid-glass", label: "Liquid Glass" },
   { id: "vault", label: "Vault" },
   { id: "ledger", label: "Ledger" },
   { id: "midnight", label: "Midnight" },
@@ -33,12 +38,14 @@ interface ThemeContextValue {
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 // Mirrors LocaleProvider: client-only, localStorage-backed, starts on
-// the default ("vault") every render, then reads the stored preference
-// in an effect. The dashboard is entirely behind auth and "use client",
-// so there is no server-rendering consequence beyond the one extra
-// render when a non-default theme was stored.
+// the default ("liquid-glass") every render, then reads the stored
+// preference in an effect. `:root` carries the vault tokens, so the
+// server markup paints as vault for one frame before the mount effect
+// sets `data-theme="liquid-glass"` — the same one-render swap that a
+// stored non-default theme already causes. The dashboard is entirely
+// behind auth and "use client", so there is no SSR consequence.
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setThemeState] = useState<ThemeId>("vault");
+  const [theme, setThemeState] = useState<ThemeId>("liquid-glass");
 
   useEffect(() => {
     const stored = window.localStorage.getItem(STORAGE_KEY);

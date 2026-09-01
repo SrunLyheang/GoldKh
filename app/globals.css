@@ -116,6 +116,27 @@
     --sidebar-accent-foreground: #f5f1e8;
     --sidebar-border: #2a2013;
     --sidebar-ring: #e8b84b;
+
+    /* Liquid-glass surface tokens. The defaults here are DERIVED from
+       each theme's own --card / --foreground / --primary, so the five
+       non-default themes inherit a coherent frosted treatment for free
+       — only the two light themes (below) and the dedicated
+       `liquid-glass` block override them. Components reach glass only
+       through `.glass-surface` / `.glass-overlay` / `.glass-glow`,
+       never by hardcoding. See context/ui-context.md. */
+    --glass-bg: color-mix(in oklab, var(--card) 80%, transparent);
+    --glass-blur: 14px;
+    --glass-border-from: color-mix(in oklab, var(--foreground) 30%, transparent);
+    --glass-border-to: color-mix(in oklab, var(--foreground) 5%, transparent);
+    --glass-highlight: color-mix(in oklab, var(--foreground) 8%, transparent);
+    --glass-shadow: 0 24px 60px -30px rgb(0 0 0 / 0.7), 0 4px 14px -8px rgb(0 0 0 / 0.5);
+    --glass-radius: var(--radius);
+    --glass-scrim: rgb(0 0 0 / 0.55);
+    --glass-fallback-bg: color-mix(in oklab, var(--card) 94%, var(--background));
+    --glow-color: color-mix(in oklab, var(--primary) 35%, transparent);
+    --glow-radius: 460px;
+    --sparkle-opacity: 0.4;
+    --eyebrow-glyph: "";
 }
 
 /* ---- Ledger theme (minimalist-ui direction) --------------------------
@@ -407,6 +428,95 @@
     --sidebar-ring: #1d4ed8;
 }
 
+/* ---- Liquid Glass theme — the default -------------------------------
+   The welcome page's aesthetic brought into the signed-in app: a
+   near-black ground, amber #e8b84b accent, frosted white glass cards,
+   soft ambient shadows and an amber cursor glow. This is the only
+   fully hand-tuned glass theme; the other six render the same
+   `.glass-*` classes recoloured from their own palette. Set as the
+   default in lib/theme/theme-context.tsx. See context/ui-context.md. */
+:root[data-theme="liquid-glass"],
+[data-theme="liquid-glass"] {
+    --background: #050505;
+    --foreground: #f4f1ea;
+    --card: #0c0b0a;
+    --card-foreground: #f4f1ea;
+    --popover: #100e0c;
+    --popover-foreground: #f4f1ea;
+    --primary: #e8b84b;
+    --primary-foreground: #1a1207;
+    --secondary: #16140f;
+    --secondary-foreground: #f4f1ea;
+    --muted: #16140f;
+    --muted-foreground: #a99f8c;
+    --accent: #1c1810;
+    --accent-foreground: #f4f1ea;
+    --destructive: #f87171;
+    --state-gain: #4ade80;
+    --border: #241f16;
+    --input: #241f16;
+    --ring: #e8b84b;
+    --chart-1: #e8b84b;
+    --chart-2: #a99f8c;
+    --chart-3: #4ade80;
+    --chart-4: #f87171;
+    --chart-5: #f4f1ea;
+
+    --radius: 16px;
+
+    --label-font: var(--font-mono);
+    --label-transform: uppercase;
+    --label-tracking: 0.08em;
+    --heading-font: var(--font-sans);
+    --heading-transform: none;
+    --heading-tracking: -0.02em;
+    --heading-weight: 600;
+    --display-font: var(--font-mono);
+    --bracket-open: "";
+    --bracket-close: "";
+    --shadow-lg: 0 28px 64px -28px rgb(0 0 0 / 0.8), 0 6px 20px -10px rgb(0 0 0 / 0.6);
+    --shadow-sm: 0 16px 40px -22px rgb(0 0 0 / 0.7);
+
+    --sidebar: #0a0908;
+    --sidebar-foreground: #f4f1ea;
+    --sidebar-primary: #e8b84b;
+    --sidebar-primary-foreground: #1a1207;
+    --sidebar-accent: #1c1810;
+    --sidebar-accent-foreground: #f4f1ea;
+    --sidebar-border: #241f16;
+    --sidebar-ring: #e8b84b;
+
+    /* Hand-tuned to match components/welcome/liquid-glass-landing.tsx. */
+    --glass-bg: rgba(255, 255, 255, 0.045);
+    --glass-blur: 14px;
+    --glass-border-from: rgba(255, 255, 255, 0.42);
+    --glass-border-to: rgba(255, 255, 255, 0.02);
+    --glass-highlight: rgba(255, 255, 255, 0.14);
+    --glass-shadow: 0 8px 32px 0 rgb(0 0 0 / 0.45);
+    --glass-radius: 20px;
+    --glass-scrim: rgb(0 0 0 / 0.6);
+    --glass-fallback-bg: rgba(24, 22, 20, 0.92);
+    --glow-color: rgba(232, 184, 75, 0.28);
+    --glow-radius: 460px;
+    --sparkle-opacity: 0.5;
+    --eyebrow-glyph: "✦ ";
+}
+
+/* Light themes: a dark-tinted frost + a soft (not deep) shadow reads
+   as glass on paper, and the ambient sparkle field is off — it only
+   registers on a dark ground. */
+:root[data-theme="ledger"], [data-theme="ledger"],
+:root[data-theme="porcelain"], [data-theme="porcelain"] {
+    --glass-bg: color-mix(in oklab, var(--card) 68%, transparent);
+    --glass-border-from: color-mix(in oklab, var(--foreground) 16%, transparent);
+    --glass-border-to: color-mix(in oklab, var(--foreground) 4%, transparent);
+    --glass-highlight: rgb(255 255 255 / 0.55);
+    --glass-shadow: 0 1px 2px rgb(15 23 41 / 0.06), 0 16px 40px -22px rgb(15 23 41 / 0.14);
+    --glass-scrim: rgb(15 23 41 / 0.28);
+    --glow-color: color-mix(in oklab, var(--primary) 20%, transparent);
+    --sparkle-opacity: 0;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -429,6 +539,89 @@
 }
 .shadow-vault-sm {
   box-shadow: var(--shadow-sm);
+}
+
+/* ─── Liquid Glass surfaces ──────────────────────────────────────────
+   `.glass-surface` — scrolling cards. NO backdrop-filter (it visibly
+   shivers under scroll/animation); the frost is faked with a near-
+   opaque tinted fill + a masked gradient-border ring + a soft ambient
+   shadow. `.glass-overlay` — non-scrolling overlays only (sidebar,
+   dialogs, popovers, dropdowns, sticky bars): real backdrop blur over
+   a more translucent fill. `.glass-glow` — a token-driven cursor glow,
+   generalised from `.spotlight-card`. All three read the per-theme
+   `--glass-*` / `--glow-*` tokens, so a theme switch recolours them
+   with no JSX change. See context/ui-context.md. */
+.glass-surface {
+  position: relative;
+  background: var(--glass-bg);
+  border-radius: var(--glass-radius);
+  box-shadow: inset 0 1px 0 var(--glass-highlight), var(--glass-shadow);
+}
+.glass-overlay {
+  position: relative;
+  background: color-mix(in oklab, var(--glass-bg) 72%, transparent);
+  border-radius: var(--glass-radius);
+  box-shadow: inset 0 1px 0 var(--glass-highlight), var(--glass-shadow);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+}
+.glass-surface::before,
+.glass-overlay::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    160deg,
+    var(--glass-border-from) 0%,
+    var(--glass-border-to) 45%,
+    var(--glass-border-from) 100%
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass-overlay {
+    background: var(--glass-fallback-bg);
+  }
+}
+
+.glass-glow {
+  position: relative;
+}
+.glass-glow::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: var(--spot-opacity, 0);
+  transition: opacity 0.4s ease;
+  background: radial-gradient(
+    circle var(--glow-radius) at var(--spot-x, 50%) var(--spot-y, 50%),
+    var(--glow-color) 0%,
+    transparent 78%
+  );
+}
+@media (hover: hover) {
+  .glass-glow:hover::after {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .glass-glow {
+    transition:
+      transform 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+      box-shadow 0.3s ease;
+  }
+  .glass-glow:hover {
+    transform: translateY(-3px);
+  }
 }
 
 /* A faint fixed grain so the near-black background reads as a surface

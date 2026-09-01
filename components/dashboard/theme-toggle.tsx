@@ -15,8 +15,8 @@ import {
 // theme block is written as `:root[data-theme="x"], [data-theme="x"]`,
 // so a nested element resolves the full token set. Nothing here hardcodes
 // a colour — add a theme in globals.css and its swatch is automatically
-// correct. The inner panel uses the theme's real `--radius` and
-// `--shadow-lg` so corners and elevation preview too.
+// correct. The inner panel carries `.glass-surface` so the frosted fill,
+// gradient-border ring and ambient shadow preview per theme too.
 function ThemeSwatch({ id }: { id: ThemeId }) {
   return (
     <div
@@ -25,8 +25,8 @@ function ThemeSwatch({ id }: { id: ThemeId }) {
       style={{ borderRadius: "var(--radius)" }}
     >
       <div
-        className="flex flex-1 flex-col justify-between border border-border bg-card p-1.5"
-        style={{ borderRadius: "calc(var(--radius) * 0.6)", boxShadow: "var(--shadow-sm)" }}
+        className="glass-surface flex flex-1 flex-col justify-between p-1.5"
+        style={{ borderRadius: "calc(var(--glass-radius) * 0.6)" }}
       >
         <div className="flex items-center gap-1">
           <span className="h-1.5 w-1.5 rounded-full bg-primary" />
