@@ -4,10 +4,11 @@ import { formatUsd } from "@/lib/format/money";
 import { useLocale } from "@/lib/i18n/locale-context";
 import { unitLabels } from "@/lib/i18n/unit-labels";
 import type { CSSProperties } from "react";
-import { COUNT_UP_MS, useCountUp } from "@/lib/ui/use-count-up";
+import { COUNT_UP_MS } from "@/lib/ui/use-count-up";
 import { useValuePulse } from "@/lib/ui/use-value-pulse";
 import { cn } from "@/lib/utils";
 import { SparkleField } from "@/components/effects/sparkle-field";
+import { CountUpValue } from "./count-up-value";
 import { MonoValue } from "./mono-value";
 import { Surface } from "./surface";
 import { RefreshButton } from "./refresh-button";
@@ -46,13 +47,6 @@ export function HeroPriceCard({
   const { primary: primaryUnitLabel, secondaryLower: secondaryUnitLabel } =
     unitLabels(t, displayUnit);
 
-  // Rolls from zero to the live price on every page entry. A unit toggle
-  // afterwards snaps (see useCountUp's `from` mode).
-  const headlineDisplay = useCountUp(Number(headlinePrice), {
-    from: 0,
-    durationMs: COUNT_UP_MS,
-    format: (value) => formatUsd(String(value)),
-  });
   // Trigger on the unit-independent spot so a unit toggle doesn't pulse.
   const pulsing = useValuePulse(pricePerTroyOz);
 
@@ -77,9 +71,17 @@ export function HeroPriceCard({
             className={cn("mt-1.5 block", pulsing && "value-pulse-active")}
             style={{ "--pulse-tone": "var(--primary)" } as CSSProperties}
           >
-            <MonoValue className="tt-display block text-[34px] font-semibold tracking-tight leading-tight sm:text-[46px]">
-              {headlineDisplay}
-            </MonoValue>
+            {/* Rolls from zero to the live price on every page entry. A
+                unit toggle afterwards snaps (see useCountUp's `from`
+                mode). Isolated in CountUpValue so the per-frame roll
+                doesn't re-render the tilting glass hero card. */}
+            <CountUpValue
+              target={Number(headlinePrice)}
+              from={0}
+              durationMs={COUNT_UP_MS}
+              format={(value) => formatUsd(String(value))}
+              className="tt-display block text-[34px] font-semibold tracking-tight leading-tight sm:text-[46px]"
+            />
           </span>
           <MonoValue tone="muted" className="mt-1.5 block text-[12.5px]">
             {formatUsd(pricePerTroyOz)}/oz · {formatUsd(secondaryPrice)}/

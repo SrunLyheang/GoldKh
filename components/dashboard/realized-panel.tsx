@@ -6,8 +6,9 @@ import { formatPercent, formatUsd } from "@/lib/format/money";
 import { toneFromAmount } from "@/lib/format/tone";
 import { useLocale } from "@/lib/i18n/locale-context";
 import { cn } from "@/lib/utils";
-import { COUNT_UP_MS, useCountUp } from "@/lib/ui/use-count-up";
+import { COUNT_UP_MS } from "@/lib/ui/use-count-up";
 import { useValuePulse } from "@/lib/ui/use-value-pulse";
+import { CountUpValue } from "./count-up-value";
 import { MonoValue } from "./mono-value";
 import { Surface } from "./surface";
 
@@ -76,11 +77,6 @@ export function RealizedPanel({
   // way the stat cards and hero price do — positive rolls up, negative
   // down. A later change (a new sale recomputes it) snaps. The percent
   // sub-line snaps; reduced-motion snaps everything.
-  const valueDisplay = useCountUp(Number(realizedUsd), {
-    from: 0,
-    durationMs: COUNT_UP_MS,
-    format: (value) => formatUsd(String(value)),
-  });
   const pulsing = useValuePulse(realizedUsd);
 
   return (
@@ -112,13 +108,19 @@ export function RealizedPanel({
                 className={cn("mt-1.5 block", pulsing && "value-pulse-active")}
                 style={{ "--pulse-tone": PULSE_TONE[tone] ?? "var(--primary)" } as CSSProperties}
               >
-                <MonoValue
+                {/* Rolls from zero to the realized figure on every page
+                    entry; a later change snaps. Isolated in CountUpValue
+                    so the per-frame roll doesn't re-render this glass
+                    panel. */}
+                <CountUpValue
+                  target={Number(realizedUsd)}
+                  from={0}
+                  durationMs={COUNT_UP_MS}
+                  format={(value) => formatUsd(String(value))}
                   tone={tone}
                   signed
                   className="block text-[34px] font-semibold tracking-tight leading-tight sm:text-[40px]"
-                >
-                  {valueDisplay}
-                </MonoValue>
+                />
               </span>
               <MonoValue
                 tone={isBreakEven ? "muted" : tone}

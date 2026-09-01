@@ -24,18 +24,19 @@ const PULSE_TONE: Record<string, string> = {
 // percent sub-line snaps.
 const STORAGE_KEY = "goldkh-last-pnl";
 
-export function AnimatedPnlCard({
-  label,
+// The rolling figure, isolated in its own leaf. The tween fires setState
+// ~60fps for the whole roll; keeping that state here — in a component
+// that renders only the number — keeps the per-frame re-render off the
+// Surface / glass wrappers, so the card doesn't stutter while it counts.
+function PnlRollingFigure({
   gainLossUsd,
-  gainLossPercent,
+  tone,
 }: {
-  label: string;
   gainLossUsd: string;
-  gainLossPercent: string;
+  tone: ReturnType<typeof toneFromAmount>;
 }) {
   const reduceMotion = useReducedMotion();
   const current = Number(gainLossUsd);
-  const tone = toneFromAmount(gainLossUsd);
 
   // Non-null only while a roll is in flight.
   const [rolling, setRolling] = useState<string | null>(null);
@@ -89,6 +90,24 @@ export function AnimatedPnlCard({
   }, [gainLossUsd, current, reduceMotion]);
 
   const display = rolling ?? formatUsd(gainLossUsd);
+
+  return (
+    <MonoValue tone={tone} signed className="block text-[19px] font-semibold">
+      {display}
+    </MonoValue>
+  );
+}
+
+export function AnimatedPnlCard({
+  label,
+  gainLossUsd,
+  gainLossPercent,
+}: {
+  label: string;
+  gainLossUsd: string;
+  gainLossPercent: string;
+}) {
+  const tone = toneFromAmount(gainLossUsd);
   const pulsing = useValuePulse(gainLossUsd);
 
   return (
@@ -103,9 +122,7 @@ export function AnimatedPnlCard({
         className={cn("mt-1.5 block", pulsing && "value-pulse-active")}
         style={{ "--pulse-tone": PULSE_TONE[tone] ?? "var(--primary)" } as CSSProperties}
       >
-        <MonoValue tone={tone} signed className="block text-[19px] font-semibold">
-          {display}
-        </MonoValue>
+        <PnlRollingFigure gainLossUsd={gainLossUsd} tone={tone} />
       </span>
       <MonoValue tone={tone} signed className="mt-1 block text-[12px]">
         {formatPercent(gainLossPercent)}
