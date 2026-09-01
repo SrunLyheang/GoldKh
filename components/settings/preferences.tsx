@@ -15,7 +15,7 @@ function Field({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border py-3.5 last:border-0">
+    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-(--glass-border-to) py-3.5 last:border-0">
       <span className="tt-label text-[11px] text-muted-foreground">
         {label}
       </span>

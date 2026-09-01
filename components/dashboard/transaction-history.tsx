@@ -42,6 +42,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
+import { Magnetic } from "@/components/motion/magnetic";
 import { CsvDialog } from "./csv-dialog";
 import { MonoValue } from "./mono-value";
 import { Panel } from "./panel";
@@ -704,12 +705,14 @@ export function TransactionHistory({
           >
             {t.csv.importExport}
           </button>
-          <Button size="sm" onClick={onAddClick}>
-            <Plus className="h-4 w-4" />
-            <span className="tt-label text-[11.5px]">
-              {t.transactions.addTransaction}
-            </span>
-          </Button>
+          <Magnetic strength={10}>
+            <Button size="sm" onClick={onAddClick}>
+              <Plus className="h-4 w-4" />
+              <span className="tt-label text-[11.5px]">
+                {t.transactions.addTransaction}
+              </span>
+            </Button>
+          </Magnetic>
         </div>
       </div>
       {syncing && (

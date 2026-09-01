@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/loading";
+import { Magnetic } from "@/components/motion/magnetic";
+import { cn } from "@/lib/utils";
 import { useLocale } from "@/lib/i18n/locale-context";
 import { requestPriceRefresh } from "@/lib/price/requestPriceRefresh";
 import { notify } from "@/lib/ui/toast";
@@ -113,23 +115,30 @@ export function RefreshButton({
     }
   }
 
+  // Magnetic is a no-op on touch / reduced-motion (it self-gates), so the
+  // button keeps its plain behaviour there.
   return (
-    <Button
-      variant="secondary"
-      size="sm"
-      aria-disabled={busy || inCooldown || marketClosed}
-      className={busy || inCooldown || marketClosed ? "opacity-50" : undefined}
-      title={
-        marketClosed
-          ? t.refresh.marketClosed
-          : inCooldown
-            ? t.refresh.refreshedRecently
-            : undefined
-      }
-      onClick={handleClick}
-    >
-      {busy ? <Spinner size="xs" /> : <RefreshCw className="h-4 w-4" />}
-      <span className="tt-label text-[11.5px]">{t.refresh.label}</span>
-    </Button>
+    <Magnetic strength={10}>
+      <Button
+        variant="secondary"
+        size="sm"
+        aria-disabled={busy || inCooldown || marketClosed}
+        className={cn(
+          "border-(--glass-border-to) bg-(--glass-bg) hover:bg-(--glow-color)",
+          (busy || inCooldown || marketClosed) && "opacity-50",
+        )}
+        title={
+          marketClosed
+            ? t.refresh.marketClosed
+            : inCooldown
+              ? t.refresh.refreshedRecently
+              : undefined
+        }
+        onClick={handleClick}
+      >
+        {busy ? <Spinner size="xs" /> : <RefreshCw className="h-4 w-4" />}
+        <span className="tt-label text-[11.5px]">{t.refresh.label}</span>
+      </Button>
+    </Magnetic>
   );
 }

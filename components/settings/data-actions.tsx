@@ -49,7 +49,7 @@ function ConfirmAction({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="tt-label shrink-0 border border-destructive px-3 py-1.5 text-[10.5px] text-destructive transition-colors hover:bg-destructive/10"
+        className="tt-label shrink-0 rounded-full border border-destructive px-3 py-1.5 text-[10.5px] text-destructive transition-colors hover:bg-destructive/10"
       >
         {label}
       </button>
@@ -97,7 +97,7 @@ function Row({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-wrap items-start justify-between gap-3 border-b border-border py-4 last:border-0">
+    <div className="flex flex-wrap items-start justify-between gap-3 border-b border-(--glass-border-to) py-4 last:border-0">
       <div className="max-w-[42ch]">
         <p className="text-[13px] font-medium text-foreground">{title}</p>
         <p className="mt-0.5 text-[12px] text-muted-foreground">{description}</p>
@@ -173,7 +173,7 @@ export function DataActions({
             type="button"
             onClick={() => downloadCsv(transactions)}
             disabled={transactions.length === 0}
-            className="tt-label shrink-0 border border-border px-3 py-1.5 text-[10.5px] text-muted-foreground transition-colors hover:bg-accent hover:text-foreground disabled:opacity-50"
+            className="tt-label shrink-0 rounded-full border border-(--glass-border-to) px-3 py-1.5 text-[10.5px] text-muted-foreground transition-colors hover:bg-(--glow-color) hover:text-foreground disabled:opacity-50"
           >
             {t.csv.download}
           </button>

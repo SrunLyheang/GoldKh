@@ -84,7 +84,7 @@ export default async function PricePage() {
             <h1 className="tt-heading tt-bracket text-[15px] text-foreground">
               {t.chart.title}
             </h1>
-            <p className="mt-1.5 font-mono text-[28px] font-semibold leading-tight tracking-tight text-foreground tabular-nums">
+            <p className="tt-display mt-1.5 text-[28px] font-semibold leading-tight tracking-tight text-foreground tabular-nums">
               {formatUsd(pricePerDamlung)}
               <span className="ml-1 text-[13px] font-normal text-muted-foreground">
                 /damlung
@@ -92,12 +92,12 @@ export default async function PricePage() {
             </p>
           </div>
           <div className="flex flex-col items-start gap-1 sm:items-end">
-            <span className="tt-label text-[11px] text-muted-foreground">
+            <span className="tt-label inline-flex items-center gap-1.5 rounded-full border border-(--glass-border-to) bg-(--glass-bg) px-2 py-0.5 text-[11px] text-muted-foreground">
               <span
                 className={
                   isStale
-                    ? "mr-1.5 inline-block h-1.5 w-1.5 bg-muted-foreground align-middle"
-                    : "mr-1.5 inline-block h-1.5 w-1.5 bg-state-gain align-middle"
+                    ? "inline-block h-1.5 w-1.5 bg-muted-foreground"
+                    : "inline-block h-1.5 w-1.5 bg-state-gain"
                 }
               />
               <span className="tt-bracket">

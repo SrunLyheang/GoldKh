@@ -1,5 +1,6 @@
 import { Coins, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Magnetic } from "@/components/motion/magnetic";
 import { useLocale } from "@/lib/i18n/locale-context";
 
 // Trigger-only — the actual dialog is a single shared instance owned by
@@ -27,10 +28,12 @@ export function EmptyState({ onAddClick }: { onAddClick: () => void }) {
         ))}
       </ol>
       <div className="mt-7">
-        <Button onClick={onAddClick}>
-          <Plus className="h-4 w-4" />
-          <span className="tt-label text-[11.5px]">{t.transactions.addTransaction}</span>
-        </Button>
+        <Magnetic strength={10}>
+          <Button onClick={onAddClick}>
+            <Plus className="h-4 w-4" />
+            <span className="tt-label text-[11.5px]">{t.transactions.addTransaction}</span>
+          </Button>
+        </Magnetic>
       </div>
     </div>
   );

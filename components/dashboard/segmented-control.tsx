@@ -7,9 +7,11 @@ interface SegmentedControlOption<T extends string> {
   label: string;
 }
 
-// Used by UnitToggle — a generic segmented-control shape (role="group",
-// pressed-state styling, sizing) kept separate from its options so a
-// future style change, or a second toggle, has one place to land.
+// The one shared segmented control — a generic role="group" shape with
+// pressed-state styling and sizing, kept separate from its options so a
+// style change lands in a single place. Every toggle inherits this glass
+// look: the unit toggle, transaction filters, what-if tabs, the settings
+// preferences rows, and the chart presets.
 export function SegmentedControl<T extends string>({
   options,
   value,
@@ -28,7 +30,7 @@ export function SegmentedControl<T extends string>({
       role="group"
       aria-label={ariaLabel}
       className={cn(
-        "inline-flex shrink-0 items-center gap-0.5 rounded-lg border border-border bg-accent/60 p-0.5",
+        "inline-flex shrink-0 items-center gap-0.5 rounded-lg border border-(--glass-border-to) bg-(--glass-bg) p-0.5",
         className
       )}
     >

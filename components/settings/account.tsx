@@ -26,7 +26,7 @@ export function AccountSettings() {
         {t.settings.accountTitle}
       </h2>
       <Panel size="lg" className="flex flex-col">
-        <div className="flex flex-wrap items-start justify-between gap-3 border-b border-border py-4 first:pt-0">
+        <div className="flex flex-wrap items-start justify-between gap-3 border-b border-(--glass-border-to) py-4 first:pt-0">
           <div className="max-w-[42ch]">
             <p className="text-[13px] font-medium text-foreground">
               {t.settings.signOut}
@@ -58,9 +58,29 @@ export function AccountSettings() {
           <UserProfile
             routing="hash"
             appearance={{
+              // Colours only — pull Clerk's embedded UI onto the glass
+              // palette so it doesn't read as a pasted-in white card.
+              // Every value is a token; no layout or structural overrides.
+              variables: {
+                colorBackground: "transparent",
+                colorForeground: "var(--foreground)",
+                colorMutedForeground: "var(--muted-foreground)",
+                colorMuted: "var(--glass-bg)",
+                colorPrimary: "var(--primary)",
+                colorPrimaryForeground: "var(--primary-foreground)",
+                colorInput: "var(--glass-bg)",
+                colorInputForeground: "var(--foreground)",
+                colorBorder: "var(--glass-border-to)",
+                colorNeutral: "var(--foreground)",
+                colorDanger: "var(--destructive)",
+                borderRadius: "var(--radius)",
+              },
               elements: {
                 rootBox: "w-full",
-                cardBox: "w-full border-none shadow-none",
+                cardBox: "w-full border-none shadow-none bg-transparent",
+                navbar: "bg-transparent border-(--glass-border-to)",
+                pageScrollBox: "bg-transparent",
+                dividerLine: "bg-(--glass-border-to)",
               },
             }}
           />
