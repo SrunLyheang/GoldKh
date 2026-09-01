@@ -14,6 +14,25 @@ Update this file after every meaningful implementation change.
 
 ## Recent changes
 
+- **2026-09-01:** Readability pass on the auth + sign-out code
+  (codebase-design / deep-module review). Two deepenings, no behaviour
+  change:
+  1. New `components/dashboard/account-button.tsx` — `<AccountButton>`
+     wraps Clerk's `<UserButton>` with the app's `appearance` (avatar
+     order + hiding the built-in "Sign out"). Removes the duplicated
+     `appearance` override and the `userButtonPopoverActionButton__signOut`
+     internal-key knowledge from `sidebar.tsx` and `dashboard-shell.tsx`;
+     both now just render `<AccountButton />` + `<SignOutButton />`.
+  2. `<AuthShell>` now renders its own `<BackToWelcome>` footer, so
+     `sign-in` / `sign-up` pages drop the duplicated
+     `<div className="mt-6 flex justify-center">` wrapper and are down to
+     `<AuthShell><SignIn appearance={authAppearance} /></AuthShell>`.
+  3. `SparkleField`'s inline `<style>` block moved to `app/globals.css`
+     under `.sparkle-field__*` (next to the existing `.auth-aurora-*`
+     set); the component is now pure markup. No duplicate `<style>` in
+     the DOM if it ever mounts more than once.
+  tsc + eslint clean, auth tests pass.
+
 - **2026-09-01:** Merged `feat/auth-split-card` into `main`. Three
   conflicts resolved: `progress-tracker.md` (both log blocks kept),
   and the sign-in / sign-up pages. The split-card `<AuthShell>`
