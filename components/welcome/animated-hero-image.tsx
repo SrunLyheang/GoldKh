@@ -4,20 +4,28 @@ import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 
 const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
 
-// Reads the OS "reduce motion" preference. The server snapshot is always
-// false so the SSR markup and first client render agree; the client
-// snapshot reflects the real setting and re-renders if it changes.
-function usePrefersReducedMotion(): boolean {
+// Small screens and touch devices: the hero's particle canvas (75 sprites
+// each drawn with a per-frame `shadowBlur`, in an unthrottled rAF loop
+// that never stops) plus the stacked `mix-blend` beam layers saturate a
+// phone compositor, so scrolling through and past the hero stutters. On
+// a match we drop those heavy layers and keep the video + vignettes.
+const LOW_POWER_QUERY = "(max-width: 767px), (pointer: coarse)";
+
+// Subscribes to a media query. The server snapshot is always false so the
+// SSR markup and first client render agree; the client snapshot reflects
+// the real match and re-renders if it changes. Safe when matchMedia is
+// absent (jsdom) — treated as no match.
+function useMediaQuery(query: string): boolean {
   return useSyncExternalStore(
     (onChange) => {
       if (typeof window.matchMedia !== "function") return () => {};
-      const mq = window.matchMedia(REDUCED_MOTION_QUERY);
+      const mq = window.matchMedia(query);
       mq.addEventListener("change", onChange);
       return () => mq.removeEventListener("change", onChange);
     },
     () =>
       typeof window.matchMedia === "function"
-        ? window.matchMedia(REDUCED_MOTION_QUERY).matches
+        ? window.matchMedia(query).matches
         : false,
     () => false,
   );
@@ -29,7 +37,11 @@ export function AnimatedHeroImage() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [mousePos, setMousePos] = useState({ x: 0.5, y: 0.5 });
   const [tilt, setTilt] = useState({ x: 0, y: 0 });
-  const reducedMotion = usePrefersReducedMotion();
+  const reducedMotion = useMediaQuery(REDUCED_MOTION_QUERY);
+  const lowPower = useMediaQuery(LOW_POWER_QUERY);
+  // Heavy decorative layers (particle canvas, blend-mode beams, the
+  // float animation) run only on a capable pointer-fine viewport.
+  const heavyFxOff = reducedMotion || lowPower;
 
   // ── Mouse Tilt & Parallax Physics ───────────────────────────────────────────
   useEffect(() => {
@@ -90,7 +102,7 @@ export function AnimatedHeroImage() {
 
   // ── Golden Dust & Star Ember Particles Canvas ───────────────────────────────
   useEffect(() => {
-    if (reducedMotion) return;
+    if (heavyFxOff) return;
 
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -163,7 +175,7 @@ export function AnimatedHeroImage() {
       window.removeEventListener("resize", handleResize);
       cancelAnimationFrame(animId);
     };
-  }, [reducedMotion]);
+  }, [heavyFxOff]);
 
   // Pause the looping hero video when the user prefers reduced motion.
   useEffect(() => {
@@ -189,7 +201,11 @@ export function AnimatedHeroImage() {
       style={{ perspective: "1000px" }}
     >
       {/* ── 1. 3D Parallax Video Wrapper ──────────────────────────────────────── */}
-      <div className="absolute inset-[-2%] w-[104%] h-[104%] anim-float-gentle transition-transform duration-75 ease-out">
+      <div
+        className={`absolute inset-[-2%] w-[104%] h-[104%] transition-transform duration-75 ease-out${
+          heavyFxOff ? "" : " anim-float-gentle"
+        }`}
+      >
         <div
           className="w-full h-full"
           style={{
@@ -208,53 +224,63 @@ export function AnimatedHeroImage() {
             playsInline
           />
 
-          {/* ── 2. Animated Radiant Orange Light Beam Overlay ─────────────────────── */}
-          <div
-            className="absolute top-[6%] right-[10%] w-[38%] h-[55%] anim-beam-orange pointer-events-none mix-blend-screen"
-            style={{
-              background:
-                "radial-gradient(ellipse at 45% 45%, rgba(255, 140, 40, 0.45) 0%, rgba(255, 100, 20, 0.2) 40%, transparent 75%)",
-              transform: "rotate(-32deg)",
-            }}
-          />
+          {/* Layers 2–5 are `mix-blend` gradient washes that force
+              off-screen compositing passes on every paint. On phones /
+              touch (heavyFxOff) they are the difference between a smooth
+              and a stuttering scroll, and are barely visible over the
+              video at that size — so they render on capable pointers
+              only. */}
+          {!heavyFxOff && (
+            <>
+              {/* ── 2. Animated Radiant Orange Light Beam Overlay ─────────────────── */}
+              <div
+                className="absolute top-[6%] right-[10%] w-[38%] h-[55%] anim-beam-orange pointer-events-none mix-blend-screen"
+                style={{
+                  background:
+                    "radial-gradient(ellipse at 45% 45%, rgba(255, 140, 40, 0.45) 0%, rgba(255, 100, 20, 0.2) 40%, transparent 75%)",
+                  transform: "rotate(-32deg)",
+                }}
+              />
 
-          {/* ── 3. Animated Electric Cyan Light Beam Overlay ──────────────────────── */}
-          <div
-            className="absolute top-[22%] left-[8%] w-[42%] h-[48%] anim-beam-cyan pointer-events-none mix-blend-screen"
-            style={{
-              background:
-                "radial-gradient(ellipse at 50% 50%, rgba(60, 200, 255, 0.4) 0%, rgba(30, 140, 255, 0.15) 45%, transparent 75%)",
-              transform: "rotate(-25deg)",
-            }}
-          />
+              {/* ── 3. Animated Electric Cyan Light Beam Overlay ──────────────────── */}
+              <div
+                className="absolute top-[22%] left-[8%] w-[42%] h-[48%] anim-beam-cyan pointer-events-none mix-blend-screen"
+                style={{
+                  background:
+                    "radial-gradient(ellipse at 50% 50%, rgba(60, 200, 255, 0.4) 0%, rgba(30, 140, 255, 0.15) 45%, transparent 75%)",
+                  transform: "rotate(-25deg)",
+                }}
+              />
 
-          {/* ── 4. Glowing Orb Core Aura ─────────────────────────────────────────── */}
-          <div
-            className="absolute top-[38%] left-[53%] -translate-x-1/2 -translate-y-1/2 w-[380px] h-[380px] sm:w-[480px] sm:h-[480px] anim-gold-glow pointer-events-none mix-blend-screen"
-            style={{
-              background:
-                "radial-gradient(circle, rgba(255, 200, 100, 0.5) 0%, rgba(255, 130, 40, 0.2) 40%, rgba(60, 180, 255, 0.1) 60%, transparent 80%)",
-            }}
-          />
+              {/* ── 4. Glowing Orb Core Aura ─────────────────────────────────────── */}
+              <div
+                className="absolute top-[38%] left-[53%] -translate-x-1/2 -translate-y-1/2 w-[380px] h-[380px] sm:w-[480px] sm:h-[480px] anim-gold-glow pointer-events-none mix-blend-screen"
+                style={{
+                  background:
+                    "radial-gradient(circle, rgba(255, 200, 100, 0.5) 0%, rgba(255, 130, 40, 0.2) 40%, rgba(60, 180, 255, 0.1) 60%, transparent 80%)",
+                }}
+              />
 
-          {/* ── 5. Cursor-Follow Specular Highlight on Sphere ───────────────────── */}
-          <div
-            className="absolute w-[220px] h-[220px] rounded-full pointer-events-none mix-blend-color-dodge transition-opacity duration-300"
-            style={{
-              left: `${mousePos.x * 100}%`,
-              top: `${mousePos.y * 100}%`,
-              transform: "translate(-50%, -50%)",
-              background:
-                "radial-gradient(circle, rgba(255, 240, 200, 0.35) 0%, rgba(245, 180, 80, 0.12) 45%, transparent 70%)",
-              opacity:
-                mousePos.x > 0.35 &&
-                mousePos.x < 0.75 &&
-                mousePos.y > 0.15 &&
-                mousePos.y < 0.65
-                  ? 1
-                  : 0.2,
-            }}
-          />
+              {/* ── 5. Cursor-Follow Specular Highlight on Sphere ─────────────────── */}
+              <div
+                className="absolute w-[220px] h-[220px] rounded-full pointer-events-none mix-blend-color-dodge transition-opacity duration-300"
+                style={{
+                  left: `${mousePos.x * 100}%`,
+                  top: `${mousePos.y * 100}%`,
+                  transform: "translate(-50%, -50%)",
+                  background:
+                    "radial-gradient(circle, rgba(255, 240, 200, 0.35) 0%, rgba(245, 180, 80, 0.12) 45%, transparent 70%)",
+                  opacity:
+                    mousePos.x > 0.35 &&
+                    mousePos.x < 0.75 &&
+                    mousePos.y > 0.15 &&
+                    mousePos.y < 0.65
+                      ? 1
+                      : 0.2,
+                }}
+              />
+            </>
+          )}
 
           {/* ── 6. Vignettes for Text Contrast ───────────────────────────────────── */}
           <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-black/50 pointer-events-none" />
@@ -263,10 +289,14 @@ export function AnimatedHeroImage() {
       </div>
 
       {/* ── 7. Golden Dust & Star Particles Layer ─────────────────────────────── */}
-      <canvas
-        ref={canvasRef}
-        className="absolute inset-0 w-full h-full pointer-events-none z-10"
-      />
+      {/* Skipped on phones / touch: the per-frame `shadowBlur` draw is
+          the single most expensive thing in the hero on a mobile GPU. */}
+      {!heavyFxOff && (
+        <canvas
+          ref={canvasRef}
+          className="absolute inset-0 w-full h-full pointer-events-none z-10"
+        />
+      )}
     </div>
   );
 }
