@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useReducedMotion } from "motion/react";
 import {
   Brush,
   CartesianGrid,
@@ -17,6 +18,7 @@ import { formatUsd } from "@/lib/format/money";
 import { useLocale } from "@/lib/i18n/locale-context";
 import { notify } from "@/lib/ui/toast";
 import { cn } from "@/lib/utils";
+import { CHART_DRAW_MS } from "@/components/motion/motion";
 
 // One reusable interactive time-series chart. Three call sites:
 //   - /dashboard/price      — spot price per damlung, full mode
@@ -50,6 +52,9 @@ interface DetailedChartProps {
   // that still wants the full toolset (the Insights portfolio chart).
   compact?: boolean;
   richControls?: boolean;
+  // Draw the line(s) on once, on first mount only (range/preset changes
+  // never re-draw). Defaults on; forced off under `prefers-reduced-motion`.
+  animate?: boolean;
   onExpand?: () => void;
   referenceLines?: ChartReferenceLine[];
   yTickFormatter?: (value: number) => string;
@@ -227,7 +232,7 @@ function DetailedTooltip({
     return null;
   }
   return (
-    <div className="rounded-md border border-border bg-popover px-3 py-2 text-popover-foreground shadow-none">
+    <div className="glass-overlay rounded-md px-3 py-2 text-popover-foreground">
       <p className="font-mono text-[12px] tabular-nums text-muted-foreground">
         {typeof label === "number" ? formatTooltipTime(label) : ""}
       </p>
@@ -251,6 +256,7 @@ export function DetailedChart({
   series,
   compact = false,
   richControls,
+  animate = true,
   onExpand,
   referenceLines = [],
   yTickFormatter = (value) => `$${Math.round(value)}`,
@@ -259,7 +265,20 @@ export function DetailedChart({
   className,
 }: DetailedChartProps) {
   const { t } = useLocale();
+  const reduceMotion = useReducedMotion();
   const showControls = richControls ?? !compact;
+
+  // Draw-on runs on the first mount only. After the initial paint the
+  // flag flips, so range/preset re-renders redraw instantly.
+  const [hasDrawn, setHasDrawn] = useState(false);
+  useEffect(() => {
+    // One-shot: after the first paint, range/preset re-renders redraw
+    // instantly. Same settle-once-in-an-effect pattern as ThemeProvider.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setHasDrawn(true);
+  }, []);
+  const drawOn = animate && !reduceMotion && !hasDrawn;
+
   const rows = useMemo(() => mergeSeries(series), [series]);
   const keys = useMemo(() => series.map((s) => s.key), [series]);
 
@@ -413,7 +432,7 @@ export function DetailedChart({
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={rows} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
             <CartesianGrid
-              stroke="var(--border)"
+              stroke="var(--glass-border-to)"
               strokeDasharray="3 3"
               vertical={false}
             />
@@ -453,7 +472,7 @@ export function DetailedChart({
                     valueFormatter={valueFormatter}
                   />
                 }
-                cursor={{ stroke: "var(--border)" }}
+                cursor={{ stroke: "var(--glass-border-to)" }}
               />
             )}
             {referenceLines.map((ref, index) => {
@@ -497,14 +516,16 @@ export function DetailedChart({
                 dot={false}
                 activeDot={{ r: 4 }}
                 connectNulls
-                isAnimationActive={false}
+                isAnimationActive={drawOn}
+                animationDuration={CHART_DRAW_MS}
+                animationEasing="ease-out"
               />
             ))}
             <Brush
               dataKey="t"
               height={brushHeight}
-              stroke="var(--border)"
-              fill="var(--card)"
+              stroke="var(--glass-border-to)"
+              fill="var(--glass-bg)"
               travellerWidth={8}
               tickFormatter={formatAxisTime}
               startIndex={startIndex}
