@@ -12,19 +12,15 @@ import { useReducedMotion } from "motion/react";
 // Mirrors the pattern in components/welcome/spotlight-card.tsx.
 export function usePointerFx(): boolean {
   const reduceMotion = useReducedMotion();
-  const [enabled, setEnabled] = useState(false);
+  const [matches, setMatches] = useState(false);
 
   useEffect(() => {
-    if (reduceMotion) {
-      setEnabled(false);
-      return;
-    }
     if (typeof window === "undefined") return;
     if (typeof window.matchMedia !== "function") return;
     const fine = window.matchMedia("(pointer: fine)");
     const wide = window.matchMedia("(min-width: 768px)");
     const sync = () => {
-      setEnabled(fine.matches && wide.matches);
+      setMatches(fine.matches && wide.matches);
     };
     sync();
     fine.addEventListener("change", sync);
@@ -33,7 +29,10 @@ export function usePointerFx(): boolean {
       fine.removeEventListener("change", sync);
       wide.removeEventListener("change", sync);
     };
-  }, [reduceMotion]);
+  }, []);
 
-  return enabled;
+  // `reduceMotion` gates in render, not the effect — a synchronous
+  // setState in an effect for state derivable at render trips
+  // react-hooks/set-state-in-effect.
+  return matches && !reduceMotion;
 }
