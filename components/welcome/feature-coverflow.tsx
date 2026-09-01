@@ -54,7 +54,7 @@ const FEATURES: Feature[] = [
   {
     icon: <TrendingUp className="h-6 w-6" />,
     title: "Up or down, at a glance",
-    body: "See whether your gold is worth more or less than you paid, in USD, against the latest spot price — including the gain or loss on gold you've already sold.",
+    body: "See whether your gold is worth more or less than you paid, in USD, against the latest spot price. This includes the gain or loss on gold you have already sold.",
     proof: "Gain / loss in USD",
   },
 ];

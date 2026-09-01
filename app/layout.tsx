@@ -3,7 +3,7 @@ import { shadcn } from "@clerk/ui/themes";
 import type { Metadata } from "next";
 import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
-import { Newsreader } from "next/font/google";
+import { Newsreader, Fraunces } from "next/font/google";
 import { cn } from "@/lib/utils";
 import "./globals.css";
 
@@ -15,6 +15,17 @@ const newsreader = Newsreader({
   weight: ["400", "500", "600"],
   style: ["normal", "italic"],
   variable: "--font-newsreader",
+});
+
+// Display face for the marketing / landing page headings. Geist Sans
+// still carries body copy and Geist Mono the eyebrow labels, so the
+// landing runs three distinct typefaces. Referenced only from the
+// `.liquid-glass-landing-root` rules in globals.css.
+const fraunces = Fraunces({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  style: ["normal", "italic"],
+  variable: "--font-fraunces",
 });
 
 export const metadata: Metadata = {
@@ -29,7 +40,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={cn(
         GeistSans.variable,
         GeistMono.variable,
-        newsreader.variable
+        newsreader.variable,
+        fraunces.variable
       )}
     >
       <body className="font-sans">

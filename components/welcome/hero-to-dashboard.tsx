@@ -197,9 +197,9 @@ export function HeroToDashboard() {
                 Your buys roll up into one position.
               </h2>
               <p className="text-sm leading-relaxed text-white/60 sm:text-base">
-                Every buy you record — at whatever price, on whatever day — folds
-                into a single view: what you paid on average, what it&apos;s
-                worth today, and whether you&apos;re ahead.
+                Every buy you record, at whatever price and on whatever day,
+                folds into a single view. It shows what you paid on average,
+                what it&apos;s worth today, and whether you&apos;re ahead.
               </p>
             </motion.div>
           </div>
@@ -370,9 +370,9 @@ function StaticBridge({
               Your buys roll up into one position.
             </h2>
             <p className="text-sm leading-relaxed text-white/60 sm:text-base">
-              Every buy you record — at whatever price, on whatever day — folds
-              into a single view: what you paid on average, what it&apos;s worth
-              today, and whether you&apos;re ahead.
+              Every buy you record, at whatever price and on whatever day,
+              folds into a single view. It shows what you paid on average, what
+              it&apos;s worth today, and whether you&apos;re ahead.
             </p>
           </div>
         </div>

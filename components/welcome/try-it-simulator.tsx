@@ -123,8 +123,8 @@ export function TryItSimulator({ signedIn }: TryItSimulatorProps) {
             Your pretend ledger
           </span>
           <p className="mb-5 text-sm leading-relaxed text-white/60">
-            Add a few buys the way you actually bought — in chi or damlung,
-            with what you paid in total.
+            Add a few buys the way you actually bought them, in chi or
+            damlung, with what you paid in total.
           </p>
 
           <div className="space-y-3">
@@ -202,7 +202,7 @@ export function TryItSimulator({ signedIn }: TryItSimulatorProps) {
           <ul className="mt-5 space-y-2">
             {buys.length === 0 && (
               <li className="rounded-2xl border border-dashed border-white/15 px-4 py-3 text-center font-mono text-xs text-white/40">
-                Ledger empty — add a buy above.
+                Ledger empty. Add a buy above.
               </li>
             )}
             {buys.map((b) => (

@@ -864,6 +864,29 @@ html:has(.liquid-glass-landing-root) {
   height: calc(100dvh / 0.67);
 }
 
+/* Typography mix for the landing tree: Fraunces (serif) sets every
+   heading, while Geist Sans keeps body copy and Geist Mono keeps the
+   eyebrow labels. Scoped to `.liquid-glass-landing-root` so the
+   dashboard and other themes are untouched. The compound selector
+   outranks the `font-bold` / `font-medium` / `tracking-tight`
+   utilities on the headings, so weight and tracking come from here. */
+.liquid-glass-landing-root :is(h1, h2, h3, h4) {
+  font-family: var(--font-fraunces), Georgia, "Times New Roman", serif;
+  font-weight: 500;
+  letter-spacing: -0.015em;
+}
+
+.liquid-glass-landing-root h1 {
+  font-weight: 400;
+  letter-spacing: -0.02em;
+}
+
+/* The one word we let Fraunces italic carry, as the page's signature. */
+.liquid-glass-landing-root .landing-accent {
+  font-style: italic;
+  font-weight: 400;
+}
+
 /* backdrop-filter is unsupported or disabled in some browsers/contexts;
    without it the near-transparent glass surfaces vanish against the
    black page, so raise the fill opacity as a fallback. */

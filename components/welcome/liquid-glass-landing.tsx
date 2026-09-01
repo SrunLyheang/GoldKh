@@ -186,7 +186,7 @@ export function LiquidGlassLanding() {
         <div className="absolute bottom-0 left-0 z-20 px-6 sm:px-12 pb-10 sm:pb-16 max-w-2xl">
           <h1 className="text-white text-4xl sm:text-5xl lg:text-6xl font-medium leading-tight tracking-tight mb-4">
             See What Your Gold <br />
-            Is Actually Worth
+            Is <span className="landing-accent">Actually</span> Worth
           </h1>
 
           <p className="text-white/60 text-sm sm:text-base leading-relaxed mb-7 max-w-md">
@@ -240,12 +240,13 @@ export function LiquidGlassLanding() {
               ✦ Try it right here
             </span>
             <h2 className="mb-4 text-3xl font-bold tracking-tight text-white sm:text-4xl">
-              Build a ledger. Drag the price. Watch it move.
+              Add a few buys, then drag the price and watch your position
+              respond.
             </h2>
             <p className="text-sm leading-relaxed text-white/65 sm:text-base">
-              No sign-up needed. Add a few pretend buys, then drag today&apos;s
-              price and see your average cost, holdings, and gain or loss
-              recompute live.
+              You do not need to sign up. Add a few sample buys, then drag
+              today&apos;s price and see your average cost, your holdings, and
+              your gain or loss update as you go.
             </p>
           </div>
 
@@ -352,8 +353,8 @@ export function LiquidGlassLanding() {
                 <p className="text-white/70 text-sm leading-relaxed mb-6">
                   Gold here is bought and sold in <strong>Chi (ជី)</strong> and{" "}
                   <strong>Damlung (ដំឡឹង)</strong>. GoldKh converts them to
-                  grams and troy ounces exactly, with no rounding along the way
-                  — and you can feel it in the{" "}
+                  grams and troy ounces exactly, with no rounding along the
+                  way, and you can feel it in the{" "}
                   <a
                     href="#try-it"
                     className="text-amber-300 underline-offset-4 hover:underline"
@@ -404,8 +405,8 @@ export function LiquidGlassLanding() {
                   <SpotSparkline className="h-28 w-full" />
                   <p className="mt-4 font-mono text-[10px] leading-relaxed text-white/40">
                     The world price moves all day. On your dashboard every price
-                    is stamped with the exact time it was pulled — no guessing
-                    how old a number is.
+                    is stamped with the exact time it was pulled, so you never
+                    have to guess how old a number is.
                   </p>
                 </div>
               </div>
@@ -423,12 +424,12 @@ export function LiquidGlassLanding() {
               ✦ What GoldKh Is
             </span>
             <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-white mb-6">
-              Not an exchange. No money moves here.
+              It is not an exchange, and no money moves through it.
             </h2>
             <p className="text-white/70 text-base leading-relaxed mb-10">
-              GoldKh is just a tracker for people who own physical gold — bars
-              or jewelry — in Cambodia. It doesn&apos;t hold your gold, it
-              doesn&apos;t trade, and it never asks for payment details.
+              GoldKh is a tracker for people in Cambodia who own physical gold,
+              whether that is bars or jewelry. It never holds your gold or
+              trades on your behalf, and it does not ask for payment details.
             </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 text-left">
