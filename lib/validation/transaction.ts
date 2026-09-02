@@ -6,6 +6,15 @@ import { z } from "zod";
 export const MIN_QUANTITY_CHI = 0.01;
 const MIN_QUANTITY_DAMLUNG = MIN_QUANTITY_CHI / 10;
 
+// Upper bounds on the two amount fields. Anything past these is a fat-finger
+// or a mangled CSV cell, not a real entry. They also keep a derived
+// `pricePerUnit` (total_paid / quantity, from a CSV import) inside the
+// numeric(14,4) / numeric(12,4) columns, so an oversized row fails per-row
+// in the import preview instead of aborting the all-or-nothing bulk insert
+// with a Postgres numeric-overflow.
+export const MAX_PRICE_PER_UNIT = 1_000_000_000;
+export const MAX_QUANTITY = 100_000_000;
+
 // User-facing validation copy. Kept as literals here (not routed through
 // the i18n dictionary) because the schema runs on the server too, where
 // there is no locale context — matches the pre-existing pattern of inline
@@ -16,6 +25,8 @@ export const transactionMessages = {
   quantityNotPositive: "Enter an amount greater than zero.",
   quantityTooSmall: `The smallest amount you can log is ${MIN_QUANTITY_CHI} chi.`,
   priceNotPositive: "Enter a price greater than zero.",
+  quantityTooLarge: "That amount is too large — check the value.",
+  priceTooLarge: "That price is too large — check the value.",
   dateInvalid: "Enter a valid date.",
   dateInFuture: "The date can't be in the future.",
   notesTooLong: "Notes can't be longer than 500 characters.",
@@ -33,7 +44,13 @@ function checkAmount(
   value: string,
   ctx: z.RefinementCtx,
   path: string,
-  opts: { notPositiveMessage: string; min?: number; minMessage?: string }
+  opts: {
+    notPositiveMessage: string;
+    min?: number;
+    minMessage?: string;
+    max?: number;
+    maxMessage?: string;
+  }
 ): void {
   const add = (message: string) =>
     ctx.addIssue({ code: "custom", message, path: [path] });
@@ -53,6 +70,10 @@ function checkAmount(
   const n = Number(normalized);
   if (!Number.isFinite(n) || n <= 0) {
     add(opts.notPositiveMessage);
+    return;
+  }
+  if (opts.max !== undefined && n > opts.max) {
+    add(opts.maxMessage!);
     return;
   }
   if (opts.min !== undefined && n < opts.min) {
@@ -87,9 +108,13 @@ export const transactionInputSchema = z
       notPositiveMessage: transactionMessages.quantityNotPositive,
       min: value.unit === "chi" ? MIN_QUANTITY_CHI : MIN_QUANTITY_DAMLUNG,
       minMessage: transactionMessages.quantityTooSmall,
+      max: MAX_QUANTITY,
+      maxMessage: transactionMessages.quantityTooLarge,
     });
     checkAmount(value.pricePerUnit, ctx, "pricePerUnit", {
       notPositiveMessage: transactionMessages.priceNotPositive,
+      max: MAX_PRICE_PER_UNIT,
+      maxMessage: transactionMessages.priceTooLarge,
     });
     if (
       /^\d{4}-\d{2}-\d{2}$/.test(value.transactionDate) &&

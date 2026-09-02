@@ -48,6 +48,22 @@
     --radius-2xl: calc(var(--radius) * 1.8);
     --radius-3xl: calc(var(--radius) * 2.2);
     --radius-4xl: calc(var(--radius) * 2.6);
+
+    /* Dashboard type scale — see DESIGN.md § Typography. Semantic names,
+       NOT t-shirt sizes: these are additive utilities (`text-label`,
+       `text-figure`, …) and deliberately do NOT override Tailwind's
+       default `text-xs/sm/base/...` steps, so the landing tree is
+       untouched. Components migrate off `text-[Npx]` one-offs onto
+       these; new code uses them from the start. */
+    --text-micro: 0.625rem;        /* 10px — micro labels, sparingly */
+    --text-label: 0.6875rem;       /* 11px — labels, metadata, status (.tt-label) */
+    --text-detail: 0.8125rem;      /* 13px — secondary body, table cells, sublines */
+    --text-body: 0.9375rem;        /* 15px — body copy, section headings (.tt-heading) */
+    --text-emphasis: 1.0625rem;    /* 17px — emphasized body */
+    --text-figure: 1.1875rem;      /* 19px — stat-card values */
+    --text-figure-lg: 1.75rem;     /* 28px — sub-hero figures */
+    --text-display: 2.125rem;      /* 34px — hero price, mobile */
+    --text-display-lg: 2.875rem;   /* 46px — hero price, desktop */
 }
 
 :root {
