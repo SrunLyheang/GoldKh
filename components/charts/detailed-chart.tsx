@@ -370,7 +370,9 @@ export function DetailedChart({
       el.removeEventListener("touchend", onEnd);
       el.removeEventListener("touchcancel", onEnd);
     };
-  }, []);
+    // Re-run once rows reach chartable length so listeners attach to the plot
+    // element, which only renders past the `rows.length < 2` early return.
+  }, [rows.length]);
 
   if (rows.length < 2) {
     return (
