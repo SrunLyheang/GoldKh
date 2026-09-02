@@ -1,9 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useReducedMotion } from "motion/react";
 import {
-  Brush,
   CartesianGrid,
   Line,
   LineChart,
@@ -258,7 +257,7 @@ export function DetailedChart({
   const showControls = richControls ?? !compact;
 
   // Draw-on runs on first mount only; the flag then flips so later
-  // range/preset re-renders redraw instantly.
+  // preset re-renders redraw instantly.
   const [hasDrawn, setHasDrawn] = useState(false);
   useEffect(() => {
     // One-shot settle-in-effect (same pattern as ThemeProvider).
@@ -270,31 +269,104 @@ export function DetailedChart({
   const rows = useMemo(() => mergeSeries(series), [series]);
   const keys = useMemo(() => series.map((s) => s.key), [series]);
 
-  // Recharts 3's <Brush> divides by the plot width to place its travellers;
-  // on first mount ResponsiveContainer briefly reports width 0 before its
-  // ResizeObserver fires, so that math yields NaN and React warns about a
-  // NaN `x` on the traveller <rect>. Gate the Brush on a sane width.
-  const [plotWidth, setPlotWidth] = useState(0);
-
-  const lastIndex = Math.max(0, rows.length - 1);
-  const [range, setRange] = useState<[number, number] | null>(null);
-  const [activePreset, setActivePreset] = useState<PresetKey | null>("All");
-
-  const [rawStart, rawEnd] = range ?? [0, lastIndex];
-  const startIndex = Math.min(Math.max(0, rawStart), lastIndex);
-  const endIndex = Math.min(Math.max(startIndex, rawEnd), lastIndex);
-
-  const visibleRows = rows.slice(startIndex, endIndex + 1);
+  // Y-domain is fixed to the whole history, not the visible slice: the plot
+  // is now panned by horizontal scroll (below), and a domain that refit on
+  // every scroll frame would make the line jump under the reader's finger.
   const { domain, ticks } = useMemo(
-    () => computeSeriesYAxis(visibleRows.length >= 2 ? visibleRows : rows, keys),
-    [visibleRows, rows, keys],
+    () => computeSeriesYAxis(rows, keys),
+    [rows, keys],
   );
+
+  // A preset no longer slices the data — it sets how many points should fill
+  // the frame, i.e. how wide the plot is drawn ("zoom"); the reader scrolls
+  // through the rest. Even "All" stays scrollable once history outgrows a
+  // readable density (~90 points across the frame). Short history → 1×, fits.
+  const [activePreset, setActivePreset] = useState<PresetKey | null>("All");
+  const zoom = useMemo(() => {
+    if (!showControls) return 1;
+    const target =
+      activePreset && activePreset !== "All"
+        ? Math.max(
+            presetRange(rows, activePreset)[1] -
+              presetRange(rows, activePreset)[0] +
+              1,
+            6,
+          )
+        : 90;
+    return Math.min(Math.max(rows.length / target, 1), 12);
+  }, [showControls, activePreset, rows]);
 
   // Inline charts with the full toolset get more plot height than a bare
   // preview, but stay short of the standalone route.
   const height = compact ? (showControls ? 280 : 220) : 360;
-  // Taller strip when presets show, so the drag handles read as a control.
-  const brushHeight = showControls ? 28 : 16;
+
+  // Pinned y-axis geometry — mirrors the Recharts <LineChart> margins so the
+  // HTML tick labels line up with the scrolling plot's grid lines.
+  const Y_AXIS_W = 56;
+  const X_AXIS_H = 24;
+  const M_TOP = 4;
+  const plotSpan = height - X_AXIS_H - M_TOP;
+  const yPos = (value: number) =>
+    M_TOP +
+    (1 - (value - domain[0]) / (domain[1] - domain[0] || 1)) * plotSpan;
+
+  const scrollerRef = useRef<HTMLDivElement>(null);
+
+  // Anchor the view to the most recent data whenever the zoom changes or a
+  // new snapshot lands (rows grows).
+  useEffect(() => {
+    const el = scrollerRef.current;
+    if (el) el.scrollLeft = el.scrollWidth;
+  }, [zoom, rows.length]);
+
+  // Desktop has no natural horizontal-scroll gesture, so give the scroller a
+  // grab-drag and translate vertical wheel to horizontal pan. Touch keeps the
+  // native momentum scroll (touch-action: pan-x) and skips this entirely.
+  useEffect(() => {
+    const el = scrollerRef.current;
+    if (!el || !window.matchMedia?.("(pointer: fine)").matches) return;
+    let down = false;
+    let startX = 0;
+    let startLeft = 0;
+    const onDown = (e: PointerEvent) => {
+      down = true;
+      startX = e.clientX;
+      startLeft = el.scrollLeft;
+      el.setPointerCapture(e.pointerId);
+      el.style.cursor = "grabbing";
+    };
+    const onMove = (e: PointerEvent) => {
+      if (down) el.scrollLeft = startLeft - (e.clientX - startX);
+    };
+    const onUp = (e: PointerEvent) => {
+      down = false;
+      el.style.cursor = "grab";
+      try {
+        el.releasePointerCapture(e.pointerId);
+      } catch {
+        // pointer already released
+      }
+    };
+    const onWheel = (e: WheelEvent) => {
+      if (el.scrollWidth <= el.clientWidth) return;
+      // Leave a plain vertical wheel to the page; only pan on a horizontal
+      // (trackpad) or shift-wheel gesture.
+      if (!e.shiftKey && Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return;
+      e.preventDefault();
+      el.scrollLeft += e.deltaX || e.deltaY;
+    };
+    el.style.cursor = "grab";
+    el.addEventListener("pointerdown", onDown);
+    el.addEventListener("pointermove", onMove);
+    el.addEventListener("pointerup", onUp);
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => {
+      el.removeEventListener("pointerdown", onDown);
+      el.removeEventListener("pointermove", onMove);
+      el.removeEventListener("pointerup", onUp);
+      el.removeEventListener("wheel", onWheel);
+    };
+  }, [zoom]);
 
   if (rows.length < 2) {
     return (
@@ -309,19 +381,6 @@ export function DetailedChart({
     );
   }
 
-  const fullRange: [number, number] = [0, lastIndex];
-  const isZoomed = startIndex > 0 || endIndex < lastIndex;
-
-  function applyPreset(preset: PresetKey) {
-    setActivePreset(preset);
-    setRange(presetRange(rows, preset));
-  }
-
-  function resetZoom() {
-    setActivePreset("All");
-    setRange(fullRange);
-  }
-
   const presetLabel: Record<PresetKey, string> = {
     "1W": t.chart.range1W,
     "1M": t.chart.range1M,
@@ -330,8 +389,100 @@ export function DetailedChart({
   };
 
   const rangeCaption = t.chart.showingRange(
-    formatAxisTime(rows[startIndex].t),
-    formatAxisTime(rows[endIndex].t),
+    formatAxisTime(rows[0].t),
+    formatAxisTime(rows[rows.length - 1].t),
+  );
+
+  const chartBody = (pinnedAxis: boolean) => (
+    <LineChart data={rows} margin={{ top: M_TOP, right: 8, bottom: 0, left: 0 }}>
+      <CartesianGrid
+        stroke="var(--glass-border-to)"
+        strokeDasharray="3 3"
+        vertical={false}
+      />
+      <XAxis
+        dataKey="t"
+        type="number"
+        scale="time"
+        domain={["dataMin", "dataMax"]}
+        tickFormatter={formatAxisTime}
+        tick={{
+          fontSize: 11,
+          fill: "var(--muted-foreground)",
+          fontFamily: "var(--font-mono)",
+        }}
+        tickLine={false}
+        axisLine={false}
+        minTickGap={40}
+        height={pinnedAxis ? X_AXIS_H : undefined}
+      />
+      <YAxis
+        hide={pinnedAxis}
+        tick={{
+          fontSize: 11,
+          fill: "var(--muted-foreground)",
+          fontFamily: "var(--font-mono)",
+        }}
+        tickLine={false}
+        axisLine={false}
+        width={Y_AXIS_W}
+        tickFormatter={yTickFormatter}
+        domain={domain}
+        ticks={ticks}
+      />
+      {showControls && (
+        <Tooltip
+          content={
+            <DetailedTooltip series={series} valueFormatter={valueFormatter} />
+          }
+          cursor={{ stroke: "var(--glass-border-to)" }}
+        />
+      )}
+      {referenceLines.map((ref, index) => {
+        const placed = placeReferenceLine(ref.value, domain);
+        return (
+          <ReferenceLine
+            key={`${ref.label}-${index}`}
+            y={placed.y}
+            stroke={ref.color ?? "var(--muted-foreground)"}
+            strokeDasharray={placed.placement === "on-scale" ? "6 5" : "2 3"}
+            strokeWidth={1.5}
+            label={
+              placed.placement === "on-scale"
+                ? undefined
+                : {
+                    value:
+                      placed.placement === "above"
+                        ? `${ref.label} ↑`
+                        : `${ref.label} ↓`,
+                    position:
+                      placed.placement === "above"
+                        ? "insideTopLeft"
+                        : "insideBottomLeft",
+                    fill: "var(--muted-foreground)",
+                    fontSize: 10,
+                    fontFamily: "var(--font-mono)",
+                  }
+            }
+          />
+        );
+      })}
+      {series.map((s) => (
+        <Line
+          key={s.key}
+          type="monotone"
+          dataKey={s.key}
+          stroke={s.color}
+          strokeWidth={2}
+          dot={false}
+          activeDot={{ r: 4 }}
+          connectNulls
+          isAnimationActive={drawOn}
+          animationDuration={CHART_DRAW_MS}
+          animationEasing="ease-out"
+        />
+      ))}
+    </LineChart>
   );
 
   return (
@@ -362,7 +513,7 @@ export function DetailedChart({
                         notify.info(t.chart.historyShorterThanRange);
                         return;
                       }
-                      applyPreset(preset);
+                      setActivePreset(preset);
                     }}
                     className={cn(
                       "tt-label rounded-md px-2.5 py-1 text-[10.5px] transition-colors",
@@ -377,22 +528,11 @@ export function DetailedChart({
                 );
               })}
             </div>
-            {isZoomed && (
-              <button
-                type="button"
-                onClick={resetZoom}
-                className="tt-label rounded-md border border-border px-2.5 py-1 text-[10.5px] text-muted-foreground transition-colors hover:text-foreground"
-              >
-                {t.chart.reset}
-              </button>
-            )}
           </div>
-          <p className="text-[11px] text-muted-foreground">
+          <p className="text-label text-muted-foreground">
             <span className="font-mono tabular-nums text-foreground">
               {rangeCaption}
             </span>
-            <span className="mx-1.5 text-border">·</span>
-            {t.chart.zoomHint}
           </p>
         </div>
       )}
@@ -411,142 +551,50 @@ export function DetailedChart({
 
       <div className="relative w-full" style={{ height }}>
         {compact && onExpand && (
-          // Transparent click target over the plot only — leaves the Brush
-          // strip uncovered so drag-to-zoom still works.
           <button
             type="button"
             aria-label={t.chart.openDetailed}
             onClick={onExpand}
-            className="absolute inset-x-0 top-0 z-10 cursor-pointer"
-            style={{ bottom: brushHeight }}
+            className="absolute inset-0 z-10 cursor-pointer"
           />
         )}
-        <ResponsiveContainer
-          width="100%"
-          height="100%"
-          onResize={(w) => setPlotWidth(w)}
-        >
-          <LineChart data={rows} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
-            <CartesianGrid
-              stroke="var(--glass-border-to)"
-              strokeDasharray="3 3"
-              vertical={false}
-            />
-            <XAxis
-              dataKey="t"
-              type="number"
-              scale="time"
-              domain={["dataMin", "dataMax"]}
-              tickFormatter={formatAxisTime}
-              tick={{
-                fontSize: 11,
-                fill: "var(--muted-foreground)",
-                fontFamily: "var(--font-mono)",
-              }}
-              tickLine={false}
-              axisLine={false}
-              minTickGap={40}
-            />
-            <YAxis
-              tick={{
-                fontSize: 11,
-                fill: "var(--muted-foreground)",
-                fontFamily: "var(--font-mono)",
-              }}
-              tickLine={false}
-              axisLine={false}
-              width={56}
-              tickFormatter={yTickFormatter}
-              domain={domain}
-              ticks={ticks}
-            />
-            {showControls && (
-              <Tooltip
-                content={
-                  <DetailedTooltip
-                    series={series}
-                    valueFormatter={valueFormatter}
-                  />
-                }
-                cursor={{ stroke: "var(--glass-border-to)" }}
-              />
-            )}
-            {referenceLines.map((ref, index) => {
-              const placed = placeReferenceLine(ref.value, domain);
-              return (
-                <ReferenceLine
-                  key={`${ref.label}-${index}`}
-                  y={placed.y}
-                  stroke={ref.color ?? "var(--muted-foreground)"}
-                  strokeDasharray={
-                    placed.placement === "on-scale" ? "6 5" : "2 3"
-                  }
-                  strokeWidth={1.5}
-                  label={
-                    placed.placement === "on-scale"
-                      ? undefined
-                      : {
-                          value:
-                            placed.placement === "above"
-                              ? `${ref.label} ↑`
-                              : `${ref.label} ↓`,
-                          position:
-                            placed.placement === "above"
-                              ? "insideTopLeft"
-                              : "insideBottomLeft",
-                          fill: "var(--muted-foreground)",
-                          fontSize: 10,
-                          fontFamily: "var(--font-mono)",
-                        }
-                  }
-                />
-              );
-            })}
-            {series.map((s) => (
-              <Line
-                key={s.key}
-                type="monotone"
-                dataKey={s.key}
-                stroke={s.color}
-                strokeWidth={2}
-                dot={false}
-                activeDot={{ r: 4 }}
-                connectNulls
-                isAnimationActive={drawOn}
-                animationDuration={CHART_DRAW_MS}
-                animationEasing="ease-out"
-              />
-            ))}
-            {plotWidth > 120 && (
-              // Keyed on row count: when a new snapshot lands mid-session
-              // and `rows` grows, Brush's own state (built for the old
-              // length) briefly evaluates the new startIndex/endIndex
-              // outside its stale domain and renders NaN travellers. A
-              // fresh key forces a clean remount instead of patching that
-              // reconciliation gap in recharts itself.
-              <Brush
-                key={rows.length}
-                dataKey="t"
-                height={brushHeight}
-                stroke="var(--glass-border-to)"
-                fill="var(--glass-bg)"
-                travellerWidth={8}
-                tickFormatter={formatAxisTime}
-                startIndex={startIndex}
-                endIndex={endIndex}
-                onChange={(next: { startIndex?: number; endIndex?: number }) => {
-                  if (
-                    typeof next.startIndex === "number" &&
-                    typeof next.endIndex === "number"
-                  ) {
-                    setRange([next.startIndex, next.endIndex]);
-                    setActivePreset(null);
-                  }
-                }}
-              />
-            )}
-          </LineChart>
-        </ResponsiveContainer>
+
+        {showControls ? (
+          <>
+            {/* Pinned y-axis: HTML labels positioned off the shared domain,
+                so they hold still while the plot scrolls beneath them. */}
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-y-0 left-0 z-10"
+              style={{ width: Y_AXIS_W }}
+            >
+              {ticks.map((tick) => (
+                <span
+                  key={tick}
+                  className="absolute right-2 -translate-y-1/2 font-mono text-label tabular-nums text-muted-foreground"
+                  style={{ top: yPos(tick) }}
+                >
+                  {yTickFormatter(tick)}
+                </span>
+              ))}
+            </div>
+            <div
+              ref={scrollerRef}
+              className="absolute inset-y-0 right-0 select-none overflow-x-auto overflow-y-hidden"
+              style={{ left: Y_AXIS_W, touchAction: "pan-x" }}
+            >
+              <div style={{ width: `${zoom * 100}%`, height: "100%" }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  {chartBody(true)}
+                </ResponsiveContainer>
+              </div>
+            </div>
+          </>
+        ) : (
+          <ResponsiveContainer width="100%" height="100%">
+            {chartBody(false)}
+          </ResponsiveContainer>
+        )}
       </div>
     </div>
   );

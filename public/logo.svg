@@ -1,27 +1,28 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 56" width="220" height="56">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 210 56" width="210" height="56">
   <defs>
-    <linearGradient id="ingot" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#f6dd9c" />
-      <stop offset="45%" stop-color="#e8b84b" />
-      <stop offset="100%" stop-color="#b8862e" />
+    <linearGradient id="plate" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#151009" />
+      <stop offset="1" stop-color="#050505" />
     </linearGradient>
-    <linearGradient id="ingotTop" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#fbeac0" />
-      <stop offset="100%" stop-color="#f0c667" />
+    <linearGradient id="hexface" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f6dd9c" />
+      <stop offset="45%" stop-color="#e8b84b" />
+      <stop offset="1" stop-color="#b8862e" />
     </linearGradient>
   </defs>
 
-  <rect width="56" height="56" rx="12" fill="#151009" />
-  <rect x="0.5" y="0.5" width="55" height="55" rx="11.5" fill="none" stroke="#2a2013" />
-
-  <path d="M16 19 L40 19 L46 38 L10 38 Z" fill="url(#ingot)" />
-  <path d="M16 19 L40 19 L37 23 L19 23 Z" fill="url(#ingotTop)" />
-  <path d="M16 19 L19 23 L14.5 38 L10 38 Z" fill="#c99a3a" opacity="0.55" />
+  <g transform="scale(0.109375)">
+    <rect width="512" height="512" rx="112" fill="url(#plate)" />
+    <path d="M256 54 L426 126 V346 L256 458 L86 346 V126 Z" fill="#8a6524" />
+    <path d="M256 74 L408 139 V337 L256 440 L104 337 V139 Z" fill="url(#hexface)" />
+    <path d="M256 100 L382 156 V322 L256 408 L130 322 V156 Z" fill="#0c0906" stroke="#e8b84b" stroke-opacity="0.3" stroke-width="4" />
+    <path d="M256 162 A96 96 0 1 0 352 258 L300 258" fill="none" stroke="#eab94d" stroke-width="52" stroke-linecap="round" stroke-linejoin="round" />
+  </g>
 
   <text
     x="70"
     y="36"
-    font-family="'Geist Mono', 'JetBrains Mono', ui-monospace, monospace"
+    font-family="'IBM Plex Mono', ui-monospace, monospace"
     font-size="26"
     font-weight="600"
     letter-spacing="-0.5"

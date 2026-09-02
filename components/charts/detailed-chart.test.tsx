@@ -180,31 +180,32 @@ describe("DetailedChart rendering", () => {
     expect(onExpand).toHaveBeenCalled();
   });
 
-  it("full mode marks the clicked preset active and shows a Reset control", async () => {
+  it("moves the active state between presets, with All the default", async () => {
     const rows = [2800, 2810, 2820, 2830, 2840];
     render(
       <DetailedChart
         series={[priceSeries(rows, { start: Date.now() - 200 * DAY, stepMs: 40 * DAY })]}
       />,
     );
-    expect(
-      screen.queryByRole("button", { name: /reset/i }),
-    ).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "All" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
 
     const oneWeek = screen.getByRole("button", { name: "1W" });
     expect(oneWeek).toHaveAttribute("aria-pressed", "false");
     await userEvent.click(oneWeek);
     expect(oneWeek).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "All" })).toHaveAttribute(
+      "aria-pressed",
+      "false",
+    );
 
-    const reset = screen.getByRole("button", { name: /reset/i });
-    await userEvent.click(reset);
+    await userEvent.click(screen.getByRole("button", { name: "All" }));
     expect(screen.getByRole("button", { name: "All" })).toHaveAttribute(
       "aria-pressed",
       "true",
     );
-    expect(
-      screen.queryByRole("button", { name: /reset/i }),
-    ).not.toBeInTheDocument();
   });
 
   it("shows the visible date range as a caption", () => {

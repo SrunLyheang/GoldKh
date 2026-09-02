@@ -130,7 +130,6 @@ const en = {
     averageCost: "Average cost",
     expand: "Expand",
     openDetailed: "Open the detailed price chart",
-    reset: "Reset zoom",
     rangeLabel: "Range",
     range1W: "1W",
     range1M: "1M",
@@ -138,8 +137,6 @@ const en = {
     rangeAll: "All",
     backToDashboard: "Back to dashboard",
     showingRange: (from: string, to: string) => `Showing ${from} – ${to}`,
-    zoomHint:
-      "Drag the strip below to zoom into a date range, or pick a preset.",
     historyShorterThanRange:
       "That range is longer than your saved price history — showing all of it.",
   },
