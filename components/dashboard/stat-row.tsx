@@ -47,7 +47,7 @@ function StatCard({
   const pulsing = useValuePulse(pulseKey);
   return (
     <Surface>
-      <p className="tt-label text-[11px] text-muted-foreground">{label}</p>
+      <p className="tt-label text-label text-muted-foreground">{label}</p>
       <span
         className={cn("mt-1.5 block", pulsing && "value-pulse-active")}
         style={{ "--pulse-tone": "var(--primary)" } as CSSProperties}
@@ -58,10 +58,10 @@ function StatCard({
           durationMs={COUNT_UP_MS}
           format={format}
           tone="foreground"
-          className="block text-[19px] font-semibold"
+          className="block text-figure font-semibold"
         />
       </span>
-      <MonoValue tone="muted" className="mt-1 block text-[12px]">
+      <MonoValue tone="muted" className="mt-1 block text-detail">
         {subLine}
       </MonoValue>
     </Surface>
@@ -85,7 +85,7 @@ export function StatRow({
     unitLabels(t, displayUnit);
   return (
     <div>
-      <h2 className="tt-heading tt-bracket mb-4 text-[15px] text-foreground">
+      <h2 className="tt-heading tt-bracket mb-4 text-body text-foreground">
         {t.stat.sectionLabel}
       </h2>
       <div className="grid grid-cols-2 gap-4 sm:gap-5 lg:grid-cols-4">

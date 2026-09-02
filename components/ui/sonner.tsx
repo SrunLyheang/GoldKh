@@ -5,7 +5,7 @@ import { Toaster as Sonner, type ToasterProps } from "sonner";
 
 import { useTheme } from "@/lib/theme/theme-context";
 
-// Themed to the active token set (context/ui-context.md). `richColors` is
+// Themed to the active token set (DESIGN.md). `richColors` is
 // left off deliberately — green and red carry financial meaning in this
 // app, so success/error carry colour only on a thin left accent rail.
 // The whole toast surface (frosted glass, gradient-border ring, inset

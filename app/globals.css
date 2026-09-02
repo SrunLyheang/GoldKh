@@ -48,6 +48,22 @@
     --radius-2xl: calc(var(--radius) * 1.8);
     --radius-3xl: calc(var(--radius) * 2.2);
     --radius-4xl: calc(var(--radius) * 2.6);
+
+    /* Dashboard type scale — see DESIGN.md § Typography. Semantic names,
+       NOT t-shirt sizes: these are additive utilities (`text-label`,
+       `text-figure`, …) and deliberately do NOT override Tailwind's
+       default `text-xs/sm/base/...` steps, so the landing tree is
+       untouched. Components migrate off `text-[Npx]` one-offs onto
+       these; new code uses them from the start. */
+    --text-micro: 0.625rem;        /* 10px — micro labels, sparingly */
+    --text-label: 0.6875rem;       /* 11px — labels, metadata, status (.tt-label) */
+    --text-detail: 0.8125rem;      /* 13px — secondary body, table cells, sublines */
+    --text-body: 0.9375rem;        /* 15px — body copy, section headings (.tt-heading) */
+    --text-emphasis: 1.0625rem;    /* 17px — emphasized body */
+    --text-figure: 1.1875rem;      /* 19px — stat-card values */
+    --text-figure-lg: 1.75rem;     /* 28px — sub-hero figures */
+    --text-display: 2.125rem;      /* 34px — hero price, mobile */
+    --text-display-lg: 2.875rem;   /* 46px — hero price, desktop */
 }
 
 :root {
@@ -61,7 +77,7 @@
        "loading", not as a distinct theme. Every real theme block below
        is written `:root[data-theme="x"], [data-theme="x"]` so a nested
        `<div data-theme="x">` (the picker's swatches) gets the full token
-       set, not just <html>. See context/ui-context.md. */
+       set, not just <html>. See DESIGN.md. */
     --background: #0f0c08;
     --foreground: #f5f1e8;
     --card: #151009;
@@ -94,7 +110,7 @@
        below overrides them. Components reach the idiom only through
        `.tt-label` / `.tt-heading` / `.tt-display` / `.tt-bracket`, never
        by hardcoding it — that is what makes a new theme one CSS block.
-       See context/ui-context.md's Theming section. */
+       See DESIGN.md's Theming section. */
     --label-font: var(--font-mono);
     --label-transform: uppercase;
     --label-tracking: 0.08em;
@@ -123,14 +139,14 @@
        — only the two light themes (below) and the dedicated
        `liquid-glass` block override them outright. Components reach glass only
        through `.glass-surface` / `.glass-overlay` / `.glass-glow`,
-       never by hardcoding. See context/ui-context.md. */
+       never by hardcoding. See DESIGN.md. */
     --glass-bg: color-mix(in oklab, var(--card) 80%, transparent);
     --glass-blur: 14px;
     --glass-border-from: color-mix(in oklab, var(--foreground) 30%, transparent);
     /* Also the hairline-divider colour everywhere (row separators, field
        dividers, in-card rules). Kept low, but high enough to actually
        register against the near-black ground — 5% was effectively
-       invisible. See context/ui-context.md. */
+       invisible. See DESIGN.md. */
     --glass-border-to: color-mix(in oklab, var(--foreground) 11%, transparent);
     --glass-highlight: color-mix(in oklab, var(--foreground) 8%, transparent);
     --glass-shadow: 0 24px 60px -30px rgb(0 0 0 / 0.7), 0 4px 14px -8px rgb(0 0 0 / 0.5);
@@ -147,7 +163,7 @@
    Warm monochrome paper, editorial serif headings, soft borders and
    shadows, rounded corners. Selectable from the sidebar theme toggle.
    Adding another theme means another block just like this one — nothing
-   in the components changes. See context/ui-context.md's Theming
+   in the components changes. See DESIGN.md's Theming
    section and the "Goldsmith's Ledger" mockup. */
 :root[data-theme="ledger"],
 [data-theme="ledger"] {
@@ -207,7 +223,7 @@
    large soft blue GLOW instead of a hard plate, generously rounded
    corners. Headings are airy — sans, sentence-case, LIGHT weight,
    positive tracking. Labels drop to sans too. No bracket framing.
-   See context/ui-context.md's Theming section. */
+   See DESIGN.md's Theming section. */
 :root[data-theme="midnight"],
 [data-theme="midnight"] {
     --background: #090d18;
@@ -265,7 +281,7 @@
    a soft green-tinted shadow. Headings are the opposite of Midnight's:
    sans, UPPERCASE, HEAVY (800), tightly tracked — a stout, confident
    voice. Labels stay mono. No bracket framing.
-   See context/ui-context.md's Theming section. */
+   See DESIGN.md's Theming section. */
 :root[data-theme="emerald"],
 [data-theme="emerald"] {
     --background: #071410;
@@ -322,7 +338,7 @@
    shadow. Headings are sans, sentence-case, semibold, tight —
    friendly and modern, the opposite of Ledger's editorial serif.
    Grain darkens faintly (multiply), set below.
-   See context/ui-context.md's Theming section. */
+   See DESIGN.md's Theming section. */
 :root[data-theme="coral"],
 [data-theme="coral"] {
     --background: #fff7f4;
@@ -381,7 +397,7 @@
    border. Headings and labels are sans, UPPERCASE, widely tracked
    — International-Typographic-Style signage. Distinct from Ledger,
    which is warm paper + serif + soft shadow. Grain darkens faintly
-   (multiply), set below. See context/ui-context.md's Theming. */
+   (multiply), set below. See DESIGN.md's Theming. */
 :root[data-theme="porcelain"],
 [data-theme="porcelain"] {
     --background: #fbfcfd;
@@ -440,7 +456,7 @@
    soft ambient shadows and an amber cursor glow. This is the only
    fully hand-tuned glass theme; the other six render the same
    `.glass-*` classes recoloured from their own palette. Set as the
-   default in lib/theme/theme-context.tsx. See context/ui-context.md. */
+   default in lib/theme/theme-context.tsx. See DESIGN.md. */
 :root[data-theme="liquid-glass"],
 [data-theme="liquid-glass"] {
     --background: #050505;
@@ -558,7 +574,7 @@
      and win on specificity, so this only fills the gap left by the
      bespoke dashboard controls — the segmented control, sidebar nav,
      theme picker, icon buttons — which previously fell back to the
-     inconsistent UA outline. See context/ui-context.md. */
+     inconsistent UA outline. See DESIGN.md. */
   :focus-visible {
     outline: 2px solid var(--ring);
     outline-offset: 2px;
@@ -575,7 +591,7 @@
    a more translucent fill. `.glass-glow` — a token-driven cursor glow,
    generalised from `.spotlight-card`. All three read the per-theme
    `--glass-*` / `--glow-*` tokens, so a theme switch recolours them
-   with no JSX change. See context/ui-context.md. */
+   with no JSX change. See DESIGN.md. */
 .glass-surface {
   position: relative;
   background: var(--glass-bg);
@@ -731,7 +747,7 @@
 }
 
 /* The one hero price headline. The base keeps it on the mono tabular
-   face (ui-context.md's numbers rule); a theme may point --display-font
+   face (DESIGN.md's numbers rule); a theme may point --display-font
    at a serif. tabular-nums stays on either way so digits still align. */
 .tt-display {
   font-family: var(--display-font);

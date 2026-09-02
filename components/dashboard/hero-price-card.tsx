@@ -59,7 +59,7 @@ export function HeroPriceCard({
       <div className="relative z-10 flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between sm:gap-8">
         <div>
           <div className="flex flex-wrap items-center gap-2.5">
-            <p className="tt-label text-[11px] text-muted-foreground">
+            <p className="tt-label text-label text-muted-foreground">
               {t.hero.pricePer(primaryUnitLabel)}
             </p>
             {onDisplayUnitChange && (
@@ -81,10 +81,10 @@ export function HeroPriceCard({
               from={0}
               durationMs={COUNT_UP_MS}
               format={(value) => formatUsd(String(value))}
-              className="tt-display block text-[34px] font-semibold tracking-tight leading-tight sm:text-[46px]"
+              className="tt-display block text-display font-semibold tracking-tight leading-tight sm:text-display-lg"
             />
           </h1>
-          <MonoValue tone="muted" className="mt-1.5 block text-[12.5px]">
+          <MonoValue tone="muted" className="mt-1.5 block text-detail">
             {formatUsd(pricePerTroyOz)}/oz · {formatUsd(secondaryPrice)}/
             {secondaryUnitLabel}
           </MonoValue>
@@ -98,7 +98,7 @@ export function HeroPriceCard({
                   : "h-1.5 w-1.5 bg-state-gain"
               }
             />
-            <MonoValue tone="muted" className="tt-label text-[11px]">
+            <MonoValue tone="muted" className="tt-label text-label">
               <span className="tt-bracket">
                 {isStale ? t.hero.stale : t.hero.live}
               </span>{" "}
@@ -106,7 +106,7 @@ export function HeroPriceCard({
             </MonoValue>
           </div>
           {marketClosed && (
-            <MonoValue tone="muted" className="tt-label text-[11px]">
+            <MonoValue tone="muted" className="tt-label text-label">
               {t.hero.marketClosed}
             </MonoValue>
           )}
@@ -116,7 +116,7 @@ export function HeroPriceCard({
           />
         </div>
       </div>
-      <p className="relative z-10 mt-5 border-t border-(--glass-border-to) pt-4 text-[11.5px] text-muted-foreground">
+      <p className="relative z-10 mt-5 border-t border-(--glass-border-to) pt-4 text-label text-muted-foreground">
         {t.hero.disclaimer}
       </p>
     </Surface>

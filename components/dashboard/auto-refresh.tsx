@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useRef } from "react";
 import { MANUAL_REFRESH_COOLDOWN_MS } from "@/lib/constants/staleness";
+import { isMarketOpen } from "@/lib/price/marketHours";
 
 // Re-runs the server-rendered dashboard when the user returns to the tab after
 // it's been hidden (switched away, minimized), so the price, P&L, and chart
@@ -30,6 +31,11 @@ export function AutoRefresh({ capturedAt }: { capturedAt: Date }) {
 
     function onVisible() {
       if (document.visibilityState !== "visible") return;
+      // The spot market is closed (weekend): the price can't have moved, so a
+      // refresh would only re-fetch the same snapshot and re-render the chart.
+      // A tab left open across the weekend picks Monday's price back up because
+      // isMarketOpen() is re-checked live on each tab re-entry.
+      if (!isMarketOpen(new Date(Date.now()))) return;
       if (Date.now() - lastRefreshAtRef.current < MANUAL_REFRESH_COOLDOWN_MS) {
         return;
       }

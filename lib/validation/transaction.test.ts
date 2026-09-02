@@ -101,6 +101,29 @@ describe("transactionInputSchema", () => {
         fieldError({ ...base, pricePerUnit: "300.00001" }, "pricePerUnit")
       ).toBe(transactionMessages.tooManyDecimals);
     });
+
+    it("rejects a price over 1 billion", () => {
+      expect(
+        fieldError({ ...base, pricePerUnit: "1000000000.0001" }, "pricePerUnit")
+      ).toBe(transactionMessages.priceTooLarge);
+    });
+
+    it("accepts a price of exactly 1 billion", () => {
+      expect(
+        transactionInputSchema.safeParse({
+          ...base,
+          pricePerUnit: "1000000000",
+        }).success
+      ).toBe(true);
+    });
+  });
+
+  describe("quantity upper bound", () => {
+    it("rejects a quantity over 100 million", () => {
+      expect(
+        fieldError({ ...base, quantity: "100000000.0001" }, "quantity")
+      ).toBe(transactionMessages.quantityTooLarge);
+    });
   });
 
   describe("transactionDate", () => {

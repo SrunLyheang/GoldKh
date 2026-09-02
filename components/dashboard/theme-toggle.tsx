@@ -46,7 +46,7 @@ function ThemeSwatch({ id }: { id: ThemeId }) {
 // Registry-driven theme picker. Replaces the old SegmentedControl /
 // Select: with six themes a plain list doesn't communicate what each one
 // looks like, so this is a popover of live preview swatches instead.
-// context/ui-context.md's Theming section documents the contract.
+// DESIGN.md's Theming section documents the contract.
 export function ThemeToggle({ className }: { className?: string }) {
   const { theme, setTheme } = useTheme();
   const active = THEMES.find((entry) => entry.id === theme) ?? THEMES[0];
