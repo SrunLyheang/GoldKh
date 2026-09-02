@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useReducedMotion } from "motion/react";
 import {
+  Brush,
   CartesianGrid,
   Line,
   LineChart,
@@ -87,7 +88,8 @@ function niceStep(range: number): number {
   }
   const rough = range / TARGET_TICK_COUNT;
   return (
-    NICE_STEPS.find((step) => step >= rough) ?? NICE_STEPS[NICE_STEPS.length - 1]
+    NICE_STEPS.find((step) => step >= rough) ??
+    NICE_STEPS[NICE_STEPS.length - 1]
   );
 }
 
@@ -257,7 +259,7 @@ export function DetailedChart({
   const showControls = richControls ?? !compact;
 
   // Draw-on runs on first mount only; the flag then flips so later
-  // preset re-renders redraw instantly.
+  // range/preset re-renders redraw instantly.
   const [hasDrawn, setHasDrawn] = useState(false);
   useEffect(() => {
     // One-shot settle-in-effect (same pattern as ThemeProvider).
@@ -269,104 +271,106 @@ export function DetailedChart({
   const rows = useMemo(() => mergeSeries(series), [series]);
   const keys = useMemo(() => series.map((s) => s.key), [series]);
 
-  // Y-domain is fixed to the whole history, not the visible slice: the plot
-  // is now panned by horizontal scroll (below), and a domain that refit on
-  // every scroll frame would make the line jump under the reader's finger.
-  const { domain, ticks } = useMemo(
-    () => computeSeriesYAxis(rows, keys),
-    [rows, keys],
-  );
+  // Recharts 3's <Brush> divides by the plot width to place its travellers;
+  // on first mount ResponsiveContainer briefly reports width 0 before its
+  // ResizeObserver fires, so that math yields NaN and React warns about a
+  // NaN `x` on the traveller <rect>. Gate the Brush on a sane width.
+  const [plotWidth, setPlotWidth] = useState(0);
 
-  // A preset no longer slices the data — it sets how many points should fill
-  // the frame, i.e. how wide the plot is drawn ("zoom"); the reader scrolls
-  // through the rest. Even "All" stays scrollable once history outgrows a
-  // readable density (~90 points across the frame). Short history → 1×, fits.
+  const lastIndex = Math.max(0, rows.length - 1);
+  const [range, setRange] = useState<[number, number] | null>(null);
   const [activePreset, setActivePreset] = useState<PresetKey | null>("All");
-  const zoom = useMemo(() => {
-    if (!showControls) return 1;
-    const target =
-      activePreset && activePreset !== "All"
-        ? Math.max(
-            presetRange(rows, activePreset)[1] -
-              presetRange(rows, activePreset)[0] +
-              1,
-            6,
-          )
-        : 90;
-    return Math.min(Math.max(rows.length / target, 1), 12);
-  }, [showControls, activePreset, rows]);
+
+  const [rawStart, rawEnd] = range ?? [0, lastIndex];
+  const startIndex = Math.min(Math.max(0, rawStart), lastIndex);
+  const endIndex = Math.min(Math.max(startIndex, rawEnd), lastIndex);
+
+  const visibleRows = rows.slice(startIndex, endIndex + 1);
+  const { domain, ticks } = useMemo(
+    () =>
+      computeSeriesYAxis(visibleRows.length >= 2 ? visibleRows : rows, keys),
+    [visibleRows, rows, keys],
+  );
 
   // Inline charts with the full toolset get more plot height than a bare
   // preview, but stay short of the standalone route.
   const height = compact ? (showControls ? 280 : 220) : 360;
+  // Taller strip when presets show, so the drag handles read as a control.
+  const brushHeight = showControls ? 28 : 16;
 
-  // Pinned y-axis geometry — mirrors the Recharts <LineChart> margins so the
-  // HTML tick labels line up with the scrolling plot's grid lines.
-  const Y_AXIS_W = 56;
-  const X_AXIS_H = 24;
-  const M_TOP = 4;
-  const plotSpan = height - X_AXIS_H - M_TOP;
-  const yPos = (value: number) =>
-    M_TOP +
-    (1 - (value - domain[0]) / (domain[1] - domain[0] || 1)) * plotSpan;
-
-  const scrollerRef = useRef<HTMLDivElement>(null);
-
-  // Anchor the view to the most recent data whenever the zoom changes or a
-  // new snapshot lands (rows grows).
+  // Drag-to-pan straight on the plot — the phone gesture people expect,
+  // without having to hit the thin Brush strip. Horizontal drags shift the
+  // visible index window; vertical drags and taps fall through untouched so
+  // the page still scrolls and the tooltip still opens. Only armed while
+  // zoomed in (nothing to pan at full range).
+  const plotBoxRef = useRef<HTMLDivElement>(null);
+  const panLive = useRef({ startIndex, endIndex, lastIndex, plotWidth });
   useEffect(() => {
-    const el = scrollerRef.current;
-    if (el) el.scrollLeft = el.scrollWidth;
-  }, [zoom, rows.length]);
-
-  // Desktop has no natural horizontal-scroll gesture, so give the scroller a
-  // grab-drag and translate vertical wheel to horizontal pan. Touch keeps the
-  // native momentum scroll (touch-action: pan-x) and skips this entirely.
+    panLive.current = { startIndex, endIndex, lastIndex, plotWidth };
+  });
   useEffect(() => {
-    const el = scrollerRef.current;
-    if (!el || !window.matchMedia?.("(pointer: fine)").matches) return;
-    let down = false;
-    let startX = 0;
-    let startLeft = 0;
-    const onDown = (e: PointerEvent) => {
-      down = true;
-      startX = e.clientX;
-      startLeft = el.scrollLeft;
-      el.setPointerCapture(e.pointerId);
-      el.style.cursor = "grabbing";
+    const el = plotBoxRef.current;
+    if (!el) return;
+    let sx = 0;
+    let sy = 0;
+    let s = 0;
+    let e0 = 0;
+    let on = false;
+    let axis: "?" | "x" | "y" = "?";
+    const onStart = (ev: TouchEvent) => {
+      const target = ev.target as Element;
+      if (ev.touches.length !== 1 || target.closest?.(".recharts-brush"))
+        return;
+      const { startIndex: si, endIndex: ei } = panLive.current;
+      if (si <= 0 && ei >= panLive.current.lastIndex) return; // not zoomed
+      sx = ev.touches[0].clientX;
+      sy = ev.touches[0].clientY;
+      s = si;
+      e0 = ei;
+      on = true;
+      axis = "?";
     };
-    const onMove = (e: PointerEvent) => {
-      if (down) el.scrollLeft = startLeft - (e.clientX - startX);
-    };
-    const onUp = (e: PointerEvent) => {
-      down = false;
-      el.style.cursor = "grab";
-      try {
-        el.releasePointerCapture(e.pointerId);
-      } catch {
-        // pointer already released
+    const onMove = (ev: TouchEvent) => {
+      if (!on) return;
+      const dx = ev.touches[0].clientX - sx;
+      const dy = ev.touches[0].clientY - sy;
+      if (axis === "?") {
+        if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
+        axis = Math.abs(dx) > Math.abs(dy) ? "x" : "y";
       }
+      if (axis !== "x") return;
+      ev.preventDefault();
+      const { lastIndex: li, plotWidth: pw } = panLive.current;
+      const span = e0 - s;
+      const plot = Math.max(1, pw - 64); // minus y-axis (56) + right margin (8)
+      const shift = Math.round((-dx / plot) * span);
+      let ns = s + shift;
+      let ne = e0 + shift;
+      if (ns < 0) {
+        ne -= ns;
+        ns = 0;
+      }
+      if (ne > li) {
+        ns -= ne - li;
+        ne = li;
+      }
+      setRange([ns, ne]);
+      setActivePreset(null);
     };
-    const onWheel = (e: WheelEvent) => {
-      if (el.scrollWidth <= el.clientWidth) return;
-      // Leave a plain vertical wheel to the page; only pan on a horizontal
-      // (trackpad) or shift-wheel gesture.
-      if (!e.shiftKey && Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return;
-      e.preventDefault();
-      el.scrollLeft += e.deltaX || e.deltaY;
+    const onEnd = () => {
+      on = false;
     };
-    el.style.cursor = "grab";
-    el.addEventListener("pointerdown", onDown);
-    el.addEventListener("pointermove", onMove);
-    el.addEventListener("pointerup", onUp);
-    el.addEventListener("wheel", onWheel, { passive: false });
+    el.addEventListener("touchstart", onStart, { passive: true });
+    el.addEventListener("touchmove", onMove, { passive: false });
+    el.addEventListener("touchend", onEnd);
+    el.addEventListener("touchcancel", onEnd);
     return () => {
-      el.removeEventListener("pointerdown", onDown);
-      el.removeEventListener("pointermove", onMove);
-      el.removeEventListener("pointerup", onUp);
-      el.removeEventListener("wheel", onWheel);
+      el.removeEventListener("touchstart", onStart);
+      el.removeEventListener("touchmove", onMove);
+      el.removeEventListener("touchend", onEnd);
+      el.removeEventListener("touchcancel", onEnd);
     };
-  }, [zoom]);
+  }, []);
 
   if (rows.length < 2) {
     return (
@@ -381,6 +385,19 @@ export function DetailedChart({
     );
   }
 
+  const fullRange: [number, number] = [0, lastIndex];
+  const isZoomed = startIndex > 0 || endIndex < lastIndex;
+
+  function applyPreset(preset: PresetKey) {
+    setActivePreset(preset);
+    setRange(presetRange(rows, preset));
+  }
+
+  function resetZoom() {
+    setActivePreset("All");
+    setRange(fullRange);
+  }
+
   const presetLabel: Record<PresetKey, string> = {
     "1W": t.chart.range1W,
     "1M": t.chart.range1M,
@@ -389,100 +406,8 @@ export function DetailedChart({
   };
 
   const rangeCaption = t.chart.showingRange(
-    formatAxisTime(rows[0].t),
-    formatAxisTime(rows[rows.length - 1].t),
-  );
-
-  const chartBody = (pinnedAxis: boolean) => (
-    <LineChart data={rows} margin={{ top: M_TOP, right: 8, bottom: 0, left: 0 }}>
-      <CartesianGrid
-        stroke="var(--glass-border-to)"
-        strokeDasharray="3 3"
-        vertical={false}
-      />
-      <XAxis
-        dataKey="t"
-        type="number"
-        scale="time"
-        domain={["dataMin", "dataMax"]}
-        tickFormatter={formatAxisTime}
-        tick={{
-          fontSize: 11,
-          fill: "var(--muted-foreground)",
-          fontFamily: "var(--font-mono)",
-        }}
-        tickLine={false}
-        axisLine={false}
-        minTickGap={40}
-        height={pinnedAxis ? X_AXIS_H : undefined}
-      />
-      <YAxis
-        hide={pinnedAxis}
-        tick={{
-          fontSize: 11,
-          fill: "var(--muted-foreground)",
-          fontFamily: "var(--font-mono)",
-        }}
-        tickLine={false}
-        axisLine={false}
-        width={Y_AXIS_W}
-        tickFormatter={yTickFormatter}
-        domain={domain}
-        ticks={ticks}
-      />
-      {showControls && (
-        <Tooltip
-          content={
-            <DetailedTooltip series={series} valueFormatter={valueFormatter} />
-          }
-          cursor={{ stroke: "var(--glass-border-to)" }}
-        />
-      )}
-      {referenceLines.map((ref, index) => {
-        const placed = placeReferenceLine(ref.value, domain);
-        return (
-          <ReferenceLine
-            key={`${ref.label}-${index}`}
-            y={placed.y}
-            stroke={ref.color ?? "var(--muted-foreground)"}
-            strokeDasharray={placed.placement === "on-scale" ? "6 5" : "2 3"}
-            strokeWidth={1.5}
-            label={
-              placed.placement === "on-scale"
-                ? undefined
-                : {
-                    value:
-                      placed.placement === "above"
-                        ? `${ref.label} ↑`
-                        : `${ref.label} ↓`,
-                    position:
-                      placed.placement === "above"
-                        ? "insideTopLeft"
-                        : "insideBottomLeft",
-                    fill: "var(--muted-foreground)",
-                    fontSize: 10,
-                    fontFamily: "var(--font-mono)",
-                  }
-            }
-          />
-        );
-      })}
-      {series.map((s) => (
-        <Line
-          key={s.key}
-          type="monotone"
-          dataKey={s.key}
-          stroke={s.color}
-          strokeWidth={2}
-          dot={false}
-          activeDot={{ r: 4 }}
-          connectNulls
-          isAnimationActive={drawOn}
-          animationDuration={CHART_DRAW_MS}
-          animationEasing="ease-out"
-        />
-      ))}
-    </LineChart>
+    formatAxisTime(rows[startIndex].t),
+    formatAxisTime(rows[endIndex].t),
   );
 
   return (
@@ -513,7 +438,7 @@ export function DetailedChart({
                         notify.info(t.chart.historyShorterThanRange);
                         return;
                       }
-                      setActivePreset(preset);
+                      applyPreset(preset);
                     }}
                     className={cn(
                       "tt-label rounded-md px-2.5 py-1 text-[10.5px] transition-colors",
@@ -528,11 +453,22 @@ export function DetailedChart({
                 );
               })}
             </div>
+            {isZoomed && (
+              <button
+                type="button"
+                onClick={resetZoom}
+                className="tt-label rounded-md border border-border px-2.5 py-1 text-[10.5px] text-muted-foreground transition-colors hover:text-foreground"
+              >
+                {t.chart.reset}
+              </button>
+            )}
           </div>
-          <p className="text-label text-muted-foreground">
+          <p className="text-[11px] text-muted-foreground">
             <span className="font-mono tabular-nums text-foreground">
               {rangeCaption}
             </span>
+            <span className="mx-1.5 text-border">·</span>
+            {t.chart.zoomHint}
           </p>
         </div>
       )}
@@ -549,52 +485,155 @@ export function DetailedChart({
         </div>
       )}
 
-      <div className="relative w-full" style={{ height }}>
+      <div
+        ref={plotBoxRef}
+        className="relative w-full"
+        style={{ height, touchAction: "pan-y" }}
+      >
         {compact && onExpand && (
+          // Transparent click target over the plot only — leaves the Brush
+          // strip uncovered so drag-to-zoom still works.
           <button
             type="button"
             aria-label={t.chart.openDetailed}
             onClick={onExpand}
-            className="absolute inset-0 z-10 cursor-pointer"
+            className="absolute inset-x-0 top-0 z-10 cursor-pointer"
+            style={{ bottom: brushHeight }}
           />
         )}
-
-        {showControls ? (
-          <>
-            {/* Pinned y-axis: HTML labels positioned off the shared domain,
-                so they hold still while the plot scrolls beneath them. */}
-            <div
-              aria-hidden
-              className="pointer-events-none absolute inset-y-0 left-0 z-10"
-              style={{ width: Y_AXIS_W }}
-            >
-              {ticks.map((tick) => (
-                <span
-                  key={tick}
-                  className="absolute right-2 -translate-y-1/2 font-mono text-label tabular-nums text-muted-foreground"
-                  style={{ top: yPos(tick) }}
-                >
-                  {yTickFormatter(tick)}
-                </span>
-              ))}
-            </div>
-            <div
-              ref={scrollerRef}
-              className="absolute inset-y-0 right-0 select-none overflow-x-auto overflow-y-hidden"
-              style={{ left: Y_AXIS_W, touchAction: "pan-x" }}
-            >
-              <div style={{ width: `${zoom * 100}%`, height: "100%" }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  {chartBody(true)}
-                </ResponsiveContainer>
-              </div>
-            </div>
-          </>
-        ) : (
-          <ResponsiveContainer width="100%" height="100%">
-            {chartBody(false)}
-          </ResponsiveContainer>
-        )}
+        <ResponsiveContainer
+          width="100%"
+          height="100%"
+          onResize={(w) => setPlotWidth(w)}
+        >
+          <LineChart
+            data={rows}
+            margin={{ top: 4, right: 8, bottom: 0, left: 0 }}
+          >
+            <CartesianGrid
+              stroke="var(--glass-border-to)"
+              strokeDasharray="3 3"
+              vertical={false}
+            />
+            <XAxis
+              dataKey="t"
+              type="number"
+              scale="time"
+              domain={["dataMin", "dataMax"]}
+              tickFormatter={formatAxisTime}
+              tick={{
+                fontSize: 11,
+                fill: "var(--muted-foreground)",
+                fontFamily: "var(--font-mono)",
+              }}
+              tickLine={false}
+              axisLine={false}
+              minTickGap={40}
+            />
+            <YAxis
+              tick={{
+                fontSize: 11,
+                fill: "var(--muted-foreground)",
+                fontFamily: "var(--font-mono)",
+              }}
+              tickLine={false}
+              axisLine={false}
+              width={56}
+              tickFormatter={yTickFormatter}
+              domain={domain}
+              ticks={ticks}
+            />
+            {showControls && (
+              <Tooltip
+                content={
+                  <DetailedTooltip
+                    series={series}
+                    valueFormatter={valueFormatter}
+                  />
+                }
+                cursor={{ stroke: "var(--glass-border-to)" }}
+              />
+            )}
+            {referenceLines.map((ref, index) => {
+              const placed = placeReferenceLine(ref.value, domain);
+              return (
+                <ReferenceLine
+                  key={`${ref.label}-${index}`}
+                  y={placed.y}
+                  stroke={ref.color ?? "var(--muted-foreground)"}
+                  strokeDasharray={
+                    placed.placement === "on-scale" ? "6 5" : "2 3"
+                  }
+                  strokeWidth={1.5}
+                  label={
+                    placed.placement === "on-scale"
+                      ? undefined
+                      : {
+                          value:
+                            placed.placement === "above"
+                              ? `${ref.label} ↑`
+                              : `${ref.label} ↓`,
+                          position:
+                            placed.placement === "above"
+                              ? "insideTopLeft"
+                              : "insideBottomLeft",
+                          fill: "var(--muted-foreground)",
+                          fontSize: 10,
+                          fontFamily: "var(--font-mono)",
+                        }
+                  }
+                />
+              );
+            })}
+            {series.map((s) => (
+              <Line
+                key={s.key}
+                type="monotone"
+                dataKey={s.key}
+                stroke={s.color}
+                strokeWidth={2}
+                dot={false}
+                activeDot={{ r: 4 }}
+                connectNulls
+                isAnimationActive={drawOn}
+                animationDuration={CHART_DRAW_MS}
+                animationEasing="ease-out"
+              />
+            ))}
+            {plotWidth > 120 && (
+              // Keyed on row count: when a new snapshot lands mid-session
+              // and `rows` grows, Brush's own state (built for the old
+              // length) briefly evaluates the new startIndex/endIndex
+              // outside its stale domain and renders NaN travellers. A
+              // fresh key forces a clean remount instead of patching that
+              // reconciliation gap in recharts itself.
+              <Brush
+                key={rows.length}
+                dataKey="t"
+                height={brushHeight}
+                stroke="var(--muted-foreground)"
+                fill="var(--muted)"
+                fillOpacity={0.2}
+                travellerWidth={8}
+                tickFormatter={formatAxisTime}
+                startIndex={startIndex}
+                endIndex={endIndex}
+                onChange={(next: {
+                  startIndex?: number;
+                  endIndex?: number;
+                }) => {
+                  if (
+                    typeof next.startIndex === "number" &&
+                    typeof next.endIndex === "number"
+                  ) {
+                    setRange([next.startIndex, next.endIndex]);
+                    setActivePreset(null);
+                  }
+                }}
+              />
+            )}
+          </LineChart>
+        </ResponsiveContainer>
       </div>
     </div>
   );
