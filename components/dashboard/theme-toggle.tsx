@@ -57,7 +57,7 @@ export function ThemeToggle({ className }: { className?: string }) {
         aria-label="Theme"
         className={cn(
           "tt-label inline-flex items-center gap-2 rounded-md border border-border bg-accent/60 px-2.5 py-1.5 text-[11px] text-muted-foreground transition-colors hover:text-foreground",
-          className,
+          className
         )}
       >
         <span className="flex items-center gap-0.5" aria-hidden="true">
@@ -84,7 +84,7 @@ export function ThemeToggle({ className }: { className?: string }) {
                   "group rounded-lg border p-1.5 text-left transition-colors",
                   selected
                     ? "border-primary bg-accent"
-                    : "border-border hover:border-muted-foreground/40 hover:bg-accent/50",
+                    : "border-border hover:border-muted-foreground/40 hover:bg-accent/50"
                 )}
               >
                 <ThemeSwatch id={entry.id} />
@@ -92,7 +92,7 @@ export function ThemeToggle({ className }: { className?: string }) {
                   <span
                     className={cn(
                       "tt-label text-[11px]",
-                      selected ? "text-primary" : "text-muted-foreground",
+                      selected ? "text-primary" : "text-muted-foreground"
                     )}
                   >
                     {entry.label}

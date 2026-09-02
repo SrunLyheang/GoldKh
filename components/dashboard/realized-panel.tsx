@@ -82,7 +82,7 @@ export function RealizedPanel({
                 !collapsed && "rotate-180",
               )}
             />
-            <p className="tt-label text-[11px] text-muted-foreground">
+            <p className="tt-label text-label text-muted-foreground">
               <span className="tt-bracket">{t.realized.eyebrow}</span>{" "}
               {t.realized.fromSales(saleCount)}
             </p>
@@ -102,13 +102,13 @@ export function RealizedPanel({
                   format={(value) => formatUsd(String(value))}
                   tone={tone}
                   signed
-                  className="block text-[34px] font-semibold tracking-tight leading-tight sm:text-[40px]"
+                  className="block text-display font-semibold tracking-tight leading-tight sm:text-display-lg"
                 />
               </span>
               <MonoValue
                 tone={isBreakEven ? "muted" : tone}
                 signed
-                className="mt-1 block text-[12.5px]"
+                className="mt-1 block text-detail"
               >
                 {formatPercent(realizedPercent)}
               </MonoValue>
@@ -116,7 +116,7 @@ export function RealizedPanel({
           )}
         </div>
         {!collapsed && (
-          <p className="max-w-[34ch] text-[11.5px] leading-relaxed text-muted-foreground sm:text-right">
+          <p className="max-w-[34ch] text-label leading-relaxed text-muted-foreground sm:text-right">
             {t.realized.caption}
           </p>
         )}

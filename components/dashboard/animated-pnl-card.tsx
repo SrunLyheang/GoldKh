@@ -109,7 +109,7 @@ function PnlRollingFigure({
       signed
       sizerText={sizerText}
       displayText={display}
-      className="block text-[19px] font-semibold"
+      className="block text-figure font-semibold"
     />
   );
 }
@@ -133,14 +133,14 @@ export function AnimatedPnlCard({
         tone === "loss" && "bg-destructive/6 border-l-2 border-l-destructive"
       )}
     >
-      <p className="tt-label text-[11px] text-muted-foreground">{label}</p>
+      <p className="tt-label text-label text-muted-foreground">{label}</p>
       <span
         className={cn("mt-1.5 block", pulsing && "value-pulse-active")}
         style={{ "--pulse-tone": PULSE_TONE[tone] ?? "var(--primary)" } as CSSProperties}
       >
         <PnlRollingFigure gainLossUsd={gainLossUsd} tone={tone} />
       </span>
-      <MonoValue tone={tone} signed className="mt-1 block text-[12px]">
+      <MonoValue tone={tone} signed className="mt-1 block text-detail">
         {formatPercent(gainLossPercent)}
       </MonoValue>
     </Surface>

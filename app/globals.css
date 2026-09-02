@@ -67,7 +67,16 @@
 }
 
 :root {
-
+    /* Base token layer — NOT a selectable theme. Two jobs: it is the
+       pre-hydration fallback (the frame before ThemeProvider sets
+       `data-theme="liquid-glass"`), and it is the layer the
+       non-liquid-glass themes derive their `--glass-*` / idiom tokens
+       from (Midnight, Emerald only override colours, then inherit the
+       frosted treatment computed here). Dark, warm-neutral,
+       square — deliberately plain so the fallback frame reads as
+       "loading", not as a distinct theme. Every real theme block below
+       is written `:root[data-theme="x"], [data-theme="x"]` so a nested
+       `<div data-theme="x">` (the picker's swatches) gets the full token
        set, not just <html>. See DESIGN.md. */
     --background: #0f0c08;
     --foreground: #f5f1e8;
@@ -93,7 +102,14 @@
     --chart-3: #4ade80;
     --chart-4: #f87171;
     --chart-5: #f5f1e8;
+    /* Square by default; every rounded-* utility derives from this one
+       token. Each real theme block below sets its own corner. */
+    --radius: 0px;
 
+    /* Theme idiom tokens — plain base values; each `[data-theme]` block
+       below overrides them. Components reach the idiom only through
+       `.tt-label` / `.tt-heading` / `.tt-display` / `.tt-bracket`, never
+       by hardcoding it — that is what makes a new theme one CSS block.
        See DESIGN.md's Theming section. */
     --label-font: var(--font-mono);
     --label-transform: uppercase;
@@ -117,12 +133,19 @@
     --sidebar-border: #2a2013;
     --sidebar-ring: #e8b84b;
 
-
+    /* Liquid-glass surface tokens. The defaults here are DERIVED from
+       each theme's own --card / --foreground / --primary, so the five
+       non-default themes inherit a coherent frosted treatment for free
+       — only the two light themes (below) and the dedicated
+       `liquid-glass` block override them outright. Components reach glass only
+       through `.glass-surface` / `.glass-overlay` / `.glass-glow`,
        never by hardcoding. See DESIGN.md. */
     --glass-bg: color-mix(in oklab, var(--card) 80%, transparent);
     --glass-blur: 14px;
     --glass-border-from: color-mix(in oklab, var(--foreground) 30%, transparent);
-
+    /* Also the hairline-divider colour everywhere (row separators, field
+       dividers, in-card rules). Kept low, but high enough to actually
+       register against the near-black ground — 5% was effectively
        invisible. See DESIGN.md. */
     --glass-border-to: color-mix(in oklab, var(--foreground) 11%, transparent);
     --glass-highlight: color-mix(in oklab, var(--foreground) 8%, transparent);
@@ -137,7 +160,9 @@
 }
 
 /* ---- Ledger theme (minimalist-ui direction) --------------------------
-
+   Warm monochrome paper, editorial serif headings, soft borders and
+   shadows, rounded corners. Selectable from the sidebar theme toggle.
+   Adding another theme means another block just like this one — nothing
    in the components changes. See DESIGN.md's Theming
    section and the "Goldsmith's Ledger" mockup. */
 :root[data-theme="ledger"],
