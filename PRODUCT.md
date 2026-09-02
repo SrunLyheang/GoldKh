@@ -101,7 +101,7 @@ keeping their own tally.
 - **No user base, testimonials, customer counts, press, or usage metrics.** A
   personal project that has not been promoted. Future design or marketing work
   must not fabricate social proof, adoption numbers, or named users.
-- Signed-in design system: `context/ui-context.md`. Product/architecture
+- Signed-in design system: `DESIGN.md`. Product/architecture
   decisions: `context/progress-tracker.md`.
 
 ## Product Principles

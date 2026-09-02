@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 // panels (hero, chart) carry more padding so they read as the page's
 // primary surface; `md` panels (stat cards, transaction rows) are
 // tighter. `variant="accent"` tints the frost toward `--primary` for
-// the gold-glass hero look. See context/ui-context.md.
+// the gold-glass hero look. See DESIGN.md.
 const SIZE_CLASSES = {
   lg: "glass-surface p-6 sm:p-8",
   md: "glass-surface p-5",

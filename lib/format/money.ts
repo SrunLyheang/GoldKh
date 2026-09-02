@@ -1,5 +1,5 @@
 // Presentation-only formatting for the mono tabular-figure number
-// displays required throughout ui-context.md. Takes the numeric strings
+// displays required throughout DESIGN.md. Takes the numeric strings
 // produced by lib/calc and lib/price — never does money math itself.
 export function formatUsd(value: string): string {
   return new Intl.NumberFormat("en-US", {

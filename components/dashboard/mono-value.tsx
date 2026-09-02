@@ -12,11 +12,11 @@ const TONE_CLASSES: Record<Tone, string> = {
 
 // Every price, quantity, cost basis, and gain/loss figure uses this —
 // mono tabular figures so columns of numbers line up. See
-// context/ui-context.md's Typography section.
+// DESIGN.md's Typography section.
 //
 // `signed` splits a leading +/- (or nothing) into its own fixed-width
 // cell so "-$285.00" and "$285.00" align on the first digit — the
-// "Negative gain/loss alignment" item from ui-context.md. Only applies
+// "Negative gain/loss alignment" item from DESIGN.md. Only applies
 // when `children` is a string; anything else renders unchanged.
 export function MonoValue({
   className,
