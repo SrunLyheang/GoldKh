@@ -62,6 +62,16 @@ describe("AutoRefresh", () => {
     expect(refreshMock).toHaveBeenCalledTimes(2);
   });
 
+  it("does not refresh while the spot market is closed", () => {
+    // 1970-01-03 is a Saturday — isMarketOpen() is false all day.
+    vi.spyOn(Date, "now").mockReturnValue(Date.parse("1970-01-03T12:00:00Z"));
+    render(<AutoRefresh capturedAt={new Date(0)} />);
+
+    fireVisibility("visible");
+
+    expect(refreshMock).not.toHaveBeenCalled();
+  });
+
   it("does not refresh when the tab is going hidden", () => {
     render(<AutoRefresh capturedAt={new Date(0)} />);
 
