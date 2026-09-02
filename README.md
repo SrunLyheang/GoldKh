@@ -1,259 +1,50 @@
-# GoldKh
+# GoldKh 🪙
 
-> Track personal gold holdings against the live spot price — log your buys and
-> sells in Cambodian units, and see weighted-average cost, market value, and
-> realized/unrealized gain over time.
+> Track your personal gold holdings against live market prices. Log your buys and sells in Cambodian units (_chi_ and _damlung_), and see your weighted-average cost, market value, and gains over time.
 
-GoldKh is a **multi-user web app**, not an exchange. No money moves through it:
-you record transactions made elsewhere, and the dashboard does the math against
-a cached live gold price. Anyone can sign up.
-
-- **Units** — enter and view holdings in _chi_ and _damlung_; prices are stored
-  canonically as USD per troy ounce and converted for display.
-- **Cost basis** — weighted average, not FIFO. Selling reduces quantity and
-  leaves average cost per unit unchanged.
-- **Always a price** — the dashboard shows the last known price with an "as of"
-  timestamp instead of an error, even if every source is down.
+**GoldKh is a personal portfolio tracker, not an exchange.** No money moves through it—you record transactions made elsewhere, and the dashboard does the math against live gold prices.
 
 ---
 
-## Table of contents
+## ✨ Features
 
-- [Screens](#screens)
-- [Stack](#stack)
-- [How it fits together](#how-it-fits-together)
-- [Project structure](#project-structure)
-- [Data model](#data-model)
-- [Getting started](#getting-started)
-- [Environment variables](#environment-variables)
-- [Database migrations](#database-migrations)
-- [Scripts](#scripts)
-- [Testing](#testing)
-- [Deployment](#deployment)
-- [Theming](#theming)
-- [Design principles](#design-principles)
-- [Contributing](#contributing)
-- [Documentation](#documentation)
+- **Cambodian Units** — Enter and view holdings in _chi_ and _damlung_
+- **Weighted Average Cost** — Selling reduces quantity while keeping your average cost accurate
+- **Always Available** — Shows the last known price if live data is temporarily unavailable
+- **Private & Secure** — Your data is yours alone, protected by Clerk authentication
 
 ---
 
-## Screens
+## 📱 Pages
 
-| Route                     | What it shows                                                                             |
-| ------------------------- | ----------------------------------------------------------------------------------------- |
-| `/` · `/welcome`          | Marketing landing (redirects to the dashboard once you're signed in)                      |
-| `/dashboard`              | Live price, your position stats, realized gains, transaction history, price chart         |
-| `/dashboard/price`        | Full-screen interactive spot-price chart with range presets and drag-to-zoom              |
-| `/dashboard/insights`     | Plain-language readouts, portfolio value over time, per-buy quality, a what-if calculator |
-| `/dashboard/transactions` | Full filterable and sortable table, row detail, CSV import/export                         |
-| `/dashboard/settings`     | Account management, display preferences (unit, theme), data actions                       |
-
-Every **page** route except the landing and auth pages is private. Server-to-server webhooks like `/api/webhooks/clerk` are public, verified by Svix signature rather than Clerk auth.
+| Page             | What it shows                                                        |
+| ---------------- | -------------------------------------------------------------------- |
+| **Dashboard**    | Live price, your position stats, realized gains, transaction history |
+| **Price Chart**  | Full-screen interactive spot-price chart with zoom and range presets |
+| **Insights**     | Portfolio value over time, per-buy quality, what-if calculator       |
+| **Transactions** | Filterable table with row detail, CSV import/export                  |
+| **Settings**     | Account management, display preferences, themes                      |
 
 ---
 
-## Stack
+## 🛠️ Tech Stack
 
-| Layer      | Choice                                                                                                                                                            |
-| ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Framework  | [Next.js](https://nextjs.org) 16 (App Router) + [React](https://react.dev) 19                                                                                     |
-| Language   | TypeScript 5 (`strict`)                                                                                                                                           |
-| Styling    | [Tailwind CSS](https://tailwindcss.com) v4, [shadcn/ui](https://ui.shadcn.com) on [Base UI](https://base-ui.com), [Lucide](https://lucide.dev) icons, Geist fonts |
-| Auth       | [Clerk](https://clerk.com)                                                                                                                                        |
-| Database   | [Neon](https://neon.tech) serverless Postgres + [Drizzle ORM](https://orm.drizzle.team)                                                                           |
-| Charts     | [Recharts](https://recharts.org) 3                                                                                                                                |
-| Motion     | [`motion`](https://motion.dev) 13                                                                                                                                 |
-| Money math | [`decimal.js`](https://mikemcl.github.io/decimal.js/) — no floating point                                                                                         |
-| Validation | [Zod](https://zod.dev) 4                                                                                                                                          |
-| Errors     | [Sentry](https://sentry.io) (optional)                                                                                                                            |
-| Tests      | [Vitest](https://vitest.dev) 4 + Testing Library                                                                                                                  |
-| Hosting    | [Vercel](https://vercel.com)                                                                                                                                      |
+- **Framework:** Next.js 16 + React 19
+- **Database:** Neon PostgreSQL + Drizzle ORM
+- **Auth:** Clerk
+- **Styling:** Tailwind CSS v4 + shadcn/ui
+- **Charts:** Recharts 3
+- **Hosting:** Vercel
 
 ---
 
-## How it fits together
+## 🚀 Quick Start
 
-One Next.js repo, split into single-concern modules:
-
-| Module        | Responsibility                                                                                                               |
-| ------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| `app/`        | Routes, pages, and API handlers — request parsing, auth, and response shaping only                                           |
-| `lib/db/`     | Database schema, migrations, and every query                                                                                 |
-| `lib/price/`  | The price layer: provider modules (goldapi.io, Binance PAXG), rotation, staleness, and caching, behind a single `getPrice()` |
-| `lib/calc/`   | Pure functions for cost basis, holdings, gain/loss, and unit conversion — no I/O                                             |
-| `components/` | UI — receives already-computed values as props                                                                               |
-
-**Request flow:** a server component reads the database directly, hands plain
-data to one client component per route; changes save through `/api/*` handlers
-followed by a refresh. No client-side data-fetching library.
-
-**Price handling:** providers are called only on a cache miss. A snapshot older
-than 30 minutes is stale; a manual refresh within 5 minutes of the last is on
-cooldown. Snapshots are append-only, written on dashboard load — no scheduled job.
-
----
-
-## Project structure
-
-```text
-app/
-  dashboard/            Main app — layout, page, price/insights/transactions/settings
-  api/                  Route handlers (transactions, price refresh, account, Clerk webhook)
-  sign-in/  sign-up/    Clerk auth pages
-  welcome/  page.tsx    Marketing landing
-components/
-  dashboard/            Dashboard UI (hero card, stat row, transaction history, charts…)
-  charts/               DetailedChart — the reusable Recharts time-series chart
-  insights/  transactions/  welcome/  auth/  effects/
-  ui/                   Generated shadcn / Base UI primitives
-lib/
-  db/                   schema.ts, migrations/, queries/
-  price/                providers/, freshness, rotation, cache
-  calc/                 holdings, gainLoss, realized, portfolioSeries, buyQuality, units… (pure)
-  format/  i18n/  theme/  prefs/  ui/  api/  env.ts
-context/                Product, architecture, UI, and workflow docs
-CONTEXT.md              Domain glossary
-```
-
----
-
-## Data model
-
-Three Postgres tables (`lib/db/schema.ts`). Every money and quantity column is
-`numeric`, never a float.
-
-| Table                 | Purpose                                                                                                                                               |
-| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `transactions`        | One row per buy/sell: type, quantity, unit (`chi` / `damlung`), price per unit, currency (`USD` / `KHR`), date, notes. Belongs to one signed-in user. |
-| `price_snapshots`     | Append-only price cache: USD per troy ounce, source, manual flag, capture time. Shared by everyone.                                                   |
-| `rate_limit_counters` | Per-user throttling for manual price refreshes.                                                                                                       |
-
-Holdings, average cost, and gain/loss are recalculated from your transactions on
-every load — never stored as their own row.
-
----
-
-## Getting started
-
-**You'll need:** Node.js 24.x, npm, a [Neon](https://neon.tech) database, a
-[Clerk](https://clerk.com) application, and a
-[goldapi.io](https://www.goldapi.io) API key.
+**Prerequisites:** Node.js 24.x, Neon database, Clerk app, goldapi.io key
 
 ```bash
 npm install
-cp .env.example .env.local        # fill in your own keys (see below)
-npx drizzle-kit migrate           # apply migrations to your database
+cp .env.example .env.local        # Add your keys
+npx drizzle-kit migrate           # Set up database
 npm run dev
 ```
-
-Open <http://localhost:3000>.
-
----
-
-## Environment variables
-
-Validated at startup — a missing or malformed **required** value stops the
-process before it serves a request.
-
-| Variable                            | Required | Notes                                      |
-| ----------------------------------- | -------- | ------------------------------------------ |
-| `DATABASE_URL`                      | ✅       | Neon **pooled** connection string          |
-| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | ✅       | Clerk frontend key                         |
-| `CLERK_SECRET_KEY`                  | ✅       | Clerk backend key                          |
-| `GOLDAPI_IO_API_KEY`                | ✅       | Price provider key                         |
-| `CLERK_WEBHOOK_SIGNING_SECRET`      | —        | Needed only for the Clerk webhook endpoint |
-| `NEXT_PUBLIC_SENTRY_DSN`            | —        | Leave unset to turn off error tracking     |
-
----
-
-## Database migrations
-
-The schema lives in `lib/db/schema.ts`. Migrations are generated with
-`drizzle-kit` and applied by hand, never from a build step.
-
-```bash
-npx drizzle-kit generate      # create a migration from schema changes
-npx drizzle-kit migrate       # apply pending migrations to $DATABASE_URL
-```
-
----
-
-## Scripts
-
-| Command              | Description                 |
-| -------------------- | --------------------------- |
-| `npm run dev`        | Start the dev server        |
-| `npm run build`      | Production build            |
-| `npm run start`      | Start the production server |
-| `npm run lint`       | Lint with ESLint            |
-| `npm run test`       | Run the test suite once     |
-| `npm run test:watch` | Run tests in watch mode     |
-
----
-
-## Testing
-
-[Vitest](https://vitest.dev) with Testing Library. Test files sit next to the
-code they cover; `lib/calc/` (the money math) is the most thoroughly tested part.
-
-```bash
-npm run test
-```
-
----
-
-## Deployment
-
-- **Hosting** — Vercel. Real secrets live in Vercel's environment settings.
-- **CI** — GitHub Actions runs lint, tests, and a build on every pull request
-  and on pushes to `main`. A failing check blocks merge.
-- **Migrations** — run manually against the database before the deploy that
-  needs them.
-
----
-
-## Theming
-
-Six themes ship and switch at runtime: **Liquid Glass** (default), Ledger,
-Midnight, Emerald, Coral, and Porcelain. Each redefines a set of CSS tokens
-(colours, corner radius, shadows, typography); components only read those
-tokens, so themes stay consistent everywhere. Green and red show up only where
-they mean a gain or a loss.
-
----
-
-## Design principles
-
-Rules the codebase holds to:
-
-- Only the price layer talks to an external price provider.
-- Every query for your data is scoped to your session; a user id from the
-  request is never trusted.
-- Holdings and gain/loss are always derived, never stored.
-- Prices are stored in one unit (USD per troy ounce); everything else is a
-  display-time conversion.
-- No floating point for money or quantities.
-- API keys are read only on the server.
-
-The full set is in [`context/architecture.md`](context/architecture.md).
-
----
-
-## Contributing
-
-1. Fork and branch off `main`.
-2. Make your change; keep it focused.
-3. Make sure `npm run lint`, `npm run test`, and `npm run build` all pass.
-4. Open a pull request.
-
-Issues and discussion:
-[github.com/SrunLyheang/GoldKh](https://github.com/SrunLyheang/GoldKh).
-
----
-
-## Documentation
-
-| Path                       | Contents                                                          |
-| -------------------------- | ----------------------------------------------------------------- |
-| [`context/`](context)      | Product scope, architecture, UI conventions, and coding standards |
-| [`CONTEXT.md`](CONTEXT.md) | Domain glossary — the terms the project uses and what they mean   |
