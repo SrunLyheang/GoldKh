@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useReducedMotion } from "motion/react";
 import {
   Brush,
@@ -88,7 +88,8 @@ function niceStep(range: number): number {
   }
   const rough = range / TARGET_TICK_COUNT;
   return (
-    NICE_STEPS.find((step) => step >= rough) ?? NICE_STEPS[NICE_STEPS.length - 1]
+    NICE_STEPS.find((step) => step >= rough) ??
+    NICE_STEPS[NICE_STEPS.length - 1]
   );
 }
 
@@ -286,7 +287,8 @@ export function DetailedChart({
 
   const visibleRows = rows.slice(startIndex, endIndex + 1);
   const { domain, ticks } = useMemo(
-    () => computeSeriesYAxis(visibleRows.length >= 2 ? visibleRows : rows, keys),
+    () =>
+      computeSeriesYAxis(visibleRows.length >= 2 ? visibleRows : rows, keys),
     [visibleRows, rows, keys],
   );
 
@@ -295,6 +297,82 @@ export function DetailedChart({
   const height = compact ? (showControls ? 280 : 220) : 360;
   // Taller strip when presets show, so the drag handles read as a control.
   const brushHeight = showControls ? 28 : 16;
+
+  // Drag-to-pan straight on the plot — the phone gesture people expect,
+  // without having to hit the thin Brush strip. Horizontal drags shift the
+  // visible index window; vertical drags and taps fall through untouched so
+  // the page still scrolls and the tooltip still opens. Only armed while
+  // zoomed in (nothing to pan at full range).
+  const plotBoxRef = useRef<HTMLDivElement>(null);
+  const panLive = useRef({ startIndex, endIndex, lastIndex, plotWidth });
+  useEffect(() => {
+    panLive.current = { startIndex, endIndex, lastIndex, plotWidth };
+  });
+  useEffect(() => {
+    const el = plotBoxRef.current;
+    if (!el) return;
+    let sx = 0;
+    let sy = 0;
+    let s = 0;
+    let e0 = 0;
+    let on = false;
+    let axis: "?" | "x" | "y" = "?";
+    const onStart = (ev: TouchEvent) => {
+      const target = ev.target as Element;
+      if (ev.touches.length !== 1 || target.closest?.(".recharts-brush"))
+        return;
+      const { startIndex: si, endIndex: ei } = panLive.current;
+      if (si <= 0 && ei >= panLive.current.lastIndex) return; // not zoomed
+      sx = ev.touches[0].clientX;
+      sy = ev.touches[0].clientY;
+      s = si;
+      e0 = ei;
+      on = true;
+      axis = "?";
+    };
+    const onMove = (ev: TouchEvent) => {
+      if (!on) return;
+      const dx = ev.touches[0].clientX - sx;
+      const dy = ev.touches[0].clientY - sy;
+      if (axis === "?") {
+        if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
+        axis = Math.abs(dx) > Math.abs(dy) ? "x" : "y";
+      }
+      if (axis !== "x") return;
+      ev.preventDefault();
+      const { lastIndex: li, plotWidth: pw } = panLive.current;
+      const span = e0 - s;
+      const plot = Math.max(1, pw - 64); // minus y-axis (56) + right margin (8)
+      const shift = Math.round((-dx / plot) * span);
+      let ns = s + shift;
+      let ne = e0 + shift;
+      if (ns < 0) {
+        ne -= ns;
+        ns = 0;
+      }
+      if (ne > li) {
+        ns -= ne - li;
+        ne = li;
+      }
+      setRange([ns, ne]);
+      setActivePreset(null);
+    };
+    const onEnd = () => {
+      on = false;
+    };
+    el.addEventListener("touchstart", onStart, { passive: true });
+    el.addEventListener("touchmove", onMove, { passive: false });
+    el.addEventListener("touchend", onEnd);
+    el.addEventListener("touchcancel", onEnd);
+    return () => {
+      el.removeEventListener("touchstart", onStart);
+      el.removeEventListener("touchmove", onMove);
+      el.removeEventListener("touchend", onEnd);
+      el.removeEventListener("touchcancel", onEnd);
+    };
+    // Re-run once rows reach chartable length so listeners attach to the plot
+    // element, which only renders past the `rows.length < 2` early return.
+  }, [rows.length]);
 
   if (rows.length < 2) {
     return (
@@ -409,7 +487,11 @@ export function DetailedChart({
         </div>
       )}
 
-      <div className="relative w-full" style={{ height }}>
+      <div
+        ref={plotBoxRef}
+        className="relative w-full"
+        style={{ height, touchAction: "pan-y" }}
+      >
         {compact && onExpand && (
           // Transparent click target over the plot only — leaves the Brush
           // strip uncovered so drag-to-zoom still works.
@@ -426,7 +508,10 @@ export function DetailedChart({
           height="100%"
           onResize={(w) => setPlotWidth(w)}
         >
-          <LineChart data={rows} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
+          <LineChart
+            data={rows}
+            margin={{ top: 4, right: 8, bottom: 0, left: 0 }}
+          >
             <CartesianGrid
               stroke="var(--glass-border-to)"
               strokeDasharray="3 3"
@@ -528,13 +613,17 @@ export function DetailedChart({
                 key={rows.length}
                 dataKey="t"
                 height={brushHeight}
-                stroke="var(--glass-border-to)"
-                fill="var(--glass-bg)"
+                stroke="var(--muted-foreground)"
+                fill="var(--muted)"
+                fillOpacity={0.2}
                 travellerWidth={8}
                 tickFormatter={formatAxisTime}
                 startIndex={startIndex}
                 endIndex={endIndex}
-                onChange={(next: { startIndex?: number; endIndex?: number }) => {
+                onChange={(next: {
+                  startIndex?: number;
+                  endIndex?: number;
+                }) => {
                   if (
                     typeof next.startIndex === "number" &&
                     typeof next.endIndex === "number"

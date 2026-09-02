@@ -8,7 +8,6 @@ import {
   ArrowRight,
   ShieldCheck,
   Lock,
-  Coins,
   Eye,
   LayoutDashboard,
 } from "lucide-react";
@@ -39,6 +38,19 @@ const SECTION_NAV = [
 // build-time server render and a later client load across a New Year
 // boundary — suppressHydrationWarning covers that one span.
 const CURRENT_YEAR = new Date().getFullYear();
+
+// The GoldKh mark: gold hexagonal ingot with a G. Flat fills (no gradient)
+// since it only ever renders here at ~16-20px. Matches public/logo.svg.
+function BrandMark({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 512 512" fill="none" aria-hidden="true" className={className}>
+      <path d="M256 54 L426 126 V346 L256 458 L86 346 V126 Z" fill="#8a6524" />
+      <path d="M256 74 L408 139 V337 L256 440 L104 337 V139 Z" fill="#e8b84b" />
+      <path d="M256 100 L382 156 V322 L256 408 L130 322 V156 Z" fill="#0c0906" stroke="#e8b84b" strokeOpacity="0.3" strokeWidth="4" />
+      <path d="M256 162 A96 96 0 1 0 352 258 L300 258" stroke="#f6dd9c" strokeWidth="52" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
 
 export function LiquidGlassLanding() {
   const signedIn = useSignedIn();
@@ -80,7 +92,7 @@ export function LiquidGlassLanding() {
             href="/"
             className="flex items-center gap-2 text-white font-medium text-base group"
           >
-            <Coins className="w-5 h-5 text-amber-400 group-hover:rotate-12 transition-transform" />
+            <BrandMark className="w-6 h-6 group-hover:rotate-12 transition-transform" />
             <span className="tracking-tight font-semibold">GoldKh</span>
           </Link>
 
@@ -514,7 +526,7 @@ export function LiquidGlassLanding() {
         {/* ── 7. Footer ───────────────────────────────────────────────────────── */}
         <footer className="border-t border-white/10 py-12 px-5 sm:px-8 max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6 text-xs text-white/50 font-mono">
           <div className="flex items-center gap-3">
-            <Coins className="w-4 h-4 text-amber-400" />
+            <BrandMark className="w-4 h-4" />
             <span suppressHydrationWarning>
               &copy; {CURRENT_YEAR} GoldKh. All rights reserved.
             </span>
