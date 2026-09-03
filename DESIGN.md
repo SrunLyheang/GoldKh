@@ -337,7 +337,7 @@ written down. Canonical mapping:
 | Slot | Token | Semantic |
 |------|-------|----------|
 | `chart-1` | `--primary` (accent) | the **primary series** — spot price over time, portfolio value over time |
-| `chart-2` | `--muted-foreground` | secondary / reference series — cost-basis line, average line |
+| `chart-2` | a per-theme tone set **off `chart-1`'s hue** (not `--muted-foreground`) | secondary series — the cost-basis line, which must stay legible next to `chart-1` in every theme. The dashed reference/average line uses `--muted-foreground` directly, not this slot. |
 | `chart-3` | `--state-gain` | **gain** — positive area/segments on the P&L-over-time chart |
 | `chart-4` | `--destructive` | **loss** — negative area/segments |
 | `chart-5` | `--foreground` | high-contrast marker — the "now" point, a highlighted selection |
@@ -395,3 +395,4 @@ preserve:
 | 2026-09-03 | DESIGN.md created (codify + 5 sharpen sections) | `/design-consultation`. Codified the existing 7-theme token system; added a written type scale, an explicit number-animation policy, a canonical stale-state spec, chart-color assignment, and resolved the phantom `context/ui-context.md`. |
 | 2026-09-03 | Stale price = muted grey, never red | Users check in between in-person shop visits; a 30-min-old price is normal, not an error. Red is reserved for financial loss. Research: "showing staleness matters more than showing freshness." |
 | 2026-09-03 | Type scale uses semantic names (`text-label`, `text-figure`…), added as new tokens | Additive — does not override Tailwind's default `text-*` steps, so the landing tree is unaffected. Matches the role-based `.tt-*` philosophy. |
+| 2026-09-04 | `chart-2` retuned per theme off `chart-1`'s hue (was `--muted-foreground`) | On the Insights two-line chart the cost-basis line was near-indistinguishable from the market-value line in `midnight` / `emerald` / `ledger`. `chart-2` is used only there; the dashed reference line takes `--muted-foreground` directly. |

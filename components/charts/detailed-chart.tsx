@@ -96,12 +96,14 @@ function DetailedTooltip({
   payload,
   label,
   series,
+  referenceLines,
   valueFormatter,
 }: {
   active?: boolean;
   payload?: Array<{ dataKey: string; value: number }>;
   label?: number;
   series: ChartSeries[];
+  referenceLines: ChartReferenceLine[];
   valueFormatter: (value: number) => string;
 }) {
   if (!active || !payload?.length) {
@@ -134,6 +136,21 @@ function DetailedTooltip({
           </p>
         );
       })}
+      {referenceLines.map((ref, index) => (
+        <p
+          key={`ref-${index}`}
+          className="flex items-center gap-1.5 font-mono text-detail tabular-nums text-muted-foreground"
+        >
+          <span
+            aria-hidden
+            className="inline-block w-2.5 shrink-0 border-t border-dashed"
+            style={{ borderColor: ref.color ?? "var(--muted-foreground)" }}
+          />
+          <span>
+            {ref.label}: {valueFormatter(ref.value)}
+          </span>
+        </p>
+      ))}
     </div>
   );
 }
@@ -364,6 +381,7 @@ export function DetailedChart({
                 content={
                   <DetailedTooltip
                     series={series}
+                    referenceLines={referenceLines}
                     valueFormatter={valueFormatter}
                   />
                 }
