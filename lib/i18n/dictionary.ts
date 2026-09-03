@@ -138,8 +138,11 @@ const en = {
     rangeAll: "All",
     backToDashboard: "Back to dashboard",
     showingRange: (from: string, to: string) => `Showing ${from} – ${to}`,
-    zoomHint:
-      "Drag the strip below to zoom into a date range, or pick a preset.",
+    zoomHint: "Drag the strip below to zoom, or pick a preset above.",
+    // Shown instead of zoomHint while every preset is greyed out because
+    // there is under a week of history — explains the disabled buttons.
+    zoomHintEarly:
+      "This is your full history so far — range presets unlock past a week of data.",
     historyShorterThanRange:
       "That range is longer than your saved price history — showing all of it.",
   },

@@ -59,15 +59,13 @@ describe("PriceHistoryChart break-even caption", () => {
   it("describes the break-even line as pinned when the average cost is off scale", () => {
     render(<PriceHistoryChart points={points} breakEvenPerDamlung={99999} />);
     expect(
-      screen.getByText(/is above this range — the dashed line is pinned/),
+      screen.getByText(/above this range \(line shown at the edge\)/),
     ).toBeInTheDocument();
   });
 
   it("describes the break-even line normally when it sits within the price range", () => {
     render(<PriceHistoryChart points={points} breakEvenPerDamlung={2810} />);
-    expect(
-      screen.getByText(/Dashed line = your average cost/),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/Average cost — /)).toBeInTheDocument();
   });
 
   it("shows no caption without a position", () => {

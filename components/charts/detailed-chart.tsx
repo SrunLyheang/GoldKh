@@ -114,13 +114,23 @@ function DetailedTooltip({
       </p>
       {payload.map((entry) => {
         const matched = series.find((s) => s.key === entry.dataKey);
+        const labelled = series.length > 1 && matched;
         return (
           <p
             key={entry.dataKey}
-            className="font-mono text-[13px] font-semibold tabular-nums text-foreground"
+            className="flex items-center gap-1.5 font-mono text-detail font-semibold tabular-nums text-foreground"
           >
-            {series.length > 1 && matched ? `${matched.label}: ` : ""}
-            {valueFormatter(entry.value)}
+            {labelled && (
+              <span
+                aria-hidden
+                className="inline-block size-2 shrink-0 rounded-full"
+                style={{ backgroundColor: matched.color }}
+              />
+            )}
+            <span>
+              {labelled ? `${matched.label}: ` : ""}
+              {valueFormatter(entry.value)}
+            </span>
           </p>
         );
       })}
@@ -210,6 +220,11 @@ export function DetailedChart({
     formatAxisTime(rows[startIndex].t),
     formatAxisTime(rows[endIndex].t),
   );
+  // 1W is the shortest preset; if even that spans the whole dataset then
+  // every preset is disabled, so point the hint at the strip instead.
+  const zoomHint = presetCoversAll(rows, "1W")
+    ? t.chart.zoomHintEarly
+    : t.chart.zoomHint;
 
   return (
     <div className={cn("flex flex-col gap-2", className)}>
@@ -264,12 +279,12 @@ export function DetailedChart({
               </button>
             )}
           </div>
-          <p className="text-[11px] text-muted-foreground">
+          <p className="text-label text-muted-foreground">
             <span className="font-mono tabular-nums text-foreground">
               {rangeCaption}
             </span>
             <span className="mx-1.5 text-border">·</span>
-            {t.chart.zoomHint}
+            {zoomHint}
           </p>
         </div>
       )}
@@ -366,23 +381,24 @@ export function DetailedChart({
                     placed.placement === "on-scale" ? "6 5" : "2 3"
                   }
                   strokeWidth={1.5}
-                  label={
-                    placed.placement === "on-scale"
-                      ? undefined
-                      : {
-                          value:
-                            placed.placement === "above"
-                              ? `${ref.label} ↑`
-                              : `${ref.label} ↓`,
-                          position:
-                            placed.placement === "above"
-                              ? "insideTopLeft"
-                              : "insideBottomLeft",
-                          fill: "var(--muted-foreground)",
-                          fontSize: 10,
-                          fontFamily: "var(--font-mono)",
-                        }
-                  }
+                  label={{
+                    // On-scale: name the line where it sits. Off-scale: add
+                    // an arrow since the line is pinned to the plot edge.
+                    value:
+                      placed.placement === "on-scale"
+                        ? ref.label
+                        : placed.placement === "above"
+                          ? `${ref.label} ↑`
+                          : `${ref.label} ↓`,
+                    position:
+                      placed.placement === "above"
+                        ? "insideTopLeft"
+                        : "insideBottomLeft",
+                    fill: "var(--foreground)",
+                    fontSize: 11,
+                    fontWeight: 600,
+                    fontFamily: "var(--font-mono)",
+                  }}
                 />
               );
             })}

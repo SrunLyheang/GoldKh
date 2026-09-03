@@ -2,6 +2,7 @@ import { auth } from "@clerk/nextjs/server";
 import Link from "next/link";
 import { DetailedChart } from "@/components/charts/detailed-chart";
 import { buildChartModel } from "@/components/charts/chart-model";
+import { ReferenceLineCaption } from "@/components/charts/reference-line-caption";
 import { Panel } from "@/components/dashboard/panel";
 import { computePosition } from "@/lib/calc/position";
 import { buildDamlungPriceSeries } from "@/lib/calc/priceHistory";
@@ -62,7 +63,7 @@ export default async function PricePage() {
       ? [
           {
             value: breakEvenPerDamlung,
-            label: "avg cost",
+            label: "Avg cost",
             color: "var(--muted-foreground)",
           },
         ]
@@ -122,19 +123,7 @@ export default async function PricePage() {
 
         <DetailedChart series={series} referenceLines={referenceLines} />
 
-        {placedRefLine && (
-          <p className="mt-2 text-[11.5px] text-muted-foreground">
-            {placedRefLine.placement === "on-scale"
-              ? `${t.chart.averageCost}: ${formatUsd(
-                  String(placedRefLine.actual),
-                )}/damlung — the dashed line.`
-              : `${t.chart.averageCost}: ${formatUsd(
-                  String(placedRefLine.actual),
-                )}/damlung is ${
-                  placedRefLine.placement === "above" ? "above" : "below"
-                } this range — the dashed line is pinned to the edge.`}
-          </p>
-        )}
+        {placedRefLine && <ReferenceLineCaption placed={placedRefLine} />}
         {marketClosed && (
           <p className="mt-2 text-[11.5px] text-muted-foreground">
             {t.chart.marketClosedNote}

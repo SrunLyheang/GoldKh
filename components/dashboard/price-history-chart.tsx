@@ -7,7 +7,7 @@ import {
   buildChartModel,
   type ChartSeries,
 } from "@/components/charts/detailed-chart";
-import { formatUsd } from "@/lib/format/money";
+import { ReferenceLineCaption } from "@/components/charts/reference-line-caption";
 import type { ChartPoint } from "@/lib/calc/priceHistory";
 import { t } from "@/lib/i18n/dictionary";
 import { Panel } from "./panel";
@@ -53,7 +53,7 @@ export function PriceHistoryChart({
       ? [
           {
             value: breakEvenPerDamlung,
-            label: "avg cost",
+            label: "Avg cost",
             color: "var(--muted-foreground)",
           },
         ]
@@ -90,19 +90,7 @@ export function PriceHistoryChart({
         emptyLabel={t.chart.notEnoughHistory}
       />
 
-      {breakEven && (
-        <p className="mt-2 text-[11.5px] text-muted-foreground">
-          {breakEven.placement === "on-scale"
-            ? `Dashed line = your average cost (${formatUsd(
-                String(breakEven.actual),
-              )}/damlung).`
-            : `Your average cost (${formatUsd(
-                String(breakEven.actual),
-              )}/damlung) is ${
-                breakEven.placement === "above" ? "above" : "below"
-              } this range — the dashed line is pinned to the edge.`}
-        </p>
-      )}
+      {breakEven && <ReferenceLineCaption placed={breakEven} />}
 
       {marketClosed && (
         <p className="mt-2 text-[11.5px] text-muted-foreground">
