@@ -1,8 +1,11 @@
 import { auth } from "@clerk/nextjs/server";
 import Link from "next/link";
-import { DetailedChart } from "@/components/charts/detailed-chart";
+import {
+  DetailedChart,
+  buildChartModel,
+} from "@/components/charts/detailed-chart";
 import { Panel } from "@/components/dashboard/panel";
-import { computeHoldings } from "@/lib/calc/holdings";
+import { computePosition } from "@/lib/calc/position";
 import { buildDamlungPriceSeries } from "@/lib/calc/priceHistory";
 import { priceFromTroyOz } from "@/lib/calc/units";
 import { listRecentPriceSnapshots } from "@/lib/db/queries/priceSnapshots";
@@ -15,10 +18,9 @@ import { priceFreshness } from "@/lib/price/freshness";
 import { isMarketOpen } from "@/lib/price/marketHours";
 
 // Detailed, interactive spot-price history — the drill-in from the
-// dashboard's compact chart (dashboard-expansion-plan.md §D.2). Reads the
-// same stored price_snapshots the dashboard does; the deliberate "read the
-// ledger at request time, don't add a cron" choice for charts is in
-// architecture.md.
+// dashboard's compact chart. Reads the same stored price_snapshots the
+// dashboard does; the deliberate "read the ledger at request time, don't
+// add a cron" choice for charts holds here too.
 const t = dictionary.en;
 
 export default async function PricePage() {
@@ -41,11 +43,10 @@ export default async function PricePage() {
   const chartPoints = buildDamlungPriceSeries(recentSnapshots);
   const pricePerDamlung = priceFromTroyOz(price.pricePerTroyOz, "damlung");
 
-  const holdings = computeHoldings(transactions);
-  const hasHoldings = Number(holdings.totalTroyOz) > 0;
-  const breakEvenPerDamlung = hasHoldings
-    ? Number(priceFromTroyOz(holdings.averageCostPerTroyOz, "damlung"))
-    : undefined;
+  const { breakEvenPerDamlung } = computePosition(
+    transactions,
+    price.pricePerTroyOz,
+  );
 
   const series = [
     {
@@ -68,6 +69,14 @@ export default async function PricePage() {
           },
         ]
       : [];
+
+  // The caption below describes the average-cost line against the same
+  // y-domain DetailedChart opens at — on-scale vs. pinned-to-edge is
+  // decided here, not assumed.
+  const { placedRefLine } = buildChartModel({
+    series,
+    referenceLine: breakEvenPerDamlung,
+  });
 
   return (
     <div className="flex flex-col gap-6">
@@ -115,10 +124,17 @@ export default async function PricePage() {
 
         <DetailedChart series={series} referenceLines={referenceLines} />
 
-        {breakEvenPerDamlung !== undefined && (
+        {placedRefLine && (
           <p className="mt-2 text-[11.5px] text-muted-foreground">
-            {t.chart.averageCost}: {formatUsd(String(breakEvenPerDamlung))}/damlung
-            {" — "}the dashed line. Off-scale, it is pinned to the nearer edge.
+            {placedRefLine.placement === "on-scale"
+              ? `${t.chart.averageCost}: ${formatUsd(
+                  String(placedRefLine.actual),
+                )}/damlung — the dashed line.`
+              : `${t.chart.averageCost}: ${formatUsd(
+                  String(placedRefLine.actual),
+                )}/damlung is ${
+                  placedRefLine.placement === "above" ? "above" : "below"
+                } this range — the dashed line is pinned to the edge.`}
           </p>
         )}
         {marketClosed && (

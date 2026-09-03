@@ -12,7 +12,7 @@ import {
 } from "drizzle-orm/pg-core";
 
 // Prices are stored in one canonical unit — USD per troy ounce — per
-// architecture-context.md. Unit and currency conversion happens at
+// CONTEXT.md invariant 2. Unit and currency conversion happens at
 // display time, in lib/calc.
 export const priceSnapshots = pgTable("price_snapshots", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -40,8 +40,7 @@ export const goldUnitEnum = pgEnum("gold_unit", ["chi", "damlung"]);
 export const currencyEnum = pgEnum("currency", ["USD", "KHR"]);
 
 // userId is always the Clerk session user id — never accepted from the
-// client. See progress-tracker.md's "User ID always from the server-side
-// Clerk session" invariant.
+// client. See CONTEXT.md invariant 6.
 export const transactions = pgTable("transactions", {
   id: uuid("id").primaryKey().defaultRandom(),
   userId: text("user_id").notNull(),
@@ -64,11 +63,11 @@ export const transactions = pgTable("transactions", {
 });
 
 // Fixed-window request counter backing rate limiting on the
-// transaction-mutating routes — see progress-tracker.md's rate-limiting
-// decision. One row per (user, window); incremented via an atomic
-// Postgres upsert (lib/db/queries/rateLimit.ts) so the database
-// arbitrates concurrency, per code-standards.md, rather than a
-// check-then-write in JS. windowStart is the app-clock window boundary,
+// transaction-mutating routes — see CONTEXT.md "rate limiting". One row
+// per (user, window); incremented via an atomic Postgres upsert
+// (lib/db/queries/rateLimit.ts) so the database arbitrates concurrency
+// (CONTEXT.md invariant 9), rather than a check-then-write in JS.
+// windowStart is the app-clock window boundary,
 // not a request timestamp — see RATE_LIMIT_WINDOW_MS.
 export const rateLimitCounters = pgTable(
   "rate_limit_counters",

@@ -6,7 +6,7 @@ import { InsightsContent } from "@/components/insights/insights-content";
 
 // "Is my position any good?" — headline readouts, portfolio value over
 // time (the shared DetailedChart inline), per-buy quality, and a what-if
-// calculator (dashboard-expansion-plan.md §5). Loads the same two queries
+// calculator. Loads the same two queries
 // the dashboard uses plus the current price; everything shown is derived
 // at read time from the ledger and stored price snapshots — no new table,
 // no cron (§8).

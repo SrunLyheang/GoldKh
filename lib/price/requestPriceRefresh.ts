@@ -1,7 +1,7 @@
 // Owns the entire client-side conversation with POST /api/price/refresh:
 // the endpoint path, that a 429 carries the cooldown deadline as a
-// Retry-After header (seconds remaining, not the JSON envelope — see
-// code-standards.md), that a 200 carries it as cooldownEndsAt in the data
+// Retry-After header (seconds remaining, not the JSON envelope), that a
+// 200 carries it as cooldownEndsAt in the data
 // payload, and how a dropped connection differs from a route-level error.
 // Returns one of four outcomes — see CONTEXT.md "manual refresh outcome".
 //

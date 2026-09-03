@@ -14,7 +14,7 @@ const STORAGE_KEY = "goldkh-prefs";
 // Display-only preferences, persisted to localStorage. Not user data —
 // they never leave the browser and are not sent to the server. `currency`
 // is stored today but only "USD" is honoured anywhere; KHR display is
-// deferred project-wide (project-overview.md).
+// deferred project-wide.
 export interface Prefs {
   displayUnit: GoldUnit;
   currency: "USD" | "KHR";

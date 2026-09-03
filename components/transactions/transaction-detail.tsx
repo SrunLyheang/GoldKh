@@ -31,7 +31,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 }
 
 // The everything-the-compact-view-omits panel shown when a transaction
-// row / card is expanded (dashboard-expansion-plan.md §4.2). Shared by the
+// row / card is expanded. Shared by the
 // dashboard panel and the full transactions route so the two can't drift.
 // `spotPerDamlungOnDate` is resolved by the caller from its own snapshot
 // list — null means the price history doesn't reach that far back.

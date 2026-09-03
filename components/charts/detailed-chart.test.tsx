@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import {
   DetailedChart,
+  buildChartModel,
   computeSeriesYAxis,
   mergeSeries,
   placeReferenceLine,
@@ -99,6 +100,33 @@ describe("placeReferenceLine", () => {
       y: 2790,
       placement: "below",
     });
+  });
+});
+
+describe("buildChartModel", () => {
+  it("reports the same on-scale domain the chart opens at, and places the line", () => {
+    const series = [priceSeries([2800, 2820, 2810])];
+    const model = buildChartModel({ series, referenceLine: 2810 });
+    expect(model.domain).toEqual(computeSeriesYAxis(model.rows, ["price"]).domain);
+    expect(model.placedRefLine?.placement).toBe("on-scale");
+  });
+
+  it("pins an off-scale reference line to the edge", () => {
+    const model = buildChartModel({
+      series: [priceSeries([2800, 2820])],
+      referenceLine: 50000,
+    });
+    expect(model.placedRefLine?.placement).toBe("above");
+  });
+
+  it("returns no placed line without a reference value or with too little history", () => {
+    expect(
+      buildChartModel({ series: [priceSeries([2800, 2820])] }).placedRefLine,
+    ).toBeNull();
+    expect(
+      buildChartModel({ series: [priceSeries([2800])], referenceLine: 2810 })
+        .placedRefLine,
+    ).toBeNull();
   });
 });
 

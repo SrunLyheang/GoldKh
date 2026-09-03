@@ -4,7 +4,7 @@ import { rateLimitCounters } from "@/lib/db/schema";
 import { RATE_LIMIT_WINDOW_MS } from "@/lib/constants/rateLimit";
 
 // Atomic Postgres upsert, not a check-then-write in JS — the database
-// arbitrates concurrency (code-standards.md), same pattern getPrice()'s
+// arbitrates concurrency (CONTEXT.md invariant 9), same pattern getPrice()'s
 // conditional insert follows. windowStart is floored to
 // RATE_LIMIT_WINDOW_MS boundaries using the app clock (matching
 // isManualCooldownActive's Date.now()-based approach in

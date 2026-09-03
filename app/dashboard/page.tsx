@@ -12,8 +12,7 @@ import { DashboardContent } from "@/components/dashboard/dashboard-content";
 export default async function DashboardPage() {
   // The dashboard layout (app/dashboard/layout.tsx) already gates on auth and
   // redirects unauthenticated users, so userId is non-null here. A second
-  // redirect gave the Clerk dev handshake another way to bounce the route —
-  // see ~/.claude/plans/dashboard-request-loop-clerk-handshake.md.
+  // redirect gave the Clerk dev handshake another way to bounce the route.
   const { userId } = await auth();
   if (!userId) return null;
 

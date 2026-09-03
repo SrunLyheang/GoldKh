@@ -50,7 +50,7 @@ describe("computeHoldings", () => {
     );
   });
 
-  it("a sell reduces quantity but leaves average cost unchanged — the worked example from project-overview.md", () => {
+  it("a sell reduces quantity but leaves average cost unchanged — the worked example from CONTEXT.md", () => {
     const afterSell = computeHoldings([
       buy("10", "chi", "300"),
       sell("3", "chi", "999"),

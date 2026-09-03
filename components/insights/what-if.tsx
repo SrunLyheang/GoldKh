@@ -37,9 +37,8 @@ const MODES: WhatIfMode[] = ["buy", "sell"];
 
 // Stateless what-if: fold a hypothetical buy or sell into the current
 // position and show the projected average cost, holdings, break-even,
-// realized/unrealized P&L — each as a current → projected pair
-// (dashboard-expansion-plan.md §5.4). No persistence, no API — the calc
-// lives in lib/calc/whatIf.ts.
+// realized/unrealized P&L — each as a current → projected pair. No
+// persistence, no API — the calc lives in lib/calc/whatIf.ts.
 export function WhatIf({ holdings, pricePerTroyOz }: WhatIfProps) {
   const [mode, setMode] = useState<WhatIfMode>("buy");
   const [quantity, setQuantity] = useState("");

@@ -29,9 +29,9 @@ export interface BuyQualityRow {
 }
 
 // Per-buy quality: how each purchase priced against spot on the day it
-// was made (dashboard-expansion-plan.md §5.3). USD buys only — sells have
-// no ongoing position to grade and KHR conversion is deferred
-// (project-overview.md), the same rule classifyEntry encodes. Pure: no
+// was made. USD buys only — sells have no ongoing position to grade and
+// KHR conversion is deferred (CONTEXT.md invariant 4), the same rule
+// classifyEntry encodes. Pure: no
 // I/O. Input order of the buys is preserved; the UI does the sorting.
 export function computeBuyQuality(
   transactions: BuyQualityTxInput[],

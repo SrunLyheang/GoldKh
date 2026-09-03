@@ -10,13 +10,13 @@ export interface Holdings {
 // Weighted average cost, not FIFO — matches how the user thinks about the
 // position (total spent against current value). A sell reduces quantity
 // and leaves the average cost per unit unchanged; proceeds don't touch
-// the basis of what remains (project-overview.md's worked example: hold
-// 10 chi at $300 average cost, sell 3, still hold 7 chi at $300 average
-// cost).
+// the basis of what remains. Worked example: hold 10 chi at $300 average
+// cost, sell 3, still hold 7 chi at $300 average cost. See CONTEXT.md
+// "weighted-average cost, not FIFO".
 //
 // KHR rows are excluded entirely, not converted — this aggregate is
-// USD-denominated (see architecture.md invariant 4) and KHR conversion
-// is out of scope (project-overview.md). classifyEntry names that rule;
+// USD-denominated (see CONTEXT.md invariant 4) and KHR conversion is out
+// of scope. classifyEntry names that rule;
 // computeRowValuation in transactionRow.ts keys its per-row treatment off
 // the same classification.
 export function computeHoldings(transactions: LedgerEntry[]): Holdings {

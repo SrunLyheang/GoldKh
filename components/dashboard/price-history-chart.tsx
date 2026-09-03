@@ -4,9 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   DetailedChart,
-  computeSeriesYAxis,
-  mergeSeries,
-  placeReferenceLine,
+  buildChartModel,
   type ChartSeries,
 } from "@/components/charts/detailed-chart";
 import { formatUsd } from "@/lib/format/money";
@@ -29,7 +27,7 @@ const PRICE_KEY = "pricePerDamlung";
 // itself both drill into /dashboard/price, where DetailedChart runs in
 // full mode. The break-even ReferenceLine and the market-closed treatment
 // are preserved here — the line is passed through to DetailedChart, the
-// caption and badge stay local (dashboard-expansion-plan.md §D.3).
+// caption and badge stay local.
 export function PriceHistoryChart({
   points,
   breakEvenPerDamlung,
@@ -61,17 +59,12 @@ export function PriceHistoryChart({
         ]
       : [];
 
-  // The caption describes the average-cost line against the full price
-  // range — the same domain DetailedChart opens at, computed with the same
-  // helpers it draws with.
-  const rows = mergeSeries(series);
-  const breakEven =
-    breakEvenPerDamlung !== undefined && rows.length >= 2
-      ? placeReferenceLine(
-          breakEvenPerDamlung,
-          computeSeriesYAxis(rows, [PRICE_KEY]).domain,
-        )
-      : null;
+  // The caption describes the average-cost line against the same y-domain
+  // DetailedChart opens at — one shared computation.
+  const { placedRefLine: breakEven } = buildChartModel({
+    series,
+    referenceLine: breakEvenPerDamlung,
+  });
 
   return (
     <Panel size="lg">

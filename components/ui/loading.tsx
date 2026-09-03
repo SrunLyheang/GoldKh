@@ -9,7 +9,7 @@ const SPINNER_SIZES = {
 
 // The one loading primitive for the app — a ring that spins to the gold
 // accent, built from existing tokens (--border, --primary) rather than a
-// new color, per code-standards.md's "no hardcoded hex" rule. Anything
+// new color, per CONTEXT.md invariant 10 ("no hardcoded hex"). Anything
 // that needs a loading state (a submit button, a full-page loading.tsx)
 // composes this instead of inventing its own spinner or disabled-text
 // treatment.

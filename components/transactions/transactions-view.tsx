@@ -348,8 +348,8 @@ function ViewCard({
   );
 }
 
-// The full transactions route (dashboard-expansion-plan.md §4b): every
-// row, a filter row, sortable Date / P&L, CSV import/export, and the same
+// The full transactions route: every row, a filter row, sortable
+// Date / P&L, CSV import/export, and the same
 // click-to-expand detail as the dashboard panel. Filter + sort state is
 // component-local — not persisted, not in the URL for v1.
 export function TransactionsView({

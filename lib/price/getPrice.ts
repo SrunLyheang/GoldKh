@@ -34,7 +34,7 @@ const defaultDeps: GetPriceDeps = {
 
 // Reads newest, checks age, returns if fresh — otherwise walks the
 // provider list, inserts, returns. Falls back to the last cached price
-// on total provider failure (project-overview.md success criterion 3),
+// on total provider failure (CONTEXT.md invariant 8 — "always a price"),
 // and only throws when there is no cache to fall back to at all.
 export async function getPrice(
   deps: GetPriceDeps = defaultDeps
