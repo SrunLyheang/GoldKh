@@ -1,9 +1,7 @@
 import { auth } from "@clerk/nextjs/server";
 import Link from "next/link";
-import {
-  DetailedChart,
-  buildChartModel,
-} from "@/components/charts/detailed-chart";
+import { DetailedChart } from "@/components/charts/detailed-chart";
+import { buildChartModel } from "@/components/charts/chart-model";
 import { Panel } from "@/components/dashboard/panel";
 import { computePosition } from "@/lib/calc/position";
 import { buildDamlungPriceSeries } from "@/lib/calc/priceHistory";
