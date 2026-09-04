@@ -13,11 +13,11 @@ export interface RowValuation {
 
 // Per-row valuation is informational only — "what this specific entry is
 // worth today" — and is never fed into the portfolio's aggregate
-// holdings/gain-loss figures, which stay weighted-average per
-// project-overview.md's "Out of Scope: FIFO or per-lot cost basis" rule.
-// A sell row shows what was received, not a current value — there's no
-// ongoing position on that entry to value. KHR rows show no USD figures
-// since KHR conversion is deferred entirely (project-overview.md).
+// holdings/gain-loss figures, which stay weighted-average — see CONTEXT.md
+// "weighted-average cost, not FIFO". A sell row shows what was received,
+// not a current value — there's no ongoing position on that entry to
+// value. KHR rows show no USD figures since KHR conversion is deferred
+// entirely (CONTEXT.md invariant 4).
 export function computeRowValuation(
   tx: LedgerEntry,
   currentPricePerTroyOz: string

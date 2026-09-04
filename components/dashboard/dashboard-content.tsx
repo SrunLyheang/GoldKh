@@ -1,13 +1,10 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useSectionEnter } from "@/components/motion/use-section-enter";
 import { notify } from "@/lib/ui/toast";
-import { computeGainLoss } from "@/lib/calc/gainLoss";
-import { computeHoldings } from "@/lib/calc/holdings";
-import { computeRealized } from "@/lib/calc/realized";
-import { toChronological } from "@/lib/calc/chronological";
+import { computePosition } from "@/lib/calc/position";
 import { fromTroyOz, priceFromTroyOz, type GoldUnit } from "@/lib/calc/units";
 import { usePrefs } from "@/lib/prefs/prefs-context";
 import type { ChartPoint } from "@/lib/calc/priceHistory";
@@ -143,18 +140,13 @@ export function DashboardContent({
     return true;
   }
 
-  // computeHoldings and computeRealized replay the ledger forward in
-  // time; `rows` is newest-first for the history table, so they must be
-  // re-sorted oldest-first or a sell is valued against an empty position.
-  const chronological = toChronological(rows);
-  const holdings = computeHoldings(chronological);
-  const gainLoss = computeGainLoss(
-    holdings.totalTroyOz,
-    holdings.averageCostPerTroyOz,
-    pricePerTroyOz
-  );
-  const realized = computeRealized(chronological);
-  const hasHoldings = Number(holdings.totalTroyOz) > 0;
+  // `rows` is newest-first for the history table; computePosition re-sorts
+  // it oldest-first before replaying the ledger.
+  const { holdings, gainLoss, realized, breakEvenPerDamlung } =
+    useMemo(
+      () => computePosition(rows, pricePerTroyOz),
+      [rows, pricePerTroyOz]
+    );
 
   return (
     <div className="flex flex-col gap-7 md:gap-9">
@@ -233,11 +225,7 @@ export function DashboardContent({
         <PriceHistoryChart
           points={chartPoints}
           marketOpen={marketOpen}
-          breakEvenPerDamlung={
-            hasHoldings
-              ? Number(priceFromTroyOz(holdings.averageCostPerTroyOz, "damlung"))
-              : undefined
-          }
+          breakEvenPerDamlung={breakEvenPerDamlung}
         />
       </div>
     </div>

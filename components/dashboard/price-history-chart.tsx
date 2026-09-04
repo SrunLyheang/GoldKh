@@ -4,12 +4,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   DetailedChart,
-  computeSeriesYAxis,
-  mergeSeries,
-  placeReferenceLine,
+  buildChartModel,
   type ChartSeries,
 } from "@/components/charts/detailed-chart";
-import { formatUsd } from "@/lib/format/money";
+import { ReferenceLineCaption } from "@/components/charts/reference-line-caption";
 import type { ChartPoint } from "@/lib/calc/priceHistory";
 import { t } from "@/lib/i18n/dictionary";
 import { Panel } from "./panel";
@@ -29,7 +27,7 @@ const PRICE_KEY = "pricePerDamlung";
 // itself both drill into /dashboard/price, where DetailedChart runs in
 // full mode. The break-even ReferenceLine and the market-closed treatment
 // are preserved here — the line is passed through to DetailedChart, the
-// caption and badge stay local (dashboard-expansion-plan.md §D.3).
+// caption and badge stay local.
 export function PriceHistoryChart({
   points,
   breakEvenPerDamlung,
@@ -55,23 +53,18 @@ export function PriceHistoryChart({
       ? [
           {
             value: breakEvenPerDamlung,
-            label: "avg cost",
+            label: "Avg cost",
             color: "var(--muted-foreground)",
           },
         ]
       : [];
 
-  // The caption describes the average-cost line against the full price
-  // range — the same domain DetailedChart opens at, computed with the same
-  // helpers it draws with.
-  const rows = mergeSeries(series);
-  const breakEven =
-    breakEvenPerDamlung !== undefined && rows.length >= 2
-      ? placeReferenceLine(
-          breakEvenPerDamlung,
-          computeSeriesYAxis(rows, [PRICE_KEY]).domain,
-        )
-      : null;
+  // The caption describes the average-cost line against the same y-domain
+  // DetailedChart opens at — one shared computation.
+  const { placedRefLine: breakEven } = buildChartModel({
+    series,
+    referenceLine: breakEvenPerDamlung,
+  });
 
   return (
     <Panel size="lg">
@@ -97,19 +90,7 @@ export function PriceHistoryChart({
         emptyLabel={t.chart.notEnoughHistory}
       />
 
-      {breakEven && (
-        <p className="mt-2 text-[11.5px] text-muted-foreground">
-          {breakEven.placement === "on-scale"
-            ? `Dashed line = your average cost (${formatUsd(
-                String(breakEven.actual),
-              )}/damlung).`
-            : `Your average cost (${formatUsd(
-                String(breakEven.actual),
-              )}/damlung) is ${
-                breakEven.placement === "above" ? "above" : "below"
-              } this range — the dashed line is pinned to the edge.`}
-        </p>
-      )}
+      {breakEven && <ReferenceLineCaption placed={breakEven} />}
 
       {marketClosed && (
         <p className="mt-2 text-[11.5px] text-muted-foreground">

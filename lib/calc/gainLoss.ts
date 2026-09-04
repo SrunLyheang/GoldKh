@@ -7,8 +7,8 @@ export interface GainLoss {
 }
 
 // Gain/loss stays computed against the spot price, not a retail premium
-// — see progress-tracker.md's "Retail-vs-spot premium" decision. The UI
-// carries a disclaimer explaining the gap; this function does not.
+// — see CONTEXT.md invariant 5. The UI carries a disclaimer explaining
+// the gap; this function does not.
 export function computeGainLoss(
   totalTroyOz: string,
   averageCostPerTroyOz: string,

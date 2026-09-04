@@ -23,8 +23,8 @@ export interface InsightsAggregates {
 }
 
 // The two Insights readout aggregates that aren't already covered by
-// computeHoldings / computeGainLoss / computeRealized
-// (dashboard-expansion-plan.md §5.1). Pure. KHR buys are excluded, the
+// computeHoldings / computeGainLoss / computeRealized.
+// Pure. KHR buys are excluded, the
 // same rule the rest of the calc layer applies (classifyEntry).
 export function computeInsights(
   transactions: DatedLedgerEntry[],

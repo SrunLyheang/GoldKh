@@ -5,7 +5,7 @@
 // the whole month's quota in under a day. 30 minutes cuts worst-case call
 // volume 6x while still refreshing several times during a normal session.
 // If the free tier is exceeded anyway, getPrice() falls back to the last
-// cached price rather than failing — see progress-tracker.md.
+// cached price rather than failing — see CONTEXT.md "price freshness".
 export const PRICE_STALENESS_MS = 30 * 60 * 1000;
 
 // Minimum gap between user-triggered manual refreshes (POST

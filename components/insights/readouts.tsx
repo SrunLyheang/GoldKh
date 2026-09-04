@@ -52,8 +52,8 @@ function Stat({
   );
 }
 
-// The headline figures at the top of Insights (dashboard-expansion-plan.md
-// §5.1), shown as a 2×2 stat grid in the same idiom as the dashboard's
+// The headline figures at the top of Insights, shown as a 2×2 stat grid
+// in the same idiom as the dashboard's
 // Position row — a mono uppercase label, the figure emphasised, a muted
 // qualifier. Tiles render only when they have something to say.
 export function Readouts({

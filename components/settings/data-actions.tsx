@@ -106,8 +106,8 @@ function Row({
   );
 }
 
-// Settings → Data (dashboard-expansion-plan.md §6.3): export, delete all
-// transactions, delete account. `transactions` is passed from the server
+// Settings → Data: export, delete all transactions, delete account.
+// `transactions` is passed from the server
 // page so export reuses the same serializer the CSV dialog uses.
 export function DataActions({
   transactions,

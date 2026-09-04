@@ -25,8 +25,8 @@ function Field({
 }
 
 // Display-only preferences, persisted to localStorage via PrefsProvider.
-// Changing a value saves immediately — there is no explicit save button
-// (dashboard-expansion-plan.md §6.2). Currency is stored but only USD is
+// Changing a value saves immediately — there is no explicit save button.
+// Currency is stored but only USD is
 // honoured anywhere today; KHR display is deferred project-wide.
 export function PreferencesSettings() {
   const { prefs, setPrefs } = usePrefs();

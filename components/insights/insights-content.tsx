@@ -1,12 +1,9 @@
 "use client";
 
 import { useMemo } from "react";
-import { computeGainLoss } from "@/lib/calc/gainLoss";
-import { computeHoldings } from "@/lib/calc/holdings";
-import { computeRealized } from "@/lib/calc/realized";
 import { computeInsights } from "@/lib/calc/insights";
 import { computeBuyQuality } from "@/lib/calc/buyQuality";
-import { toChronological } from "@/lib/calc/chronological";
+import { computePosition } from "@/lib/calc/position";
 import {
   buildPortfolioSeries,
   type DatedLedgerEntry,
@@ -30,7 +27,7 @@ interface InsightsContentProps {
 // Client shell for the Insights route: runs every pure calc once and
 // hands each section its slice. All four sections are a Panel size="lg"
 // in the dashboard's 32px block rhythm with a .tt-heading .tt-bracket
-// header (dashboard-expansion-plan.md §5).
+// header.
 export function InsightsContent({
   transactions,
   snapshots,
@@ -51,29 +48,11 @@ export function InsightsContent({
   const { ref: whatIfRef, revealClass: whatIfCls, style: whatIfStyle } =
     useSectionEnter<HTMLDivElement>(200);
 
-  // Newest-first from the server; the replay-based aggregates below need
-  // it oldest-first (see toChronological).
-  const chronological = useMemo(
-    () => toChronological(transactions),
-    [transactions],
-  );
-
-  const holdings = useMemo(
-    () => computeHoldings(chronological),
-    [chronological],
-  );
-  const gainLoss = useMemo(
-    () =>
-      computeGainLoss(
-        holdings.totalTroyOz,
-        holdings.averageCostPerTroyOz,
-        pricePerTroyOz,
-      ),
-    [holdings, pricePerTroyOz],
-  );
-  const realized = useMemo(
-    () => computeRealized(chronological),
-    [chronological],
+  // Newest-first from the server; computePosition re-sorts oldest-first
+  // before replaying the ledger.
+  const { holdings, gainLoss, realized } = useMemo(
+    () => computePosition(transactions, pricePerTroyOz),
+    [transactions, pricePerTroyOz],
   );
   const aggregates = useMemo(
     () => computeInsights(transactions),

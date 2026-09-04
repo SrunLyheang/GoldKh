@@ -43,7 +43,7 @@ describe("fetchGoldapiPrice", () => {
   });
 
   // A provider returning HTTP 200 with an error body is the expected
-  // failure mode called out in code-standards.md, not an edge case.
+  // failure mode to guard against, not an edge case.
   it("throws on a 200 response with an error body instead of a price", async () => {
     global.fetch = vi.fn().mockResolvedValue(
       new Response(JSON.stringify({ error: "rate limit exceeded" }), {

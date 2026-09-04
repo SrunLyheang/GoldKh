@@ -13,9 +13,8 @@ interface ValueOverTimeProps {
 
 // Portfolio market value vs cost basis over time. Wraps the shared
 // DetailedChart inline in compact mode — no onExpand, no route, because
-// this is the user's own position, not spot price
-// (dashboard-expansion-plan.md §5.2). Fewer than 2 points falls through
-// to DetailedChart's own empty state.
+// this is the user's own position, not spot price. Fewer than 2 points
+// falls through to DetailedChart's own empty state.
 export function ValueOverTime({ points }: ValueOverTimeProps) {
 
   const series: ChartSeries[] = [

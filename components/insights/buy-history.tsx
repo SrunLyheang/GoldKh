@@ -47,8 +47,8 @@ function SortButton({
   );
 }
 
-// Every buy graded against spot on its date (dashboard-expansion-plan.md
-// §5.3). Sortable by date or by `vs spot`; rows with no old-enough
+// Every buy graded against spot on its date. Sortable by date or by
+// `vs spot`; rows with no old-enough
 // snapshot show "—" and sort last on the vs-spot key.
 export function BuyHistory({ rows }: BuyHistoryProps) {
   const [sortKey, setSortKey] = useState<SortKey>("date");

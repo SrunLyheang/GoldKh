@@ -14,10 +14,9 @@ export interface NormalizedPrice {
 }
 
 // A provider returning HTTP 200 with an error body is the expected
-// failure mode to guard against, not an edge case — see
-// code-standards.md. The schema parse below rejects that shape the
-// same way it rejects a network error, so callers only need one
-// try/catch.
+// failure mode to guard against, not an edge case. The schema parse
+// below rejects that shape the same way it rejects a network error, so
+// callers only need one try/catch.
 export async function fetchGoldapiPrice(): Promise<NormalizedPrice> {
   const apiKey = process.env.GOLDAPI_IO_API_KEY;
   if (!apiKey) {

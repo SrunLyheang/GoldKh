@@ -220,8 +220,8 @@ function Fields({
 // Table-first filter bar: a single toggle row that stays out of the way
 // until you need it. Collapsed, it shows the active filters as removable
 // chips plus the result count; expanded, the full control set. Same
-// behaviour on every viewport (dashboard-expansion-plan.md §4b, adjusted
-// after user feedback that the always-open grid buried the table).
+// behaviour on every viewport (adjusted after user feedback that the
+// always-open grid buried the table).
 export function TransactionFilters({
   value,
   onChange,

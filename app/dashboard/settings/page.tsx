@@ -5,7 +5,7 @@ import { AccountSettings } from "@/components/settings/account";
 import { DataActions } from "@/components/settings/data-actions";
 import { PreferencesSettings } from "@/components/settings/preferences";
 
-// Settings (dashboard-expansion-plan.md §6): a server-component shell with
+// Settings: a server-component shell with
 // three client islands — Account (Clerk), Preferences (localStorage), and
 // Data (export + destructive actions). Only the transaction list is read
 // here, so Data's export can reuse the CSV serializer.

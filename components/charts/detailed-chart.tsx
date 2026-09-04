@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useReducedMotion } from "motion/react";
 import {
   Brush,
@@ -19,26 +19,41 @@ import { t } from "@/lib/i18n/dictionary";
 import { notify } from "@/lib/ui/toast";
 import { cn } from "@/lib/utils";
 import { CHART_DRAW_MS } from "@/components/motion/motion";
+import {
+  PRESET_ORDER,
+  presetCoversAll,
+  useChartRange,
+  type PresetKey,
+} from "./use-chart-range";
+import {
+  computeSeriesYAxis,
+  mergeSeries,
+  placeReferenceLine,
+  type ChartReferenceLine,
+  type ChartSeries,
+} from "./chart-model";
+
+// Re-exported so existing importers (and the test suite) keep a single
+// entry point for the chart's pure helpers. The pure geometry lives in
+// chart-model.ts (no "use client") so a server component can call
+// buildChartModel; this module just re-exposes it.
+export { presetCoversAll, presetRange, type PresetKey } from "./use-chart-range";
+export {
+  buildChartModel,
+  computeSeriesYAxis,
+  mergeSeries,
+  placeReferenceLine,
+  type ChartModel,
+  type ChartReferenceLine,
+  type ChartSeries,
+  type MergedRow,
+  type RefPlacement,
+} from "./chart-model";
 
 // Reusable interactive time-series chart: /dashboard/price (full), the
 // dashboard compact chart, and Insights' portfolio chart (two series).
 // Recharts <Brush> for drag-to-range; y-domain recomputed from the visible
 // slice; range presets hand-wired off Date.now(), clamped to history.
-
-export interface ChartSeries {
-  key: string;
-  label: string;
-  color: string;
-  data: { t: number; value: number }[];
-}
-
-export interface ChartReferenceLine {
-  value: number;
-  // `${label} ↑`/`↓` only when the line is off-scale; on-scale lines are
-  // unlabelled (caller writes its own caption).
-  label: string;
-  color?: string;
-}
 
 interface DetailedChartProps {
   series: ChartSeries[];
@@ -56,136 +71,6 @@ interface DetailedChartProps {
   valueFormatter?: (value: number) => string;
   emptyLabel?: string;
   className?: string;
-}
-
-export interface MergedRow {
-  t: number;
-  [seriesKey: string]: number;
-}
-
-// Collapse N sparse {t,value} series onto one timestamp-keyed row array so a
-// single <LineChart> draws them all and <Brush> has one index space.
-export function mergeSeries(series: ChartSeries[]): MergedRow[] {
-  const byT = new Map<number, MergedRow>();
-  for (const s of series) {
-    for (const point of s.data) {
-      const row = byT.get(point.t) ?? { t: point.t };
-      row[s.key] = point.value;
-      byT.set(point.t, row);
-    }
-  }
-  return Array.from(byT.values()).sort((a, b) => a.t - b.t);
-}
-
-const NICE_STEPS = [
-  5, 10, 20, 25, 50, 100, 200, 250, 500, 1000, 2000, 5000, 10000, 20000,
-];
-const TARGET_TICK_COUNT = 5;
-
-function niceStep(range: number): number {
-  if (range <= 0) {
-    return NICE_STEPS[0];
-  }
-  const rough = range / TARGET_TICK_COUNT;
-  return (
-    NICE_STEPS.find((step) => step >= rough) ??
-    NICE_STEPS[NICE_STEPS.length - 1]
-  );
-}
-
-// Domain sized from visible series values alone — reference lines excluded,
-// since a fat-fingered average-cost line would otherwise flatten the real
-// line to a sliver. Off-scale reference lines are clamped by placeReferenceLine.
-export function computeSeriesYAxis(
-  rows: MergedRow[],
-  keys: string[],
-): { domain: [number, number]; ticks: number[] } {
-  const values: number[] = [];
-  for (const row of rows) {
-    for (const key of keys) {
-      const value = row[key];
-      if (typeof value === "number" && Number.isFinite(value)) {
-        values.push(value);
-      }
-    }
-  }
-  if (values.length === 0) {
-    return { domain: [0, 1], ticks: [0, 1] };
-  }
-
-  const dataMin = Math.min(...values);
-  const dataMax = Math.max(...values);
-  const range = dataMax - dataMin;
-  const step = niceStep(range);
-  const padding = Math.max(range * 0.1, step * 0.5);
-  const domainMin = dataMin - padding;
-  const domainMax = dataMax + padding;
-
-  const firstTick = Math.floor(domainMin / step) * step;
-  const lastTick = Math.ceil(domainMax / step) * step;
-  const ticks: number[] = [];
-  for (let tick = firstTick; tick <= lastTick; tick += step) {
-    ticks.push(tick);
-  }
-
-  return { domain: [domainMin, domainMax], ticks };
-}
-
-export type RefPlacement = "on-scale" | "above" | "below";
-
-export function placeReferenceLine(
-  value: number,
-  [domainMin, domainMax]: [number, number],
-): { actual: number; y: number; placement: RefPlacement } {
-  if (value > domainMax) {
-    return { actual: value, y: domainMax, placement: "above" };
-  }
-  if (value < domainMin) {
-    return { actual: value, y: domainMin, placement: "below" };
-  }
-  return { actual: value, y: value, placement: "on-scale" };
-}
-
-export const PRESET_WINDOWS_MS = {
-  "1W": 7 * 24 * 60 * 60 * 1000,
-  "1M": 30 * 24 * 60 * 60 * 1000,
-  "3M": 90 * 24 * 60 * 60 * 1000,
-} as const;
-
-export type PresetKey = keyof typeof PRESET_WINDOWS_MS | "All";
-
-const PRESET_ORDER: PresetKey[] = ["1W", "1M", "3M", "All"];
-
-// [startIndex, endIndex] into `rows` for a preset window ending now. "All" or
-// any window past the earliest datum clamps to the full range — no backfill.
-export function presetRange(
-  rows: MergedRow[],
-  preset: PresetKey,
-  now: number = Date.now(),
-): [number, number] {
-  const lastIndex = Math.max(0, rows.length - 1);
-  if (preset === "All" || rows.length === 0) {
-    return [0, lastIndex];
-  }
-  const cutoff = now - PRESET_WINDOWS_MS[preset];
-  if (cutoff <= rows[0].t) {
-    return [0, lastIndex];
-  }
-  const start = rows.findIndex((row) => row.t >= cutoff);
-  return [start < 0 ? lastIndex : start, lastIndex];
-}
-
-// True when a preset's window already spans the whole dataset (same as
-// "All") — the full-mode UI disables that button.
-export function presetCoversAll(
-  rows: MergedRow[],
-  preset: PresetKey,
-  now: number = Date.now(),
-): boolean {
-  if (preset === "All" || rows.length === 0) {
-    return true;
-  }
-  return now - PRESET_WINDOWS_MS[preset] <= rows[0].t;
 }
 
 function formatAxisTime(t: number): string {
@@ -211,12 +96,14 @@ function DetailedTooltip({
   payload,
   label,
   series,
+  referenceLines,
   valueFormatter,
 }: {
   active?: boolean;
   payload?: Array<{ dataKey: string; value: number }>;
   label?: number;
   series: ChartSeries[];
+  referenceLines: ChartReferenceLine[];
   valueFormatter: (value: number) => string;
 }) {
   if (!active || !payload?.length) {
@@ -229,16 +116,41 @@ function DetailedTooltip({
       </p>
       {payload.map((entry) => {
         const matched = series.find((s) => s.key === entry.dataKey);
+        const labelled = series.length > 1 && matched;
         return (
           <p
             key={entry.dataKey}
-            className="font-mono text-[13px] font-semibold tabular-nums text-foreground"
+            className="flex items-center gap-1.5 font-mono text-detail font-semibold tabular-nums text-foreground"
           >
-            {series.length > 1 && matched ? `${matched.label}: ` : ""}
-            {valueFormatter(entry.value)}
+            {labelled && (
+              <span
+                aria-hidden
+                className="inline-block size-2 shrink-0 rounded-full"
+                style={{ backgroundColor: matched.color }}
+              />
+            )}
+            <span>
+              {labelled ? `${matched.label}: ` : ""}
+              {valueFormatter(entry.value)}
+            </span>
           </p>
         );
       })}
+      {referenceLines.map((ref, index) => (
+        <p
+          key={`ref-${index}`}
+          className="flex items-center gap-1.5 font-mono text-detail tabular-nums text-muted-foreground"
+        >
+          <span
+            aria-hidden
+            className="inline-block w-2.5 shrink-0 border-t border-dashed"
+            style={{ borderColor: ref.color ?? "var(--muted-foreground)" }}
+          />
+          <span>
+            {ref.label}: {valueFormatter(ref.value)}
+          </span>
+        </p>
+      ))}
     </div>
   );
 }
@@ -271,19 +183,22 @@ export function DetailedChart({
   const rows = useMemo(() => mergeSeries(series), [series]);
   const keys = useMemo(() => series.map((s) => s.key), [series]);
 
-  // Recharts 3's <Brush> divides by the plot width to place its travellers;
-  // on first mount ResponsiveContainer briefly reports width 0 before its
-  // ResizeObserver fires, so that math yields NaN and React warns about a
-  // NaN `x` on the traveller <rect>. Gate the Brush on a sane width.
-  const [plotWidth, setPlotWidth] = useState(0);
-
-  const lastIndex = Math.max(0, rows.length - 1);
-  const [range, setRange] = useState<[number, number] | null>(null);
-  const [activePreset, setActivePreset] = useState<PresetKey | null>("All");
-
-  const [rawStart, rawEnd] = range ?? [0, lastIndex];
-  const startIndex = Math.min(Math.max(0, rawStart), lastIndex);
-  const endIndex = Math.min(Math.max(startIndex, rawEnd), lastIndex);
+  // Visible window, range presets, and the drag-to-pan gesture — see
+  // use-chart-range.ts. `plotWidth` (reported by ResponsiveContainer)
+  // also gates the Brush: on first mount it briefly reads 0 and the
+  // traveller math yields NaN.
+  const {
+    startIndex,
+    endIndex,
+    isZoomed,
+    activePreset,
+    plotWidth,
+    setPlotWidth,
+    plotBoxRef,
+    applyPreset,
+    resetZoom,
+    onBrushChange,
+  } = useChartRange(rows);
 
   const visibleRows = rows.slice(startIndex, endIndex + 1);
   const { domain, ticks } = useMemo(
@@ -298,82 +213,6 @@ export function DetailedChart({
   // Taller strip when presets show, so the drag handles read as a control.
   const brushHeight = showControls ? 28 : 16;
 
-  // Drag-to-pan straight on the plot — the phone gesture people expect,
-  // without having to hit the thin Brush strip. Horizontal drags shift the
-  // visible index window; vertical drags and taps fall through untouched so
-  // the page still scrolls and the tooltip still opens. Only armed while
-  // zoomed in (nothing to pan at full range).
-  const plotBoxRef = useRef<HTMLDivElement>(null);
-  const panLive = useRef({ startIndex, endIndex, lastIndex, plotWidth });
-  useEffect(() => {
-    panLive.current = { startIndex, endIndex, lastIndex, plotWidth };
-  });
-  useEffect(() => {
-    const el = plotBoxRef.current;
-    if (!el) return;
-    let sx = 0;
-    let sy = 0;
-    let s = 0;
-    let e0 = 0;
-    let on = false;
-    let axis: "?" | "x" | "y" = "?";
-    const onStart = (ev: TouchEvent) => {
-      const target = ev.target as Element;
-      if (ev.touches.length !== 1 || target.closest?.(".recharts-brush"))
-        return;
-      const { startIndex: si, endIndex: ei } = panLive.current;
-      if (si <= 0 && ei >= panLive.current.lastIndex) return; // not zoomed
-      sx = ev.touches[0].clientX;
-      sy = ev.touches[0].clientY;
-      s = si;
-      e0 = ei;
-      on = true;
-      axis = "?";
-    };
-    const onMove = (ev: TouchEvent) => {
-      if (!on) return;
-      const dx = ev.touches[0].clientX - sx;
-      const dy = ev.touches[0].clientY - sy;
-      if (axis === "?") {
-        if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
-        axis = Math.abs(dx) > Math.abs(dy) ? "x" : "y";
-      }
-      if (axis !== "x") return;
-      ev.preventDefault();
-      const { lastIndex: li, plotWidth: pw } = panLive.current;
-      const span = e0 - s;
-      const plot = Math.max(1, pw - 64); // minus y-axis (56) + right margin (8)
-      const shift = Math.round((-dx / plot) * span);
-      let ns = s + shift;
-      let ne = e0 + shift;
-      if (ns < 0) {
-        ne -= ns;
-        ns = 0;
-      }
-      if (ne > li) {
-        ns -= ne - li;
-        ne = li;
-      }
-      setRange([ns, ne]);
-      setActivePreset(null);
-    };
-    const onEnd = () => {
-      on = false;
-    };
-    el.addEventListener("touchstart", onStart, { passive: true });
-    el.addEventListener("touchmove", onMove, { passive: false });
-    el.addEventListener("touchend", onEnd);
-    el.addEventListener("touchcancel", onEnd);
-    return () => {
-      el.removeEventListener("touchstart", onStart);
-      el.removeEventListener("touchmove", onMove);
-      el.removeEventListener("touchend", onEnd);
-      el.removeEventListener("touchcancel", onEnd);
-    };
-    // Re-run once rows reach chartable length so listeners attach to the plot
-    // element, which only renders past the `rows.length < 2` early return.
-  }, [rows.length]);
-
   if (rows.length < 2) {
     return (
       <div
@@ -387,19 +226,6 @@ export function DetailedChart({
     );
   }
 
-  const fullRange: [number, number] = [0, lastIndex];
-  const isZoomed = startIndex > 0 || endIndex < lastIndex;
-
-  function applyPreset(preset: PresetKey) {
-    setActivePreset(preset);
-    setRange(presetRange(rows, preset));
-  }
-
-  function resetZoom() {
-    setActivePreset("All");
-    setRange(fullRange);
-  }
-
   const presetLabel: Record<PresetKey, string> = {
     "1W": t.chart.range1W,
     "1M": t.chart.range1M,
@@ -411,6 +237,11 @@ export function DetailedChart({
     formatAxisTime(rows[startIndex].t),
     formatAxisTime(rows[endIndex].t),
   );
+  // 1W is the shortest preset; if even that spans the whole dataset then
+  // every preset is disabled, so point the hint at the strip instead.
+  const zoomHint = presetCoversAll(rows, "1W")
+    ? t.chart.zoomHintEarly
+    : t.chart.zoomHint;
 
   return (
     <div className={cn("flex flex-col gap-2", className)}>
@@ -465,12 +296,12 @@ export function DetailedChart({
               </button>
             )}
           </div>
-          <p className="text-[11px] text-muted-foreground">
+          <p className="text-label text-muted-foreground">
             <span className="font-mono tabular-nums text-foreground">
               {rangeCaption}
             </span>
             <span className="mx-1.5 text-border">·</span>
-            {t.chart.zoomHint}
+            {zoomHint}
           </p>
         </div>
       )}
@@ -550,6 +381,7 @@ export function DetailedChart({
                 content={
                   <DetailedTooltip
                     series={series}
+                    referenceLines={referenceLines}
                     valueFormatter={valueFormatter}
                   />
                 }
@@ -567,23 +399,24 @@ export function DetailedChart({
                     placed.placement === "on-scale" ? "6 5" : "2 3"
                   }
                   strokeWidth={1.5}
-                  label={
-                    placed.placement === "on-scale"
-                      ? undefined
-                      : {
-                          value:
-                            placed.placement === "above"
-                              ? `${ref.label} ↑`
-                              : `${ref.label} ↓`,
-                          position:
-                            placed.placement === "above"
-                              ? "insideTopLeft"
-                              : "insideBottomLeft",
-                          fill: "var(--muted-foreground)",
-                          fontSize: 10,
-                          fontFamily: "var(--font-mono)",
-                        }
-                  }
+                  label={{
+                    // On-scale: name the line where it sits. Off-scale: add
+                    // an arrow since the line is pinned to the plot edge.
+                    value:
+                      placed.placement === "on-scale"
+                        ? ref.label
+                        : placed.placement === "above"
+                          ? `${ref.label} ↑`
+                          : `${ref.label} ↓`,
+                    position:
+                      placed.placement === "above"
+                        ? "insideTopLeft"
+                        : "insideBottomLeft",
+                    fill: "var(--foreground)",
+                    fontSize: 11,
+                    fontWeight: 600,
+                    fontFamily: "var(--font-mono)",
+                  }}
                 />
               );
             })}
@@ -620,18 +453,7 @@ export function DetailedChart({
                 tickFormatter={formatAxisTime}
                 startIndex={startIndex}
                 endIndex={endIndex}
-                onChange={(next: {
-                  startIndex?: number;
-                  endIndex?: number;
-                }) => {
-                  if (
-                    typeof next.startIndex === "number" &&
-                    typeof next.endIndex === "number"
-                  ) {
-                    setRange([next.startIndex, next.endIndex]);
-                    setActivePreset(null);
-                  }
-                }}
+                onChange={onBrushChange}
               />
             )}
           </LineChart>

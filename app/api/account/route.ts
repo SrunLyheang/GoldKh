@@ -3,7 +3,7 @@ import { apiError, apiOk } from "@/lib/api/response";
 import { assertSameOrigin } from "@/lib/api/sameOrigin";
 import { withAuthAndRateLimit } from "@/lib/api/withAuthAndRateLimit";
 
-// Deletes the caller's Clerk user (dashboard-expansion-plan.md §6.3). The
+// Deletes the caller's Clerk user. The
 // row cleanup is not done here — Clerk fires `user.deleted` to the
 // existing webhook, which calls deleteAllTransactionsForUser. Session-
 // scoped (the userId is the Clerk session's, never a request value),

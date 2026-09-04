@@ -29,7 +29,7 @@ export const POST = withAuthAndRateLimit(async (request, { userId }) => {
 });
 
 // Wipes every transaction owned by the caller — the Settings "Delete all
-// transactions" action (dashboard-expansion-plan.md §6.3). Session-scoped,
+// transactions" action. Session-scoped,
 // rate limited, same-origin only.
 export const DELETE = withAuthAndRateLimit(async (request, { userId }) => {
   const crossOrigin = assertSameOrigin(request);
