@@ -217,12 +217,15 @@ export function AnimatedHeroImage() {
           <video
             ref={videoRef}
             className="w-full h-full object-cover"
-            src="/videos/hero_bg.mp4"
+            poster="/videos/hero_poster.jpg"
             autoPlay={!reducedMotion}
             muted
             loop
             playsInline
-          />
+          >
+            <source src="/videos/hero_bg.webm" type="video/webm" />
+            <source src="/videos/hero_bg.h264.mp4" type="video/mp4" />
+          </video>
 
           {/* Layers 2–5 are `mix-blend` gradient washes that force
               off-screen compositing passes on every paint. On phones /
