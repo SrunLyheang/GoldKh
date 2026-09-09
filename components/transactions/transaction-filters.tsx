@@ -11,7 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { SegmentedControl } from "@/components/dashboard/segmented-control";
-import { t, type Dictionary } from "@/lib/i18n/dictionary";
+import { t } from "@/lib/i18n/dictionary";
 import { cn } from "@/lib/utils";
 import type { FilterCriteria } from "@/lib/calc/filterTransactions";
 import type { GoldUnit } from "@/lib/calc/units";
@@ -73,8 +73,7 @@ export function activeFilterCount(form: FilterFormState): number {
 
 // One removable summary of each active filter, for the collapsed bar.
 function activeChips(
-  form: FilterFormState,
-  t: Dictionary
+  form: FilterFormState
 ): { key: string; label: string; clear: Partial<FilterFormState> }[] {
   const chips: { key: string; label: string; clear: Partial<FilterFormState> }[] =
     [];
@@ -233,7 +232,7 @@ export function TransactionFilters({
 }) {
   const count = activeFilterCount(value);
   const [open, setOpen] = useState(false);
-  const chips = activeChips(value, t);
+  const chips = activeChips(value);
 
   return (
     <div className="border-b border-(--glass-border-to) pb-4">

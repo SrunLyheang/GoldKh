@@ -12,7 +12,7 @@ import { CountUpValue } from "./count-up-value";
 import { MonoValue } from "./mono-value";
 import { Surface } from "./surface";
 import { RefreshButton } from "./refresh-button";
-import { UnitToggle } from "./unit-toggle";
+import { SegmentedControl } from "./segmented-control";
 
 interface HeroPriceCardProps {
   pricePerTroyOz: string;
@@ -44,7 +44,7 @@ export function HeroPriceCard({
   const headlinePrice = isChi ? pricePerChi : pricePerDamlung;
   const secondaryPrice = isChi ? pricePerDamlung : pricePerChi;
   const { primary: primaryUnitLabel, secondaryLower: secondaryUnitLabel } =
-    unitLabels(t, displayUnit);
+    unitLabels(displayUnit);
 
   // Trigger on the unit-independent spot so a unit toggle doesn't pulse.
   const pulsing = useValuePulse(pricePerTroyOz);
@@ -63,7 +63,15 @@ export function HeroPriceCard({
               {t.hero.pricePer(primaryUnitLabel)}
             </p>
             {onDisplayUnitChange && (
-              <UnitToggle value={displayUnit} onChange={onDisplayUnitChange} />
+              <SegmentedControl
+                ariaLabel="Display unit"
+                value={displayUnit}
+                onChange={onDisplayUnitChange}
+                options={[
+                  { value: "chi", label: t.unit.chi },
+                  { value: "damlung", label: t.unit.damlung },
+                ]}
+              />
             )}
           </div>
           {/* The price readout is the dashboard's page title — the only h1

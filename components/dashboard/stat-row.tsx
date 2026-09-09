@@ -82,7 +82,7 @@ export function StatRow({
   // Lowercase to match this row's pre-i18n convention ("1 damlung", "per
   // chi") — unlike the hero card's dropdown-style "Chi"/"Damlung" labels.
   const { primaryLower: primaryUnit, secondaryLower: secondaryUnit } =
-    unitLabels(t, displayUnit);
+    unitLabels(displayUnit);
   return (
     <div>
       <h2 className="tt-heading tt-bracket mb-4 text-body text-foreground">

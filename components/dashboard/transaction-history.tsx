@@ -27,7 +27,7 @@ import type { ChartPoint } from "@/lib/calc/priceHistory";
 import { spotPerDamlungOnDate } from "@/lib/calc/priceHistory";
 import { priceFromTroyOz, type GoldUnit } from "@/lib/calc/units";
 import { classifyPrice, isHardVerdict } from "@/lib/validation/priceSanity";
-import { t, type Dictionary } from "@/lib/i18n/dictionary";
+import { t } from "@/lib/i18n/dictionary";
 import { unitLabels } from "@/lib/i18n/unit-labels";
 import { TransactionDetail } from "@/components/transactions/transaction-detail";
 import { BulkActionsBar } from "@/components/transactions/bulk-actions-bar";
@@ -59,7 +59,6 @@ export function getRowDisplay(
   row: TransactionRow,
   currentPricePerTroyOz: string,
   displayUnit: GoldUnit,
-  t: Dictionary,
 ) {
   const isBuy = row.type === "buy";
   const isPending = row.id.startsWith("temp-");
@@ -93,7 +92,7 @@ export function getRowDisplay(
           Number(new Decimal(row.quantity).times(row.pricePerUnit)),
         )} KHR`;
   // Lowercase to match the pre-i18n "10 chi"/"3 damlung" convention.
-  const unitLabel = unitLabels(t, row.unit).primaryLower;
+  const unitLabel = unitLabels(row.unit).primaryLower;
 
   return {
     isBuy,
@@ -159,7 +158,7 @@ export function RowActions({
               aria-label={t.transactions.actionsFor(
                 row.type === "buy" ? t.transactions.buy : t.transactions.sell,
                 row.quantity,
-                unitLabels(t, row.unit).primary,
+                unitLabels(row.unit).primary,
               )}
               className="shrink-0 rounded-sm p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
             >
@@ -241,7 +240,7 @@ function Row({
     blankValueReason,
     paidAmount,
     unitLabel,
-  } = getRowDisplay(row, currentPricePerTroyOz, displayUnit, t);
+  } = getRowDisplay(row, currentPricePerTroyOz, displayUnit);
 
   return (
     <>
@@ -413,7 +412,7 @@ function TransactionCard({
     blankValueReason,
     paidAmount,
     unitLabel,
-  } = getRowDisplay(row, currentPricePerTroyOz, displayUnit, t);
+  } = getRowDisplay(row, currentPricePerTroyOz, displayUnit);
 
   return (
     <Panel
@@ -499,7 +498,7 @@ function TransactionCard({
         </div>
         <div>
           <p className="tt-label text-[11px] text-muted-foreground">
-            /{unitLabels(t, displayUnit).primaryLower}
+            /{unitLabels(displayUnit).primaryLower}
           </p>
           <span className="mt-0.5 flex items-center gap-1">
             {priceLooksOffSpot && (
@@ -729,7 +728,7 @@ export function TransactionHistory({
                   {t.transactions.paid}
                 </th>
                 <th className="py-3 pr-3 text-right font-medium">
-                  /{unitLabels(t, displayUnit).primaryLower}
+                  /{unitLabels(displayUnit).primaryLower}
                 </th>
                 <th className="py-3 pr-3 text-right font-medium">
                   {t.transactions.currentValue}

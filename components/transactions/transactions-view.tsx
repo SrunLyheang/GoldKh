@@ -112,7 +112,7 @@ function ViewRow({
   onDelete: (row: TransactionRow) => void;
   onEditSuccess: () => void;
 }) {
-  const d = getRowDisplay(row, currentPricePerTroyOz, displayUnit, t);
+  const d = getRowDisplay(row, currentPricePerTroyOz, displayUnit);
 
   return (
     <>
@@ -253,7 +253,7 @@ function ViewCard({
   onDelete: (row: TransactionRow) => void;
   onEditSuccess: () => void;
 }) {
-  const d = getRowDisplay(row, currentPricePerTroyOz, displayUnit, t);
+  const d = getRowDisplay(row, currentPricePerTroyOz, displayUnit);
 
   return (
     <Panel

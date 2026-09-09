@@ -48,7 +48,7 @@ export function TransactionDetail({
 }) {
   const kind = classifyEntry(row);
   const valuation = computeRowValuation(row, currentPricePerTroyOz);
-  const unit = unitLabels(t, displayUnit).primaryLower;
+  const unit = unitLabels(displayUnit).primaryLower;
   const pricePerDisplayUnit =
     displayUnit === "chi" ? valuation.pricePerChi : valuation.pricePerDamlung;
 

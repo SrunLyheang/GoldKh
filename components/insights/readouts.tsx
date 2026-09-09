@@ -116,7 +116,7 @@ export function Readouts({
   }
 
   if (aggregates.largestBuy) {
-    const { primary: unitLabel } = unitLabels(t, aggregates.largestBuy.unit);
+    const { primary: unitLabel } = unitLabels(aggregates.largestBuy.unit);
     tiles.push(
       <Stat
         key="largest"

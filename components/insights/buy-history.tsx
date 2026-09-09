@@ -120,7 +120,7 @@ export function BuyHistory({ rows }: BuyHistoryProps) {
         </thead>
         <tbody>
           {sorted.map((row, i) => {
-            const { primary: unitLabel } = unitLabels(t, row.unit);
+            const { primary: unitLabel } = unitLabels(row.unit);
             const vs =
               row.vsSpotPercent === null ? null : Number(row.vsSpotPercent);
             return (

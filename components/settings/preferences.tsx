@@ -26,8 +26,6 @@ function Field({
 
 // Display-only preferences, persisted to localStorage via PrefsProvider.
 // Changing a value saves immediately — there is no explicit save button.
-// Currency is stored but only USD is
-// honoured anywhere today; KHR display is deferred project-wide.
 export function PreferencesSettings() {
   const { prefs, setPrefs } = usePrefs();
 
@@ -46,14 +44,6 @@ export function PreferencesSettings() {
               { value: "chi", label: t.settings.unitChi },
               { value: "damlung", label: t.settings.unitDamlung },
             ]}
-          />
-        </Field>
-        <Field label={t.settings.defaultCurrency}>
-          <SegmentedControl
-            ariaLabel={t.settings.defaultCurrency}
-            value={prefs.currency}
-            onChange={(v) => setPrefs({ currency: v as "USD" | "KHR" })}
-            options={[{ value: "USD", label: t.settings.currencyUsd }]}
           />
         </Field>
         <Field label={t.settings.theme}>
