@@ -16,7 +16,7 @@ function Field({
 }) {
   return (
     <div className="flex flex-wrap items-center justify-between gap-3 border-b border-(--glass-border-to) py-3.5 last:border-0">
-      <span className="tt-label text-[11px] text-muted-foreground">
+      <span className="tt-label text-label text-muted-foreground">
         {label}
       </span>
       {children}
@@ -26,14 +26,12 @@ function Field({
 
 // Display-only preferences, persisted to localStorage via PrefsProvider.
 // Changing a value saves immediately — there is no explicit save button.
-// Currency is stored but only USD is
-// honoured anywhere today; KHR display is deferred project-wide.
 export function PreferencesSettings() {
   const { prefs, setPrefs } = usePrefs();
 
   return (
     <section className="flex flex-col gap-3">
-      <h2 className="tt-heading tt-bracket text-[15px] text-foreground">
+      <h2 className="tt-heading tt-bracket text-body text-foreground">
         {t.settings.preferencesTitle}
       </h2>
       <Panel size="lg" className="flex flex-col">
@@ -46,14 +44,6 @@ export function PreferencesSettings() {
               { value: "chi", label: t.settings.unitChi },
               { value: "damlung", label: t.settings.unitDamlung },
             ]}
-          />
-        </Field>
-        <Field label={t.settings.defaultCurrency}>
-          <SegmentedControl
-            ariaLabel={t.settings.defaultCurrency}
-            value={prefs.currency}
-            onChange={(v) => setPrefs({ currency: v as "USD" | "KHR" })}
-            options={[{ value: "USD", label: t.settings.currencyUsd }]}
           />
         </Field>
         <Field label={t.settings.theme}>

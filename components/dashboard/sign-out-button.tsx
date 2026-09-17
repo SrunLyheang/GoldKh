@@ -64,7 +64,7 @@ export function SignOutButton({ className }: { className?: string }) {
             role="status"
           >
             <Spinner size="lg" />
-            <p className="tt-label text-[11px] text-muted-foreground">
+            <p className="tt-label text-label text-muted-foreground">
               {t.nav.signingOut}
             </p>
           </div>,

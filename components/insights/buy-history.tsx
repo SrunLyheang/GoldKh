@@ -75,7 +75,7 @@ export function BuyHistory({ rows }: BuyHistoryProps) {
 
   if (rows.length === 0) {
     return (
-      <p className="text-[13.5px] text-muted-foreground">{t.insights.noBuys}</p>
+      <p className="text-detail text-muted-foreground">{t.insights.noBuys}</p>
     );
   }
 
@@ -90,9 +90,9 @@ export function BuyHistory({ rows }: BuyHistoryProps) {
 
   return (
     <div className="overflow-x-auto rounded-lg border border-(--glass-border-to)">
-      <table className="w-full border-collapse text-[13px]">
+      <table className="w-full border-collapse text-detail">
         <thead className="glass-chrome sticky top-0 z-10">
-          <tr className="tt-label border-b border-(--glass-border-to) text-left text-[11px] text-muted-foreground">
+          <tr className="tt-label border-b border-(--glass-border-to) text-left text-label text-muted-foreground">
             <th className="py-2 pr-3 pl-3 font-normal">
               <SortButton
                 label={t.insights.sortDate}
@@ -120,7 +120,7 @@ export function BuyHistory({ rows }: BuyHistoryProps) {
         </thead>
         <tbody>
           {sorted.map((row, i) => {
-            const { primary: unitLabel } = unitLabels(t, row.unit);
+            const { primary: unitLabel } = unitLabels(row.unit);
             const vs =
               row.vsSpotPercent === null ? null : Number(row.vsSpotPercent);
             return (

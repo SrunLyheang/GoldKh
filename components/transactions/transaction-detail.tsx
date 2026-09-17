@@ -24,8 +24,8 @@ function formatFullDate(dateKey: string): string {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <p className="tt-label text-[11px] text-muted-foreground">{label}</p>
-      <div className="mt-1 text-[12.5px] text-foreground">{children}</div>
+      <p className="tt-label text-label text-muted-foreground">{label}</p>
+      <div className="mt-1 text-detail text-foreground">{children}</div>
     </div>
   );
 }
@@ -48,7 +48,7 @@ export function TransactionDetail({
 }) {
   const kind = classifyEntry(row);
   const valuation = computeRowValuation(row, currentPricePerTroyOz);
-  const unit = unitLabels(t, displayUnit).primaryLower;
+  const unit = unitLabels(displayUnit).primaryLower;
   const pricePerDisplayUnit =
     displayUnit === "chi" ? valuation.pricePerChi : valuation.pricePerDamlung;
 
@@ -70,12 +70,12 @@ export function TransactionDetail({
     <div className="grid grid-cols-2 gap-x-6 gap-y-3.5 border-t border-(--glass-border-to) bg-(--glass-bg) px-4 py-3.5 sm:grid-cols-3">
       <Field label={t.transactions.date}>{formatFullDate(row.transactionDate)}</Field>
       <Field label={`${t.dialog.perUnitEquiv(unit)}`}>
-        <MonoValue className="text-[12.5px]">
+        <MonoValue className="text-detail">
           {formatUsd(pricePerDisplayUnit)}
         </MonoValue>
       </Field>
       <Field label={`${t.insights.spotOnDate} (/${unit})`}>
-        <MonoValue tone="muted" className="text-[12.5px]">
+        <MonoValue tone="muted" className="text-detail">
           {spotOnDate}
         </MonoValue>
       </Field>
@@ -83,12 +83,12 @@ export function TransactionDetail({
       {kind === "open-buy" && (
         <>
           <Field label="Cost basis">
-            <MonoValue className="text-[12.5px]">
+            <MonoValue className="text-detail">
               {formatUsd(valuation.amountUsd ?? "0")}
             </MonoValue>
           </Field>
           <Field label={t.transactions.currentValue}>
-            <MonoValue className="text-[12.5px]">
+            <MonoValue className="text-detail">
               {valuation.currentValueUsd
                 ? formatUsd(valuation.currentValueUsd)
                 : "—"}
@@ -96,7 +96,7 @@ export function TransactionDetail({
           </Field>
           <Field label={t.transactions.pnl}>
             {valuation.pnlUsd ? (
-              <MonoValue signed tone={isGain ? "gain" : "loss"} className="text-[12.5px]">
+              <MonoValue signed tone={isGain ? "gain" : "loss"} className="text-detail">
                 {formatUsd(valuation.pnlUsd)}
               </MonoValue>
             ) : (
@@ -108,7 +108,7 @@ export function TransactionDetail({
 
       {kind === "sale" && (
         <Field label="Proceeds">
-          <MonoValue className="text-[12.5px]">
+          <MonoValue className="text-detail">
             {formatUsd(valuation.amountUsd ?? "0")}
           </MonoValue>
         </Field>

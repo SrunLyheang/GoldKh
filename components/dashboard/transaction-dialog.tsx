@@ -298,7 +298,7 @@ export function TransactionDialog({
                     type="button"
                     onClick={() => setType(option)}
                     className={cn(
-                      "tt-label border py-2.5 text-[12px] transition-colors",
+                      "tt-label border py-2.5 text-detail transition-colors",
                       type === option
                         ? "border-primary bg-primary text-primary-foreground"
                         : "border-border bg-transparent text-muted-foreground hover:bg-accent hover:text-accent-foreground"
@@ -343,10 +343,10 @@ export function TransactionDialog({
                   </Select>
                 </div>
                 {fieldError("quantity") && (
-                  <p className="text-[11.5px] text-destructive">{fieldError("quantity")}</p>
+                  <p className="text-label text-destructive">{fieldError("quantity")}</p>
                 )}
                 {exceedsHoldings && (
-                  <div className="flex items-start gap-2 rounded-lg border border-border bg-muted/30 px-3 py-2.5 text-[12px] text-muted-foreground">
+                  <div className="flex items-start gap-2 rounded-lg border border-border bg-muted/30 px-3 py-2.5 text-detail text-muted-foreground">
                     <TriangleAlert className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                     <span>
                       {t.dialog.exceedsHoldings(
@@ -390,13 +390,13 @@ export function TransactionDialog({
                   </Select>
                 </div>
                 {fieldError("pricePerUnit") && (
-                  <p className="text-[11.5px] text-destructive">{fieldError("pricePerUnit")}</p>
+                  <p className="text-label text-destructive">{fieldError("pricePerUnit")}</p>
                 )}
               </div>
 
-              <div className="rounded-lg border border-border bg-muted/30 px-3.5 py-3 text-[12.5px]">
+              <div className="rounded-lg border border-border bg-muted/30 px-3.5 py-3 text-detail">
                 <div className="flex items-center justify-between">
-                  <span className="tt-label text-[11px] text-muted-foreground">
+                  <span className="tt-label text-label text-muted-foreground">
                     {t.dialog.perUnitEquiv(unitLabel(unit).toLowerCase())}
                   </span>
                   <span className="font-mono tabular-nums text-foreground">
@@ -408,7 +408,7 @@ export function TransactionDialog({
                   </span>
                 </div>
                 <div className="mt-1.5 flex items-center justify-between">
-                  <span className="tt-label text-[11px] text-muted-foreground">{t.dialog.currentSpot}</span>
+                  <span className="tt-label text-label text-muted-foreground">{t.dialog.currentSpot}</span>
                   <span className="font-mono tabular-nums text-muted-foreground">
                     {formatUsd(spotPerUnit)}/{unitLabel(unit).toLowerCase()}
                   </span>
@@ -416,10 +416,10 @@ export function TransactionDialog({
               </div>
 
               {priceVerdictMessage && priceIsHard && (
-                <p className="text-[11.5px] text-destructive">{priceVerdictMessage}</p>
+                <p className="text-label text-destructive">{priceVerdictMessage}</p>
               )}
               {priceVerdictMessage && priceIsSoft && (
-                <div className="flex items-start gap-2 rounded-lg border border-border bg-muted/30 px-3 py-2.5 text-[12px] text-muted-foreground">
+                <div className="flex items-start gap-2 rounded-lg border border-border bg-muted/30 px-3 py-2.5 text-detail text-muted-foreground">
                   <TriangleAlert className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                   <span>{priceVerdictMessage}</span>
                 </div>
@@ -447,7 +447,7 @@ export function TransactionDialog({
                   aria-invalid={!!fieldError("notes")}
                 />
                 {fieldError("notes") && (
-                  <p className="text-[11.5px] text-destructive">{fieldError("notes")}</p>
+                  <p className="text-label text-destructive">{fieldError("notes")}</p>
                 )}
               </div>
 

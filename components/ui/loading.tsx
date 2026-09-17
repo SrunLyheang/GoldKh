@@ -51,7 +51,7 @@ export function LoadingScreen({
       )}
     >
       <Spinner size="lg" />
-      <p className="text-[12.5px] text-muted-foreground">{label}</p>
+      <p className="text-detail text-muted-foreground">{label}</p>
     </div>
   )
 }

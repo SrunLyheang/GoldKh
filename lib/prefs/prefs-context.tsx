@@ -12,15 +12,12 @@ import type { GoldUnit } from "@/lib/calc/units";
 const STORAGE_KEY = "goldkh-prefs";
 
 // Display-only preferences, persisted to localStorage. Not user data —
-// they never leave the browser and are not sent to the server. `currency`
-// is stored today but only "USD" is honoured anywhere; KHR display is
-// deferred project-wide.
+// they never leave the browser and are not sent to the server.
 export interface Prefs {
   displayUnit: GoldUnit;
-  currency: "USD" | "KHR";
 }
 
-export const DEFAULT_PREFS: Prefs = { displayUnit: "damlung", currency: "USD" };
+export const DEFAULT_PREFS: Prefs = { displayUnit: "damlung" };
 
 function parseStored(raw: string | null): Prefs {
   if (!raw) return DEFAULT_PREFS;
@@ -31,10 +28,6 @@ function parseStored(raw: string | null): Prefs {
         parsed.displayUnit === "chi" || parsed.displayUnit === "damlung"
           ? parsed.displayUnit
           : DEFAULT_PREFS.displayUnit,
-      currency:
-        parsed.currency === "USD" || parsed.currency === "KHR"
-          ? parsed.currency
-          : DEFAULT_PREFS.currency,
     };
   } catch {
     return DEFAULT_PREFS;

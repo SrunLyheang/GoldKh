@@ -55,7 +55,7 @@ export function DateField({
             <button
               type="button"
               className={cn(
-                "flex h-8 w-full items-center gap-2 rounded-lg border border-border bg-background px-2.5 text-[13.5px] text-foreground outline-none transition-colors hover:bg-muted focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                "flex h-8 w-full items-center gap-2 rounded-lg border border-border bg-background px-2.5 text-detail text-foreground outline-none transition-colors hover:bg-muted focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
               )}
             >
               <CalendarIcon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />

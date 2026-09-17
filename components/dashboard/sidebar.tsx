@@ -76,7 +76,7 @@ export function Sidebar({
             height={24}
             className="h-6 w-6 rounded-sm"
           />
-          <span className="font-mono text-[15px] font-semibold tracking-tight text-primary">
+          <span className="font-mono text-body font-semibold tracking-tight text-primary">
             GoldKh
           </span>
           <button
@@ -104,7 +104,7 @@ export function Sidebar({
                 onClick={onClose}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "relative flex items-center gap-2.5 rounded-md px-3 py-2.5 text-[13.5px] font-medium transition-all duration-150",
+                  "relative flex items-center gap-2.5 rounded-md px-3 py-2.5 text-detail font-medium transition-[color,background-color,transform] duration-150",
                   active
                     ? "bg-(--glow-color) text-foreground"
                     : "text-muted-foreground hover:translate-x-0.5 hover:bg-(--glow-color) hover:text-foreground"
@@ -117,7 +117,7 @@ export function Sidebar({
                   />
                 )}
                 <Icon className={cn("h-4 w-4", active && "text-primary")} />
-                <span className="tt-label text-[12px]">{label}</span>
+                <span className="tt-label text-detail">{label}</span>
               </Link>
             );
           })}
@@ -126,7 +126,7 @@ export function Sidebar({
           <ThemeToggle className="self-start" />
           {identifier && (
             <p
-              className="truncate text-[12px] text-muted-foreground"
+              className="truncate text-detail text-muted-foreground"
               title={identifier}
             >
               {identifier}

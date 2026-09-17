@@ -73,7 +73,7 @@ export function InsightsContent({
         ref={titleRef}
         style={titleStyle}
         className={cn(
-          "tt-heading tt-bracket text-[15px] text-foreground",
+          "tt-heading tt-bracket text-body text-foreground",
           titleCls,
         )}
       >
@@ -82,7 +82,7 @@ export function InsightsContent({
 
       <div ref={readoutsRef} style={readoutsStyle} className={readoutsCls}>
         <Panel size="lg">
-          <h2 className="tt-heading tt-bracket mb-4 text-[15px] text-foreground">
+          <h2 className="tt-heading tt-bracket mb-4 text-body text-foreground">
             {t.insights.readoutsTitle}
           </h2>
           <Readouts
@@ -97,7 +97,7 @@ export function InsightsContent({
 
       <div ref={valueRef} style={valueStyle} className={valueCls}>
         <Panel size="lg">
-          <h2 className="tt-heading tt-bracket mb-4 text-[15px] text-foreground">
+          <h2 className="tt-heading tt-bracket mb-4 text-body text-foreground">
             {t.insights.valueOverTimeTitle}
           </h2>
           <ValueOverTime points={portfolioSeries} />
@@ -110,7 +110,7 @@ export function InsightsContent({
         className={buyHistoryCls}
       >
         <Panel size="lg">
-          <h2 className="tt-heading tt-bracket mb-4 text-[15px] text-foreground">
+          <h2 className="tt-heading tt-bracket mb-4 text-body text-foreground">
             {t.insights.buyHistoryTitle}
           </h2>
           <BuyHistory rows={buyQuality} />
@@ -119,7 +119,7 @@ export function InsightsContent({
 
       <div ref={whatIfRef} style={whatIfStyle} className={whatIfCls}>
         <Panel size="lg">
-          <h2 className="tt-heading tt-bracket mb-4 text-[15px] text-foreground">
+          <h2 className="tt-heading tt-bracket mb-4 text-body text-foreground">
             {t.insights.whatIfTitle}
           </h2>
           <WhatIf holdings={holdings} pricePerTroyOz={pricePerTroyOz} />

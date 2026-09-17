@@ -85,7 +85,7 @@ export function WhatIf({ holdings, pricePerTroyOz }: WhatIfProps) {
 
   return (
     <div className="flex flex-col gap-5">
-      <p className="text-[13px] text-muted-foreground">
+      <p className="text-detail text-muted-foreground">
         {t.insights.whatIfDescription}
       </p>
 
@@ -102,7 +102,7 @@ export function WhatIf({ holdings, pricePerTroyOz }: WhatIfProps) {
             aria-selected={mode === m}
             onClick={() => setMode(m)}
             className={cn(
-              "tt-label rounded-md px-2.5 py-1 text-[11px] transition-colors",
+              "tt-label rounded-md px-2.5 py-1 text-label transition-colors",
               mode === m
                 ? "bg-primary text-primary-foreground"
                 : "text-muted-foreground hover:text-foreground",
@@ -149,7 +149,7 @@ export function WhatIf({ holdings, pricePerTroyOz }: WhatIfProps) {
               <button
                 type="button"
                 onClick={useSpot}
-                className="tt-label text-[11px] text-muted-foreground transition-colors hover:text-foreground"
+                className="tt-label text-label text-muted-foreground transition-colors hover:text-foreground"
               >
                 {t.insights.whatIfUseSpot}
               </button>
@@ -172,16 +172,16 @@ export function WhatIf({ holdings, pricePerTroyOz }: WhatIfProps) {
             }
           />
           {vsSpotPercent !== null ? (
-            <span className="text-[11px]">
+            <span className="text-label">
               <MonoValue
                 tone={vsSpotToneFor(mode, vsSpotPercent)}
-                className="text-[11px]"
+                className="text-label"
               >
                 {t.insights.whatIfVsSpot(formatPercent(vsSpotPercent))}
               </MonoValue>
             </span>
           ) : hasImplied ? (
-            <span className="text-[11px] text-muted-foreground">
+            <span className="text-label text-muted-foreground">
               {t.insights.whatIfSpotHint(
                 formatUsd(
                   new Decimal(impliedTotal).toDecimalPlaces(2).toString(),
@@ -193,11 +193,11 @@ export function WhatIf({ holdings, pricePerTroyOz }: WhatIfProps) {
       </div>
 
       {result === null ? (
-        <p className="text-[13px] text-muted-foreground">
+        <p className="text-detail text-muted-foreground">
           {t.insights.whatIfEmpty}
         </p>
       ) : result.overSell ? (
-        <p className="text-[13px] text-destructive">
+        <p className="text-detail text-destructive">
           {t.insights.whatIfOverSell(
             `${formatQuantity(heldDamlung)} ${t.unit.damlung}`,
           )}
@@ -351,13 +351,13 @@ function WhatIfOutput({ t, result }: { t: Dict; result: WhatIfResult }) {
     <dl className="flex flex-col divide-y divide-(--glass-border-to) border-t border-(--glass-border-to)">
       <div className="hidden gap-3 pt-3 pb-1 sm:grid sm:grid-cols-[minmax(9rem,1fr)_repeat(3,minmax(0,1fr))]">
         <span />
-        <span className="tt-label text-[9.5px] text-muted-foreground">
+        <span className="tt-label text-micro text-muted-foreground">
           {t.insights.whatIfNow}
         </span>
-        <span className="tt-label text-[9.5px] text-muted-foreground">
+        <span className="tt-label text-micro text-muted-foreground">
           {t.insights.whatIfAfter}
         </span>
-        <span className="tt-label text-[9.5px] text-muted-foreground">
+        <span className="tt-label text-micro text-muted-foreground">
           {t.insights.whatIfChange}
         </span>
       </div>
@@ -366,7 +366,7 @@ function WhatIfOutput({ t, result }: { t: Dict; result: WhatIfResult }) {
           key={row.label}
           className="grid gap-1 py-3 sm:grid-cols-[minmax(9rem,1fr)_repeat(3,minmax(0,1fr))] sm:items-baseline sm:gap-3"
         >
-          <dt className="tt-label text-[11px] text-muted-foreground">
+          <dt className="tt-label text-label text-muted-foreground">
             {row.label}
           </dt>
           {row.kind === "single" ? (
@@ -376,26 +376,26 @@ function WhatIfOutput({ t, result }: { t: Dict; result: WhatIfResult }) {
           ) : (
             <>
               <dd className="flex flex-col">
-                <span className="tt-label text-[9.5px] text-muted-foreground sm:hidden">
+                <span className="tt-label text-micro text-muted-foreground sm:hidden">
                   {t.insights.whatIfNow}
                 </span>
-                <MonoValue tone="muted" className="text-[13px]">
+                <MonoValue tone="muted" className="text-detail">
                   {row.before}
                 </MonoValue>
               </dd>
               <dd className="flex flex-col">
-                <span className="tt-label text-[9.5px] text-muted-foreground sm:hidden">
+                <span className="tt-label text-micro text-muted-foreground sm:hidden">
                   {t.insights.whatIfAfter}
                 </span>
-                <MonoValue className="text-[13px]">{row.after}</MonoValue>
+                <MonoValue className="text-detail">{row.after}</MonoValue>
               </dd>
               <dd className="flex flex-col">
-                <span className="tt-label text-[9.5px] text-muted-foreground sm:hidden">
+                <span className="tt-label text-micro text-muted-foreground sm:hidden">
                   {t.insights.whatIfChange}
                 </span>
                 <MonoValue
                   tone={row.deltaTone === "muted" ? "muted" : row.deltaTone}
-                  className="text-[13px]"
+                  className="text-detail"
                 >
                   {row.delta}
                 </MonoValue>

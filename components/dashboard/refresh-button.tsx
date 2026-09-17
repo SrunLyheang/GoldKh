@@ -121,7 +121,7 @@ export function RefreshButton({
         onClick={handleClick}
       >
         {busy ? <Spinner size="xs" /> : <RefreshCw className="h-4 w-4" />}
-        <span className="tt-label text-[11.5px]">{t.refresh.label}</span>
+        <span className="tt-label text-label">{t.refresh.label}</span>
       </Button>
     </Magnetic>
   );

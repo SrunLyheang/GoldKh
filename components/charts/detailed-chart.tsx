@@ -111,7 +111,7 @@ function DetailedTooltip({
   }
   return (
     <div className="glass-overlay rounded-md px-3 py-2 text-popover-foreground">
-      <p className="font-mono text-[12px] tabular-nums text-muted-foreground">
+      <p className="font-mono text-detail tabular-nums text-muted-foreground">
         {typeof label === "number" ? formatTooltipTime(label) : ""}
       </p>
       {payload.map((entry) => {
@@ -219,7 +219,7 @@ export function DetailedChart({
         className={cn("flex items-center justify-center", className)}
         style={{ height }}
       >
-        <p className="text-[12.5px] text-muted-foreground">
+        <p className="text-detail text-muted-foreground">
           {emptyLabel ?? t.chart.notEnoughHistory}
         </p>
       </div>
@@ -274,7 +274,7 @@ export function DetailedChart({
                       applyPreset(preset);
                     }}
                     className={cn(
-                      "tt-label rounded-md px-2.5 py-1 text-[10.5px] transition-colors",
+                      "tt-label rounded-md px-2.5 py-1 text-micro transition-colors",
                       active
                         ? "bg-primary text-primary-foreground"
                         : "text-muted-foreground hover:text-foreground",
@@ -290,7 +290,7 @@ export function DetailedChart({
               <button
                 type="button"
                 onClick={resetZoom}
-                className="tt-label rounded-md border border-border px-2.5 py-1 text-[10.5px] text-muted-foreground transition-colors hover:text-foreground"
+                className="tt-label rounded-md border border-border px-2.5 py-1 text-micro text-muted-foreground transition-colors hover:text-foreground"
               >
                 {t.chart.reset}
               </button>
@@ -311,7 +311,7 @@ export function DetailedChart({
           <button
             type="button"
             onClick={onExpand}
-            className="tt-label inline-flex items-center gap-1 rounded-sm border border-border px-2 py-1 text-[10.5px] text-muted-foreground transition-colors hover:text-foreground"
+            className="tt-label inline-flex items-center gap-1 rounded-sm border border-border px-2 py-1 text-micro text-muted-foreground transition-colors hover:text-foreground"
           >
             {t.chart.expand} ↗
           </button>

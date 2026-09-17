@@ -179,7 +179,7 @@ export function CsvDialog({
               type="button"
               onClick={() => setMode(m)}
               className={cn(
-                "tt-label border py-2 text-[11px] transition-colors",
+                "tt-label border py-2 text-label transition-colors",
                 mode === m
                   ? "border-primary bg-primary text-primary-foreground"
                   : "border-border text-muted-foreground hover:bg-accent hover:text-accent-foreground",
@@ -192,7 +192,7 @@ export function CsvDialog({
 
         {mode === "export" ? (
           <div className="flex flex-col gap-3 pt-2">
-            <p className="text-[12px] text-muted-foreground">
+            <p className="text-detail text-muted-foreground">
               {t.csv.columnsHint}
             </p>
             <Button
@@ -205,7 +205,7 @@ export function CsvDialog({
           </div>
         ) : (
           <div className="flex flex-col gap-3 pt-2">
-            <p className="text-[12px] text-muted-foreground">
+            <p className="text-detail text-muted-foreground">
               {t.csv.columnsHint}
             </p>
             <input
@@ -216,15 +216,15 @@ export function CsvDialog({
                 const file = e.target.files?.[0];
                 if (file) void handleFile(file);
               }}
-              className="tt-label block w-full text-[11px] text-muted-foreground file:mr-3 file:border file:border-border file:bg-accent file:px-3 file:py-1.5 file:text-[11px] file:text-foreground"
+              className="tt-label block w-full text-label text-muted-foreground file:mr-3 file:border file:border-border file:bg-accent file:px-3 file:py-1.5 file:text-label file:text-foreground"
             />
 
             {parsed && (
               <>
                 <div className="max-h-64 overflow-auto rounded-lg border border-border">
-                  <table className="w-full border-collapse text-[12px]">
+                  <table className="w-full border-collapse text-detail">
                     <thead className="sticky top-0 bg-card">
-                      <tr className="tt-label border-b border-border text-[11px] text-muted-foreground">
+                      <tr className="tt-label border-b border-border text-label text-muted-foreground">
                         <th className="px-3 py-2 text-left font-medium">#</th>
                         <th className="py-2 pr-3 text-left font-medium">
                           {t.csv.preview}
@@ -247,7 +247,7 @@ export function CsvDialog({
                             <td className="py-2 pr-3">
                               <span
                                 className={cn(
-                                  "tt-label px-1.5 py-0.5 text-[9.5px]",
+                                  "tt-label px-1.5 py-0.5 text-micro",
                                   r.valid
                                     ? "bg-state-gain/15 text-state-gain"
                                     : "bg-destructive/15 text-destructive",
@@ -256,7 +256,7 @@ export function CsvDialog({
                                 {r.valid ? t.csv.rowValid : t.csv.rowInvalid}
                               </span>
                               {dup && (
-                                <span className="tt-label ml-1.5 bg-muted px-1.5 py-0.5 text-[9.5px] text-muted-foreground">
+                                <span className="tt-label ml-1.5 bg-muted px-1.5 py-0.5 text-micro text-muted-foreground">
                                   {t.csv.rowDuplicate}
                                 </span>
                               )}
@@ -276,13 +276,13 @@ export function CsvDialog({
                 </div>
 
                 {overCap && (
-                  <p className="text-[11.5px] text-destructive">
+                  <p className="text-label text-destructive">
                     {t.csv.tooManyRows(MAX_BULK_ROWS)}
                   </p>
                 )}
 
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-[11.5px] text-muted-foreground">
+                  <span className="text-label text-muted-foreground">
                     {fileName}
                   </span>
                   <Button
