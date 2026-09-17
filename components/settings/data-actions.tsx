@@ -48,7 +48,7 @@ function ConfirmAction({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="tt-label shrink-0 rounded-full border border-destructive px-3 py-1.5 text-[11px] text-destructive transition-colors hover:bg-destructive/10"
+        className="tt-label shrink-0 rounded-full border border-destructive px-3 py-1.5 text-label text-destructive transition-colors hover:bg-destructive/10"
       >
         {label}
       </button>
@@ -78,7 +78,7 @@ function ConfirmAction({
           setOpen(false);
           setText("");
         }}
-        className="tt-label text-[11px] text-muted-foreground hover:text-foreground"
+        className="tt-label text-label text-muted-foreground hover:text-foreground"
       >
         {t.settings.cancel}
       </button>
@@ -98,8 +98,8 @@ function Row({
   return (
     <div className="flex flex-wrap items-start justify-between gap-3 border-b border-(--glass-border-to) py-4 last:border-0">
       <div className="max-w-[42ch]">
-        <p className="text-[13px] font-medium text-foreground">{title}</p>
-        <p className="mt-0.5 text-[12px] text-muted-foreground">{description}</p>
+        <p className="text-detail font-medium text-foreground">{title}</p>
+        <p className="mt-0.5 text-detail text-muted-foreground">{description}</p>
       </div>
       {children}
     </div>
@@ -159,7 +159,7 @@ export function DataActions({
 
   return (
     <section className="flex flex-col gap-3">
-      <h2 className="tt-heading tt-bracket text-[15px] text-foreground">
+      <h2 className="tt-heading tt-bracket text-body text-foreground">
         {t.settings.dataTitle}
       </h2>
       <Panel size="lg" className="flex flex-col">
@@ -171,7 +171,7 @@ export function DataActions({
             type="button"
             onClick={() => downloadCsv(transactions)}
             disabled={transactions.length === 0}
-            className="tt-label shrink-0 rounded-full border border-(--glass-border-to) px-3 py-1.5 text-[11px] text-muted-foreground transition-colors hover:bg-(--glow-color) hover:text-foreground disabled:opacity-50"
+            className="tt-label shrink-0 rounded-full border border-(--glass-border-to) px-3 py-1.5 text-label text-muted-foreground transition-colors hover:bg-(--glow-color) hover:text-foreground disabled:opacity-50"
           >
             {t.csv.download}
           </button>

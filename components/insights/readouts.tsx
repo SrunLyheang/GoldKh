@@ -39,12 +39,12 @@ function Stat({
 }) {
   return (
     <Surface>
-      <p className="tt-label text-[11px] text-muted-foreground">{label}</p>
-      <MonoValue tone={tone} className="mt-1.5 block text-[19px] font-semibold">
+      <p className="tt-label text-label text-muted-foreground">{label}</p>
+      <MonoValue tone={tone} className="mt-1.5 block text-figure font-semibold">
         {value}
       </MonoValue>
       {hint ? (
-        <MonoValue tone="muted" className="mt-1 block text-[12px]">
+        <MonoValue tone="muted" className="mt-1 block text-detail">
           {hint}
         </MonoValue>
       ) : null}
@@ -129,7 +129,7 @@ export function Readouts({
 
   if (tiles.length === 0) {
     return (
-      <p className="text-[13.5px] text-muted-foreground">
+      <p className="text-detail text-muted-foreground">
         {t.insights.notEnoughData}
       </p>
     );

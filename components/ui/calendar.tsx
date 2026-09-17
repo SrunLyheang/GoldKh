@@ -69,7 +69,7 @@ export function Calendar({
         >
           <ChevronLeft className="h-4 w-4" />
         </Button>
-        <span className="text-[13.5px] font-medium text-foreground">
+        <span className="text-detail font-medium text-foreground">
           {viewDate.toLocaleDateString("en-US", { month: "long", year: "numeric" })}
         </span>
         <Button
@@ -86,7 +86,7 @@ export function Calendar({
         {WEEKDAY_LABELS.map((label) => (
           <div
             key={label}
-            className="flex h-7 items-center justify-center text-[11px] font-medium text-muted-foreground"
+            className="flex h-7 items-center justify-center text-label font-medium text-muted-foreground"
           >
             {label}
           </div>
@@ -101,7 +101,7 @@ export function Calendar({
               type="button"
               onClick={() => onSelect(key)}
               className={cn(
-                "flex h-7 w-7 items-center justify-center rounded-md text-[12.5px] tabular-nums transition-colors",
+                "flex h-7 w-7 items-center justify-center rounded-md text-detail tabular-nums transition-colors",
                 !inMonth && "text-muted-foreground/40",
                 inMonth && !isSelected && "text-foreground hover:bg-accent",
                 isSelected && "bg-primary text-primary-foreground",

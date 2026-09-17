@@ -21,16 +21,16 @@ export function AccountSettings() {
 
   return (
     <section className="flex flex-col gap-3">
-      <h2 className="tt-heading tt-bracket text-[15px] text-foreground">
+      <h2 className="tt-heading tt-bracket text-body text-foreground">
         {t.settings.accountTitle}
       </h2>
       <Panel size="lg" className="flex flex-col">
         <div className="flex flex-wrap items-start justify-between gap-3 border-b border-(--glass-border-to) py-4 first:pt-0">
           <div className="max-w-[42ch]">
-            <p className="text-[13px] font-medium text-foreground">
+            <p className="text-detail font-medium text-foreground">
               {t.settings.signOut}
             </p>
-            <p className="mt-0.5 text-[12px] text-muted-foreground">
+            <p className="mt-0.5 text-detail text-muted-foreground">
               {identity ? (
                 <>
                   {t.settings.signedInAs}{" "}

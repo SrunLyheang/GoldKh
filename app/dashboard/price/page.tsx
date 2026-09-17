@@ -81,7 +81,7 @@ export default async function PricePage() {
     <div className="flex flex-col gap-6">
       <Link
         href="/dashboard"
-        className="tt-label text-[11px] text-muted-foreground transition-colors hover:text-foreground"
+        className="tt-label text-label text-muted-foreground transition-colors hover:text-foreground"
       >
         ← {t.chart.backToDashboard}
       </Link>
@@ -89,18 +89,18 @@ export default async function PricePage() {
       <Panel size="lg">
         <div className="mb-4 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1.5">
           <div>
-            <h1 className="tt-heading tt-bracket text-[15px] text-foreground">
+            <h1 className="tt-heading tt-bracket text-body text-foreground">
               {t.chart.title}
             </h1>
-            <p className="tt-display mt-1.5 text-[28px] font-semibold leading-tight tracking-tight text-foreground tabular-nums">
+            <p className="tt-display mt-1.5 text-figure-lg font-semibold leading-tight tracking-tight text-foreground tabular-nums">
               {formatUsd(pricePerDamlung)}
-              <span className="ml-1 text-[13px] font-normal text-muted-foreground">
+              <span className="ml-1 text-detail font-normal text-muted-foreground">
                 /damlung
               </span>
             </p>
           </div>
           <div className="flex flex-col items-start gap-1 sm:items-end">
-            <span className="tt-label inline-flex items-center gap-1.5 rounded-full border border-(--glass-border-to) bg-(--glass-bg) px-2 py-0.5 text-[11px] text-muted-foreground">
+            <span className="tt-label inline-flex items-center gap-1.5 rounded-full border border-(--glass-border-to) bg-(--glass-bg) px-2 py-0.5 text-label text-muted-foreground">
               <span
                 className={
                   isStale
@@ -114,7 +114,7 @@ export default async function PricePage() {
               {t.chart.asOf(formatClockTime(price.capturedAt))}
             </span>
             {marketClosed && (
-              <span className="tt-label text-[11px] text-muted-foreground">
+              <span className="tt-label text-label text-muted-foreground">
                 {t.chart.marketClosed}
               </span>
             )}
@@ -125,7 +125,7 @@ export default async function PricePage() {
 
         {placedRefLine && <ReferenceLineCaption placed={placedRefLine} />}
         {marketClosed && (
-          <p className="mt-2 text-[11.5px] text-muted-foreground">
+          <p className="mt-2 text-label text-muted-foreground">
             {t.chart.marketClosedNote}
           </p>
         )}

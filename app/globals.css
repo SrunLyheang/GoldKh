@@ -726,6 +726,22 @@
   mix-blend-mode: multiply;
 }
 
+/* Expands an element's hit area to the 44px minimum from DESIGN.md's
+   accessibility commitment without changing its visual size — for icon
+   buttons and other small controls. `position: relative` on the element
+   itself is required for the pseudo-element to anchor correctly. */
+.tap-target {
+  position: relative;
+}
+.tap-target::after {
+  content: "";
+  position: absolute;
+  inset: 50%;
+  width: max(100%, 44px);
+  height: max(100%, 44px);
+  transform: translate(-50%, -50%);
+}
+
 /* Brutalist micro-typography — every label, nav item, table header, and
    piece of metadata routes through this instead of plain muted text, per
    the industrial-brutalist-ui skill's section 3.2. Mono + uppercase +

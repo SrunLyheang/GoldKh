@@ -133,14 +133,14 @@ export function RowActions({
         <button
           type="button"
           onClick={() => onDelete(row)}
-          className="tt-label border border-destructive px-2 py-1 text-[11px] text-destructive hover:bg-destructive/10"
+          className="tt-label border border-destructive px-2 py-1 text-label text-destructive hover:bg-destructive/10"
         >
           {t.transactions.delete}
         </button>
         <button
           type="button"
           onClick={() => setConfirming(false)}
-          className="tt-label border border-border px-2 py-1 text-[11px] text-muted-foreground hover:bg-accent"
+          className="tt-label border border-border px-2 py-1 text-label text-muted-foreground hover:bg-accent"
         >
           {t.transactions.cancel}
         </button>
@@ -160,7 +160,7 @@ export function RowActions({
                 row.quantity,
                 unitLabels(row.unit).primary,
               )}
-              className="shrink-0 rounded-sm p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+              className="tap-target shrink-0 rounded-sm p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
             >
               <MoreVertical className="h-3.5 w-3.5" />
             </button>
@@ -287,19 +287,19 @@ function Row({
                 <ArrowUpRight className="h-3.5 w-3.5 text-destructive" />
               )}
             </div>
-            <span className="font-mono text-[12px] tabular-nums text-muted-foreground">
+            <span className="font-mono text-detail tabular-nums text-muted-foreground">
               {row.transactionDate}
             </span>
           </div>
         </td>
-        <td className="py-3 pr-3 text-[13.5px] font-medium text-foreground">
+        <td className="py-3 pr-3 text-detail font-medium text-foreground">
           {isBuy ? t.transactions.buy : t.transactions.sell}{" "}
           {formatQuantity(row.quantity)} {unitLabel}
         </td>
-        <td className="py-3 pr-3 text-right font-mono text-[13px] tabular-nums text-foreground">
+        <td className="py-3 pr-3 text-right font-mono text-detail tabular-nums text-foreground">
           {paidAmount}
         </td>
-        <td className="py-3 pr-3 text-right font-mono text-[13px] tabular-nums text-muted-foreground">
+        <td className="py-3 pr-3 text-right font-mono text-detail tabular-nums text-muted-foreground">
           <span className="inline-flex items-center justify-end gap-1">
             {priceLooksOffSpot && (
               <span title={t.transactions.priceOffSpot} className="cursor-help">
@@ -312,7 +312,7 @@ function Row({
             {formatUsd(pricePerDisplayUnit)}
           </span>
         </td>
-        <td className="py-3 pr-3 text-right font-mono text-[13px] tabular-nums text-foreground">
+        <td className="py-3 pr-3 text-right font-mono text-detail tabular-nums text-foreground">
           {valuation.currentValueUsd ? (
             formatUsd(valuation.currentValueUsd)
           ) : (
@@ -321,12 +321,12 @@ function Row({
             </span>
           )}
         </td>
-        <td className="py-3 pr-3 text-right font-mono text-[13px] tabular-nums">
+        <td className="py-3 pr-3 text-right font-mono text-detail tabular-nums">
           {valuation.pnlUsd ? (
             <MonoValue
               signed
               tone={isGain ? "gain" : "loss"}
-              className="text-[13px]"
+              className="text-detail"
             >
               {formatUsd(valuation.pnlUsd)}
             </MonoValue>
@@ -344,7 +344,7 @@ function Row({
           onClick={(e) => e.stopPropagation()}
         >
           {isPending ? (
-            <span className="text-[11.5px] text-muted-foreground">
+            <span className="text-label text-muted-foreground">
               {t.transactions.saving}
             </span>
           ) : (
@@ -454,11 +454,11 @@ function TransactionCard({
             )}
           </div>
           <div className="min-w-0">
-            <p className="truncate text-[14px] font-medium text-foreground">
+            <p className="truncate text-body font-medium text-foreground">
               {isBuy ? t.transactions.buy : t.transactions.sell}{" "}
               {formatQuantity(row.quantity)} {unitLabel}
             </p>
-            <MonoValue tone="muted" className="text-[11.5px]">
+            <MonoValue tone="muted" className="text-label">
               {row.transactionDate}
             </MonoValue>
           </div>
@@ -468,7 +468,7 @@ function TransactionCard({
           onClick={(e) => e.stopPropagation()}
         >
           {isPending ? (
-            <span className="text-[11.5px] text-muted-foreground">
+            <span className="text-label text-muted-foreground">
               {t.transactions.saving}
             </span>
           ) : (
@@ -489,15 +489,15 @@ function TransactionCard({
       </div>
       <div className="grid grid-cols-2 gap-x-4 gap-y-3.5 px-4 pb-4">
         <div>
-          <p className="tt-label text-[11px] text-muted-foreground">
+          <p className="tt-label text-label text-muted-foreground">
             {t.transactions.paid}
           </p>
-          <MonoValue className="mt-0.5 block text-[13.5px]">
+          <MonoValue className="mt-0.5 block text-detail">
             {paidAmount}
           </MonoValue>
         </div>
         <div>
-          <p className="tt-label text-[11px] text-muted-foreground">
+          <p className="tt-label text-label text-muted-foreground">
             /{unitLabels(displayUnit).primaryLower}
           </p>
           <span className="mt-0.5 flex items-center gap-1">
@@ -509,44 +509,44 @@ function TransactionCard({
                 />
               </span>
             )}
-            <MonoValue tone="muted" className="block text-[13.5px]">
+            <MonoValue tone="muted" className="block text-detail">
               {formatUsd(pricePerDisplayUnit)}
             </MonoValue>
           </span>
         </div>
         <div>
-          <p className="tt-label text-[11px] text-muted-foreground">
+          <p className="tt-label text-label text-muted-foreground">
             {t.transactions.currentValue}
           </p>
           {valuation.currentValueUsd ? (
-            <MonoValue className="mt-0.5 block text-[13.5px]">
+            <MonoValue className="mt-0.5 block text-detail">
               {formatUsd(valuation.currentValueUsd)}
             </MonoValue>
           ) : (
             <span
               title={blankValueReason}
-              className="cursor-help text-[13.5px] text-muted-foreground"
+              className="cursor-help text-detail text-muted-foreground"
             >
               —
             </span>
           )}
         </div>
         <div>
-          <p className="tt-label text-[11px] text-muted-foreground">
+          <p className="tt-label text-label text-muted-foreground">
             {t.transactions.pnl}
           </p>
           {valuation.pnlUsd ? (
             <MonoValue
               tone={isGain ? "gain" : "loss"}
               signed
-              className="mt-0.5 block text-[13.5px]"
+              className="mt-0.5 block text-detail"
             >
               {formatUsd(valuation.pnlUsd)}
             </MonoValue>
           ) : (
             <span
               title={blankValueReason}
-              className="cursor-help text-[13.5px] text-muted-foreground"
+              className="cursor-help text-detail text-muted-foreground"
             >
               —
             </span>
@@ -639,14 +639,14 @@ export function TransactionHistory({
         <div className="flex items-baseline gap-3">
           <Link
             href="/dashboard/transactions"
-            className="tt-heading tt-bracket text-[15px] text-foreground transition-colors hover:text-primary"
+            className="tt-heading tt-bracket text-body text-foreground transition-colors hover:text-primary"
           >
             {t.transactions.title} →
           </Link>
           {/* Inline copy: locale is en-only and dictionary.ts is frozen this phase. */}
           <Link
             href="/dashboard/transactions"
-            className="tt-label text-[11px] text-muted-foreground transition-colors hover:text-foreground"
+            className="tt-label text-label text-muted-foreground transition-colors hover:text-foreground"
           >
             View all →
           </Link>
@@ -660,7 +660,7 @@ export function TransactionHistory({
               onClick={selectMode ? exitSelectMode : enterSelectMode}
               aria-pressed={selectMode}
               className={cn(
-                "tt-label border px-2.5 py-1.5 text-[11px] transition-colors",
+                "tt-label border px-2.5 py-1.5 text-label transition-colors",
                 selectMode
                   ? "border-foreground bg-foreground text-background"
                   : "border-border text-muted-foreground hover:bg-accent hover:text-foreground",
@@ -672,14 +672,14 @@ export function TransactionHistory({
           <button
             type="button"
             onClick={() => setCsvOpen(true)}
-            className="tt-label border border-border px-2.5 py-1.5 text-[11px] text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            className="tt-label border border-border px-2.5 py-1.5 text-label text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
           >
             {t.csv.importExport}
           </button>
           <Magnetic strength={10}>
             <Button size="sm" onClick={onAddClick}>
               <Plus className="h-4 w-4" />
-              <span className="tt-label text-[11.5px]">
+              <span className="tt-label text-label">
                 {t.transactions.addTransaction}
               </span>
             </Button>
@@ -708,7 +708,7 @@ export function TransactionHistory({
         <div className="hidden max-h-68 overflow-auto rounded-lg border border-border bg-card md:block">
           <table className="w-full min-w-140 border-collapse">
             <thead className="sticky top-0 z-10 bg-card">
-              <tr className="tt-label border-b border-border text-[11px] text-muted-foreground">
+              <tr className="tt-label border-b border-border text-label text-muted-foreground">
                 {selectMode && (
                   <th className="py-3 pr-1 pl-4">
                     <RowCheckbox

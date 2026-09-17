@@ -16,7 +16,7 @@ export function AuthShell({
   return (
     <main className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-10">
       {/* page background */}
-      <div aria-hidden className="absolute inset-0 -z-10 bg-[#0f0c08]" />
+      <div aria-hidden className="absolute inset-0 -z-10 bg-background" />
       <div
         aria-hidden
         className="absolute inset-0 -z-10"
@@ -27,7 +27,7 @@ export function AuthShell({
       />
       <SparkleField className="pointer-events-none absolute inset-0" />
 
-      <div className="relative z-10 grid w-full min-w-0 max-w-[980px] overflow-hidden rounded-[28px] border border-white/10 bg-background shadow-[0_40px_120px_-24px_rgba(0,0,0,0.7)] md:grid-cols-2">
+      <div className="relative z-10 grid w-full min-w-0 max-w-[980px] overflow-hidden rounded-2xl border border-white/10 bg-background shadow-[0_40px_120px_-24px_rgba(0,0,0,0.7)] md:grid-cols-2">
         {/* brand panel */}
         <div className="relative hidden min-h-[560px] min-w-0 bg-white md:block">
           <AuthMascot />

@@ -45,7 +45,7 @@ export function DashboardShell({ children }: { children: ReactNode }) {
               >
                 <Menu className="h-5 w-5" />
               </button>
-              <span className="flex items-center gap-2 font-mono text-[15px] font-semibold tracking-tight text-primary">
+              <span className="flex items-center gap-2 font-mono text-body font-semibold tracking-tight text-primary">
                 <Image
                   src="/icon.svg"
                   alt=""

@@ -56,19 +56,19 @@ export function ThemeToggle({ className }: { className?: string }) {
       <PopoverTrigger
         aria-label="Theme"
         className={cn(
-          "tt-label inline-flex items-center gap-2 rounded-md border border-border bg-accent/60 px-2.5 py-1.5 text-[11px] text-muted-foreground transition-colors hover:text-foreground",
+          "tt-label inline-flex items-center gap-2 rounded-md border border-border bg-accent/60 px-2.5 py-1.5 text-label text-muted-foreground transition-colors hover:text-foreground",
           className
         )}
       >
         <span className="flex items-center gap-0.5" aria-hidden="true">
-          <span className="h-2.5 w-2.5 rounded-[3px] bg-background ring-1 ring-border" />
-          <span className="h-2.5 w-2.5 rounded-[3px] bg-primary" />
+          <span className="h-2.5 w-2.5 rounded-sm bg-background ring-1 ring-border" />
+          <span className="h-2.5 w-2.5 rounded-sm bg-primary" />
         </span>
         {active.label}
         <ChevronsUpDown className="h-3 w-3 opacity-60" />
       </PopoverTrigger>
       <PopoverContent align="start" className="w-64 p-2">
-        <p className="tt-label px-1 pb-1.5 pt-0.5 text-[11px] text-muted-foreground">
+        <p className="tt-label px-1 pb-1.5 pt-0.5 text-label text-muted-foreground">
           Theme
         </p>
         <div className="grid grid-cols-2 gap-1.5">
@@ -91,7 +91,7 @@ export function ThemeToggle({ className }: { className?: string }) {
                 <span className="mt-1.5 flex items-center justify-between px-0.5">
                   <span
                     className={cn(
-                      "tt-label text-[11px]",
+                      "tt-label text-label",
                       selected ? "text-primary" : "text-muted-foreground"
                     )}
                   >

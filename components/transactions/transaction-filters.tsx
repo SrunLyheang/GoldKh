@@ -111,7 +111,7 @@ function activeChips(
 
 function FieldLabel({ children }: { children: React.ReactNode }) {
   return (
-    <span className="tt-label mb-1 block text-[9.5px] text-muted-foreground">
+    <span className="tt-label mb-1 block text-micro text-muted-foreground">
       {children}
     </span>
   );
@@ -137,7 +137,7 @@ function Fields({
           </span>
         </FieldLabel>
         <div className="relative">
-          <span className="pointer-events-none absolute inset-y-0 left-2.5 flex items-center text-[13px] text-muted-foreground">
+          <span className="pointer-events-none absolute inset-y-0 left-2.5 flex items-center text-detail text-muted-foreground">
             $
           </span>
           <Input
@@ -242,7 +242,7 @@ export function TransactionFilters({
           onClick={() => setOpen((v) => !v)}
           aria-expanded={open}
           className={cn(
-            "tt-label inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1.5 text-[11px] transition-colors",
+            "tt-label inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1.5 text-label transition-colors",
             count > 0 || open
               ? "border-primary/50 text-foreground"
               : "border-(--glass-border-to) text-muted-foreground hover:bg-(--glow-color) hover:text-foreground"
@@ -258,7 +258,7 @@ export function TransactionFilters({
               key={chip.key}
               type="button"
               onClick={() => onChange({ ...value, ...chip.clear })}
-              className="tt-label inline-flex items-center gap-1 rounded-full border border-(--glass-border-to) bg-(--glow-color) py-1 pr-1 pl-2 text-[11px] text-foreground transition-[filter] hover:brightness-125"
+              className="tt-label inline-flex items-center gap-1 rounded-full border border-(--glass-border-to) bg-(--glow-color) py-1 pr-1 pl-2 text-label text-foreground transition-[filter] hover:brightness-125"
             >
               {chip.label}
               <X className="h-3 w-3 text-muted-foreground" />
@@ -269,13 +269,13 @@ export function TransactionFilters({
           <button
             type="button"
             onClick={() => onChange(EMPTY_FILTERS)}
-            className="tt-label text-[11px] text-muted-foreground hover:text-foreground"
+            className="tt-label text-label text-muted-foreground hover:text-foreground"
           >
             {t.filters.clear}
           </button>
         )}
 
-        <span className="tt-label ml-auto text-[11px] text-muted-foreground">
+        <span className="tt-label ml-auto text-label text-muted-foreground">
           {t.filters.resultCount(resultCount)}
         </span>
       </div>

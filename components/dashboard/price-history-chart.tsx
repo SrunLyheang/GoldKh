@@ -71,12 +71,12 @@ export function PriceHistoryChart({
       <div className="mb-3 flex items-center gap-2">
         <Link
           href="/dashboard/price"
-          className="tt-heading tt-bracket text-[15px] text-foreground transition-colors hover:text-primary"
+          className="tt-heading tt-bracket text-body text-foreground transition-colors hover:text-primary"
         >
           {t.chart.title} →
         </Link>
         {marketClosed && (
-          <span className="tt-bracket tt-label text-[11px] text-muted-foreground">
+          <span className="tt-bracket tt-label text-label text-muted-foreground">
             {t.chart.marketClosed}
           </span>
         )}
@@ -93,7 +93,7 @@ export function PriceHistoryChart({
       {breakEven && <ReferenceLineCaption placed={breakEven} />}
 
       {marketClosed && (
-        <p className="mt-2 text-[11.5px] text-muted-foreground">
+        <p className="mt-2 text-label text-muted-foreground">
           {t.chart.marketClosedNote}
         </p>
       )}

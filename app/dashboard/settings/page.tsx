@@ -19,7 +19,7 @@ export default async function SettingsPage() {
 
   return (
     <div className="flex flex-col gap-8">
-      <h1 className="tt-heading tt-bracket text-[15px] text-foreground">
+      <h1 className="tt-heading tt-bracket text-body text-foreground">
         {t.settings.title}
       </h1>
       <PreferencesSettings />
