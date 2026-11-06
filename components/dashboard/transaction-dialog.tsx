@@ -290,18 +290,19 @@ export function TransactionDialog({
                 {isEdit ? t.dialog.editDescription : t.dialog.addDescription}
               </DialogDescription>
             </DialogHeader>
-            <form onSubmit={handleSubmit} className="grid gap-7 pt-2">
-              <div className="grid grid-cols-2 gap-2.5">
+            <form onSubmit={handleSubmit} className="grid gap-6 pt-1">
+              <div role="group" aria-label="Buy or sell" className="grid grid-cols-2 gap-1 rounded-lg bg-sunk p-1">
                 {(["buy", "sell"] as const).map((option) => (
                   <button
                     key={option}
                     type="button"
                     onClick={() => setType(option)}
+                    aria-pressed={type === option}
                     className={cn(
-                      "tt-label border py-2.5 text-detail transition-colors",
+                      "press min-h-10 rounded-md text-body font-medium",
                       type === option
-                        ? "border-primary bg-primary text-primary-foreground"
-                        : "border-border bg-transparent text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                        ? "bg-popover text-foreground shadow-[0_1px_2px_rgb(0_0_0/0.18)]"
+                        : "text-muted-foreground hover:text-foreground"
                     )}
                   >
                     {typeLabel(option)}
@@ -346,7 +347,7 @@ export function TransactionDialog({
                   <p className="text-label text-destructive">{fieldError("quantity")}</p>
                 )}
                 {exceedsHoldings && (
-                  <div className="flex items-start gap-2 rounded-lg border border-border bg-muted/30 px-3 py-2.5 text-detail text-muted-foreground">
+                  <div className="flex items-start gap-2 rounded-md bg-sunk px-3 py-2.5 text-detail text-muted-foreground">
                     <TriangleAlert className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                     <span>
                       {t.dialog.exceedsHoldings(
@@ -394,12 +395,12 @@ export function TransactionDialog({
                 )}
               </div>
 
-              <div className="rounded-lg border border-border bg-muted/30 px-3.5 py-3 text-detail">
+              <div className="rounded-md bg-sunk px-3.5 py-3 text-detail">
                 <div className="flex items-center justify-between">
                   <span className="tt-label text-label text-muted-foreground">
                     {t.dialog.perUnitEquiv(unitLabel(unit).toLowerCase())}
                   </span>
-                  <span className="font-mono tabular-nums text-foreground">
+                  <span className="tabular-nums text-foreground">
                     {derivedPricePerUnit === ""
                       ? "—"
                       : currency === "USD"
@@ -409,7 +410,7 @@ export function TransactionDialog({
                 </div>
                 <div className="mt-1.5 flex items-center justify-between">
                   <span className="tt-label text-label text-muted-foreground">{t.dialog.currentSpot}</span>
-                  <span className="font-mono tabular-nums text-muted-foreground">
+                  <span className="tabular-nums text-muted-foreground">
                     {formatUsd(spotPerUnit)}/{unitLabel(unit).toLowerCase()}
                   </span>
                 </div>
@@ -419,7 +420,7 @@ export function TransactionDialog({
                 <p className="text-label text-destructive">{priceVerdictMessage}</p>
               )}
               {priceVerdictMessage && priceIsSoft && (
-                <div className="flex items-start gap-2 rounded-lg border border-border bg-muted/30 px-3 py-2.5 text-detail text-muted-foreground">
+                <div className="flex items-start gap-2 rounded-md bg-sunk px-3 py-2.5 text-detail text-muted-foreground">
                   <TriangleAlert className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                   <span>{priceVerdictMessage}</span>
                 </div>
@@ -445,6 +446,8 @@ export function TransactionDialog({
                   onChange={(e) => setNotes(e.target.value)}
                   onBlur={() => touch("notes")}
                   aria-invalid={!!fieldError("notes")}
+                  placeholder={t.dialog.notesPlaceholder}
+                  className="hand text-emphasis"
                 />
                 {fieldError("notes") && (
                   <p className="text-label text-destructive">{fieldError("notes")}</p>
@@ -454,6 +457,7 @@ export function TransactionDialog({
               <Button
                 type="submit"
                 disabled={submitting || priceIsHard}
+                size="lg"
                 className="w-full"
               >
                 {t.dialog.saveTransaction}

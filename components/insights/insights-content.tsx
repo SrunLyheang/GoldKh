@@ -10,9 +10,6 @@ import {
   type PriceSnapshotPoint,
 } from "@/lib/calc/portfolioSeries";
 import { t } from "@/lib/i18n/dictionary";
-import { useSectionEnter } from "@/components/motion/use-section-enter";
-import { cn } from "@/lib/utils";
-import { Panel } from "@/components/dashboard/panel";
 import { Readouts } from "./readouts";
 import { ValueOverTime } from "./value-over-time";
 import { BuyHistory } from "./buy-history";
@@ -37,17 +34,6 @@ export function InsightsContent({
   // Sections glide in on scroll-into-view, staggered — the same quiet
   // entrance the main dashboard uses. Hooks run unconditionally; the
   // wrappers below attach ref + class + delay.
-  const { ref: titleRef, revealClass: titleCls, style: titleStyle } =
-    useSectionEnter<HTMLHeadingElement>(0);
-  const { ref: readoutsRef, revealClass: readoutsCls, style: readoutsStyle } =
-    useSectionEnter<HTMLDivElement>(60);
-  const { ref: valueRef, revealClass: valueCls, style: valueStyle } =
-    useSectionEnter<HTMLDivElement>(120);
-  const { ref: buyHistoryRef, revealClass: buyHistoryCls, style: buyHistoryStyle } =
-    useSectionEnter<HTMLDivElement>(160);
-  const { ref: whatIfRef, revealClass: whatIfCls, style: whatIfStyle } =
-    useSectionEnter<HTMLDivElement>(200);
-
   // Newest-first from the server; computePosition re-sorts oldest-first
   // before replaying the ledger.
   const { holdings, gainLoss, realized } = useMemo(
@@ -67,63 +53,57 @@ export function InsightsContent({
     [transactions, snapshots],
   );
 
+  // Two rows of pages with different weights: what the notebook says
+  // (figures down the margin, value over time beside them), then each
+  // buy against the price of its day beside a what-if scratch pad.
   return (
-    <div className="flex flex-col gap-8">
-      <h1
-        ref={titleRef}
-        style={titleStyle}
-        className={cn(
-          "tt-heading tt-bracket text-body text-foreground",
-          titleCls,
-        )}
-      >
-        {t.insights.title}
-      </h1>
-
-      <div ref={readoutsRef} style={readoutsStyle} className={readoutsCls}>
-        <Panel size="lg">
-          <h2 className="tt-heading tt-bracket mb-4 text-body text-foreground">
-            {t.insights.readoutsTitle}
-          </h2>
-          <Readouts
-            holdings={holdings}
-            gainLoss={gainLoss}
-            realized={realized}
-            aggregates={aggregates}
-            pricePerTroyOz={pricePerTroyOz}
-          />
-        </Panel>
-      </div>
-
-      <div ref={valueRef} style={valueStyle} className={valueCls}>
-        <Panel size="lg">
-          <h2 className="tt-heading tt-bracket mb-4 text-body text-foreground">
+    <div className="dash-enter flex flex-col gap-6 md:gap-8">
+      <section className="page page--plain grid gap-x-10 gap-y-6 px-5 py-6 sm:px-10 sm:py-8 lg:grid-cols-[17rem_1fr]">
+        <div>
+          <h1 className="tt-heading text-figure-lg text-foreground">
+            {t.insights.title}
+          </h1>
+          <p className="mt-1 text-detail text-muted-foreground">
+            {t.insights.subtitle}
+          </p>
+          <h2 className="sr-only">{t.insights.readoutsTitle}</h2>
+          <div className="mt-4">
+            <Readouts
+              holdings={holdings}
+              gainLoss={gainLoss}
+              realized={realized}
+              aggregates={aggregates}
+              pricePerTroyOz={pricePerTroyOz}
+            />
+          </div>
+        </div>
+        <div className="min-w-0">
+          <h2 className="tt-heading text-figure text-foreground">
             {t.insights.valueOverTimeTitle}
           </h2>
+          <p className="mb-3 mt-0.5 text-label text-faint">
+            {t.insights.valueOverTimeCaption}
+          </p>
           <ValueOverTime points={portfolioSeries} />
-        </Panel>
-      </div>
+        </div>
+      </section>
 
-      <div
-        ref={buyHistoryRef}
-        style={buyHistoryStyle}
-        className={buyHistoryCls}
-      >
-        <Panel size="lg">
-          <h2 className="tt-heading tt-bracket mb-4 text-body text-foreground">
+      <div className="grid gap-6 md:gap-8 xl:grid-cols-2">
+        <section className="page page--plain min-w-0 px-5 py-6 sm:px-10 sm:py-8">
+          <h2 className="tt-heading text-figure text-foreground">
             {t.insights.buyHistoryTitle}
           </h2>
+          <p className="mb-4 mt-0.5 text-label text-faint">
+            {t.insights.buyHistoryCaption}
+          </p>
           <BuyHistory rows={buyQuality} />
-        </Panel>
-      </div>
-
-      <div ref={whatIfRef} style={whatIfStyle} className={whatIfCls}>
-        <Panel size="lg">
-          <h2 className="tt-heading tt-bracket mb-4 text-body text-foreground">
+        </section>
+        <section className="page px-5 py-6 sm:px-8 sm:py-8">
+          <h2 className="tt-heading text-figure text-foreground">
             {t.insights.whatIfTitle}
           </h2>
           <WhatIf holdings={holdings} pricePerTroyOz={pricePerTroyOz} />
-        </Panel>
+        </section>
       </div>
     </div>
   );

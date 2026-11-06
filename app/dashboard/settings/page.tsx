@@ -18,8 +18,8 @@ export default async function SettingsPage() {
   const transactions = await listTransactionsForUser(userId);
 
   return (
-    <div className="flex flex-col gap-8">
-      <h1 className="tt-heading tt-bracket text-body text-foreground">
+    <div className="dash-enter page page--plain flex flex-col gap-12 px-5 py-6 sm:px-10 sm:py-9">
+      <h1 className="tt-heading text-figure-lg text-foreground">
         {t.settings.title}
       </h1>
       <PreferencesSettings />

@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Panel } from "@/components/dashboard/panel";
+import { SettingsRow as Row, SettingsSection } from "./section";
 import { t } from "@/lib/i18n/dictionary";
 import { notify } from "@/lib/ui/toast";
 import {
@@ -48,7 +48,7 @@ function ConfirmAction({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="tt-label shrink-0 rounded-full border border-destructive px-3 py-1.5 text-label text-destructive transition-colors hover:bg-destructive/10"
+        className="press inline-flex min-h-10 shrink-0 items-center rounded-md bg-destructive/12 px-4 text-detail font-semibold text-destructive hover:bg-destructive/20"
       >
         {label}
       </button>
@@ -62,10 +62,9 @@ function ConfirmAction({
         placeholder={prompt}
         value={text}
         onChange={(e) => setText(e.target.value)}
-        className="h-8 w-40"
+        className="w-44"
       />
       <Button
-        size="sm"
         variant="destructive"
         disabled={text !== "DELETE" || pending}
         onClick={onConfirm}
@@ -78,7 +77,7 @@ function ConfirmAction({
           setOpen(false);
           setText("");
         }}
-        className="tt-label text-label text-muted-foreground hover:text-foreground"
+        className="press min-h-10 rounded-md px-3 text-detail text-muted-foreground hover:text-foreground"
       >
         {t.settings.cancel}
       </button>
@@ -86,25 +85,6 @@ function ConfirmAction({
   );
 }
 
-function Row({
-  title,
-  description,
-  children,
-}: {
-  title: string;
-  description: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="flex flex-wrap items-start justify-between gap-3 border-b border-(--glass-border-to) py-4 last:border-0">
-      <div className="max-w-[42ch]">
-        <p className="text-detail font-medium text-foreground">{title}</p>
-        <p className="mt-0.5 text-detail text-muted-foreground">{description}</p>
-      </div>
-      {children}
-    </div>
-  );
-}
 
 // Settings → Data: export, delete all transactions, delete account.
 // `transactions` is passed from the server
@@ -158,11 +138,7 @@ export function DataActions({
   }
 
   return (
-    <section className="flex flex-col gap-3">
-      <h2 className="tt-heading tt-bracket text-body text-foreground">
-        {t.settings.dataTitle}
-      </h2>
-      <Panel size="lg" className="flex flex-col">
+    <SettingsSection title={t.settings.dataTitle} description={t.settings.dataDescription}>
         <Row
           title={t.settings.exportTransactions}
           description={t.settings.exportDescription}
@@ -171,7 +147,7 @@ export function DataActions({
             type="button"
             onClick={() => downloadCsv(transactions)}
             disabled={transactions.length === 0}
-            className="tt-label shrink-0 rounded-full border border-(--glass-border-to) px-3 py-1.5 text-label text-muted-foreground transition-colors hover:bg-(--glow-color) hover:text-foreground disabled:opacity-50"
+            className="press inline-flex min-h-10 shrink-0 items-center rounded-md bg-sunk px-4 text-detail font-semibold text-gold hover:bg-(--glow-color) disabled:cursor-not-allowed disabled:opacity-50"
           >
             {t.csv.download}
           </button>
@@ -202,7 +178,6 @@ export function DataActions({
             onConfirm={handleDeleteAccount}
           />
         </Row>
-      </Panel>
-    </section>
+    </SettingsSection>
   );
 }

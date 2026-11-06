@@ -486,7 +486,7 @@ export function TransactionsView({
       style={revealStyle}
       className={cn("flex flex-col gap-5", revealClass)}
     >
-      <Panel size="lg" className="page--plain flex flex-col gap-5 rounded-tl-none max-md:rounded-tl-xl">
+      <Panel size="lg" className="page--plain flex flex-col gap-5">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <h1 className="tt-heading text-figure-lg text-foreground">

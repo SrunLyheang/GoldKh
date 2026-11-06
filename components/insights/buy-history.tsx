@@ -6,6 +6,7 @@ import type { BuyQualityRow } from "@/lib/calc/buyQuality";
 import { formatPercent, formatQuantity, formatUsd } from "@/lib/format/money";
 import { t } from "@/lib/i18n/dictionary";
 import { unitLabels } from "@/lib/i18n/unit-labels";
+import { formatEntryDate } from "@/lib/format/datetime";
 import { cn } from "@/lib/utils";
 import { MonoValue } from "@/components/dashboard/mono-value";
 
@@ -89,11 +90,11 @@ export function BuyHistory({ rows }: BuyHistoryProps) {
   }
 
   return (
-    <div className="overflow-x-auto rounded-lg border border-(--glass-border-to)">
+    <div className="-mx-1 overflow-x-auto">
       <table className="w-full border-collapse text-detail">
-        <thead className="glass-chrome sticky top-0 z-10">
-          <tr className="tt-label border-b border-(--glass-border-to) text-left text-label text-muted-foreground">
-            <th className="py-2 pr-3 pl-3 font-normal">
+        <thead className="sticky top-0 z-10 bg-page">
+          <tr className="border-b border-(--glass-border-to) text-left text-label text-faint">
+            <th className="py-2 pr-3 pl-1 font-normal">
               <SortButton
                 label={t.insights.sortDate}
                 active={sortKey === "date"}
@@ -120,7 +121,7 @@ export function BuyHistory({ rows }: BuyHistoryProps) {
         </thead>
         <tbody>
           {sorted.map((row, i) => {
-            const { primary: unitLabel } = unitLabels(row.unit);
+            const { primaryLower: unitLabel } = unitLabels(row.unit);
             const vs =
               row.vsSpotPercent === null ? null : Number(row.vsSpotPercent);
             return (
@@ -128,8 +129,10 @@ export function BuyHistory({ rows }: BuyHistoryProps) {
                 key={`${row.transactionDate}-${i}`}
                 className="border-b border-(--glass-border-to) last:border-0"
               >
-                <td className="py-2.5 pr-3 pl-3 font-mono tabular-nums text-muted-foreground">
-                  {row.transactionDate}
+                <td className="py-2.5 pr-3 pl-1 tabular-nums text-muted-foreground">
+                  <time dateTime={row.transactionDate}>
+                    {formatEntryDate(row.transactionDate)}
+                  </time>
                 </td>
                 <td className="py-2.5 pr-3">
                   <MonoValue>

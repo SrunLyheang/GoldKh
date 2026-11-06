@@ -43,7 +43,7 @@ describe("BuyHistory", () => {
     const datesBefore = screen
       .getAllByRole("row")
       .slice(1)
-      .map((r) => within(r).getAllByRole("cell")[0].textContent);
+      .map((r) => within(r).getAllByRole("cell")[0].querySelector("time")?.getAttribute("datetime"));
     expect(datesBefore).toEqual(["2026-02-01", "2026-01-01"]);
 
     await user.click(screen.getByRole("button", { name: /vs spot/i }));
@@ -52,14 +52,14 @@ describe("BuyHistory", () => {
     const datesAfter = screen
       .getAllByRole("row")
       .slice(1)
-      .map((r) => within(r).getAllByRole("cell")[0].textContent);
+      .map((r) => within(r).getAllByRole("cell")[0].querySelector("time")?.getAttribute("datetime"));
     expect(datesAfter).toEqual(["2026-02-01", "2026-01-01"]);
 
     await user.click(screen.getByRole("button", { name: /vs spot/i }));
     const datesAsc = screen
       .getAllByRole("row")
       .slice(1)
-      .map((r) => within(r).getAllByRole("cell")[0].textContent);
+      .map((r) => within(r).getAllByRole("cell")[0].querySelector("time")?.getAttribute("datetime"));
     expect(datesAsc).toEqual(["2026-01-01", "2026-02-01"]);
   });
 });

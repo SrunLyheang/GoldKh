@@ -1,9 +1,7 @@
 import { auth } from "@clerk/nextjs/server";
-import Link from "next/link";
 import { DetailedChart } from "@/components/charts/detailed-chart";
 import { buildChartModel } from "@/components/charts/chart-model";
 import { ReferenceLineCaption } from "@/components/charts/reference-line-caption";
-import { Panel } from "@/components/dashboard/panel";
 import { computePosition } from "@/lib/calc/position";
 import { buildDamlungPriceSeries } from "@/lib/calc/priceHistory";
 import { priceFromTroyOz } from "@/lib/calc/units";
@@ -78,58 +76,54 @@ export default async function PricePage() {
   });
 
   return (
-    <div className="flex flex-col gap-6">
-      <Link
-        href="/dashboard"
-        className="tt-label text-label text-muted-foreground transition-colors hover:text-foreground"
-      >
-        ← {t.chart.backToDashboard}
-      </Link>
-
-      <Panel size="lg">
-        <div className="mb-4 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1.5">
-          <div>
-            <h1 className="tt-heading tt-bracket text-body text-foreground">
-              {t.chart.title}
-            </h1>
-            <p className="tt-display mt-1.5 text-figure-lg font-semibold leading-tight tracking-tight text-foreground tabular-nums">
+    <section
+      aria-labelledby="price-title"
+      className="dash-enter page page--plain px-5 pb-6 pt-6 sm:px-10 sm:pt-8"
+    >
+      <div className="mb-6 flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
+        <div>
+          <h1 id="price-title" className="tt-heading text-figure-lg text-foreground">
+            {t.chart.title}
+          </h1>
+          <p className="mt-1 flex flex-wrap items-baseline gap-x-2">
+            <span className="tt-display text-display font-semibold leading-none text-foreground">
               {formatUsd(pricePerDamlung)}
-              <span className="ml-1 text-detail font-normal text-muted-foreground">
-                /damlung
-              </span>
-            </p>
-          </div>
-          <div className="flex flex-col items-start gap-1 sm:items-end">
-            <span className="tt-label inline-flex items-center gap-1.5 rounded-full border border-(--glass-border-to) bg-(--glass-bg) px-2 py-0.5 text-label text-muted-foreground">
-              <span
-                className={
-                  isStale
-                    ? "inline-block h-1.5 w-1.5 bg-muted-foreground"
-                    : "inline-block h-1.5 w-1.5 bg-state-gain"
-                }
-              />
-              <span className="tt-bracket">
-                {isStale ? t.hero.stale : t.hero.live}
-              </span>{" "}
-              {t.chart.asOf(formatClockTime(price.capturedAt))}
             </span>
-            {marketClosed && (
-              <span className="tt-label text-label text-muted-foreground">
-                {t.chart.marketClosed}
-              </span>
-            )}
-          </div>
-        </div>
-
-        <DetailedChart series={series} referenceLines={referenceLines} />
-
-        {placedRefLine && <ReferenceLineCaption placed={placedRefLine} />}
-        {marketClosed && (
-          <p className="mt-2 text-label text-muted-foreground">
-            {t.chart.marketClosedNote}
+            <span className="font-serif text-emphasis text-muted-foreground">
+              a damlung
+            </span>
           </p>
-        )}
-      </Panel>
-    </div>
+        </div>
+        <div className="flex flex-col items-start gap-0.5 sm:items-end">
+          <p className="flex items-center gap-2 text-label text-muted-foreground">
+            <span
+              aria-hidden="true"
+              className={
+                isStale
+                  ? "inline-block h-2 w-2 rounded-full bg-faint"
+                  : "inline-block h-2 w-2 rounded-full bg-state-gain"
+              }
+            />
+            <span className="font-medium text-foreground/90">
+              {isStale ? t.hero.stale : t.hero.live}
+            </span>
+            {t.chart.asOf(formatClockTime(price.capturedAt))}
+          </p>
+          {marketClosed && (
+            <p className="text-label text-muted-foreground">{t.chart.marketClosed}</p>
+          )}
+        </div>
+      </div>
+
+      <DetailedChart series={series} referenceLines={referenceLines} />
+
+      {placedRefLine && <ReferenceLineCaption placed={placedRefLine} />}
+      {marketClosed && (
+        <p className="mt-2 text-label text-muted-foreground">
+          {t.chart.marketClosedNote}
+        </p>
+      )}
+      <p className="mt-4 max-w-[60ch] text-label text-faint">{t.hero.disclaimer}</p>
+    </section>
   );
 }

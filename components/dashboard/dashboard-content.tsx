@@ -111,7 +111,7 @@ export function DashboardContent({
   // "Write an entry" sits in thumb reach above the tab bar.
   return (
     <div className="flex flex-col gap-6 md:gap-8">
-      <div className="dash-enter grid overflow-hidden rounded-xl rounded-tr-none shadow-(--shadow-page) md:grid-cols-[1.08fr_1fr] md:rounded-tl-xl max-md:rounded-tr-xl">
+      <div className="dash-enter grid overflow-hidden rounded-xl shadow-(--shadow-page) md:grid-cols-[1.08fr_1fr]">
         <div
           className="page page-margin rounded-none px-5 pb-8 pt-5 [--margin-x:0.75rem] sm:px-10 sm:[--margin-x:1.75rem] md:pl-14 md:pr-10 md:pt-7 md:[--margin-x:2.25rem]"
         >

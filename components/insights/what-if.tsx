@@ -92,7 +92,7 @@ export function WhatIf({ holdings, pricePerTroyOz }: WhatIfProps) {
       <div
         role="tablist"
         aria-label={t.insights.whatIfTitle}
-        className="inline-flex w-fit shrink-0 items-center gap-0.5 rounded-lg border border-(--glass-border-to) bg-(--glass-bg) p-0.5"
+        className="inline-flex w-fit shrink-0 items-center gap-0.5 rounded-lg bg-sunk p-1"
       >
         {MODES.map((m) => (
           <button
@@ -102,9 +102,9 @@ export function WhatIf({ holdings, pricePerTroyOz }: WhatIfProps) {
             aria-selected={mode === m}
             onClick={() => setMode(m)}
             className={cn(
-              "tt-label rounded-md px-2.5 py-1 text-label transition-colors",
+              "press inline-flex min-h-9 items-center rounded-md px-3.5 text-detail font-medium",
               mode === m
-                ? "bg-primary text-primary-foreground"
+                ? "bg-popover text-foreground shadow-[0_1px_2px_rgb(0_0_0/0.18)]"
                 : "text-muted-foreground hover:text-foreground",
             )}
           >
@@ -113,7 +113,7 @@ export function WhatIf({ holdings, pricePerTroyOz }: WhatIfProps) {
         ))}
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2">
         <div className="grid gap-2">
           <Label htmlFor="whatif-quantity">{t.insights.whatIfQuantity}</Label>
           <div className="flex gap-2">
@@ -131,7 +131,7 @@ export function WhatIf({ holdings, pricePerTroyOz }: WhatIfProps) {
               value={unit}
               onValueChange={(value) => setUnit(value as GoldUnit)}
             >
-              <SelectTrigger id="whatif-unit" className="w-24">
+              <SelectTrigger id="whatif-unit" className="w-32">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -149,7 +149,7 @@ export function WhatIf({ holdings, pricePerTroyOz }: WhatIfProps) {
               <button
                 type="button"
                 onClick={useSpot}
-                className="tt-label text-label text-muted-foreground transition-colors hover:text-foreground"
+                className="press -my-2 min-h-9 rounded-md px-2 text-label font-medium text-gold hover:bg-(--glow-color)"
               >
                 {t.insights.whatIfUseSpot}
               </button>
@@ -348,16 +348,16 @@ function WhatIfOutput({ t, result }: { t: Dict; result: WhatIfResult }) {
   const rows = buildRows(result, t);
 
   return (
-    <dl className="flex flex-col divide-y divide-(--glass-border-to) border-t border-(--glass-border-to)">
+    <dl className="flex flex-col divide-y divide-(--glass-border-to)">
       <div className="hidden gap-3 pt-3 pb-1 sm:grid sm:grid-cols-[minmax(9rem,1fr)_repeat(3,minmax(0,1fr))]">
         <span />
-        <span className="tt-label text-micro text-muted-foreground">
+        <span className="text-label text-faint">
           {t.insights.whatIfNow}
         </span>
-        <span className="tt-label text-micro text-muted-foreground">
+        <span className="text-label text-faint">
           {t.insights.whatIfAfter}
         </span>
-        <span className="tt-label text-micro text-muted-foreground">
+        <span className="text-label text-faint">
           {t.insights.whatIfChange}
         </span>
       </div>
@@ -376,7 +376,7 @@ function WhatIfOutput({ t, result }: { t: Dict; result: WhatIfResult }) {
           ) : (
             <>
               <dd className="flex flex-col">
-                <span className="tt-label text-micro text-muted-foreground sm:hidden">
+                <span className="text-label text-faint sm:hidden">
                   {t.insights.whatIfNow}
                 </span>
                 <MonoValue tone="muted" className="text-detail">
@@ -384,13 +384,13 @@ function WhatIfOutput({ t, result }: { t: Dict; result: WhatIfResult }) {
                 </MonoValue>
               </dd>
               <dd className="flex flex-col">
-                <span className="tt-label text-micro text-muted-foreground sm:hidden">
+                <span className="text-label text-faint sm:hidden">
                   {t.insights.whatIfAfter}
                 </span>
                 <MonoValue className="text-detail">{row.after}</MonoValue>
               </dd>
               <dd className="flex flex-col">
-                <span className="tt-label text-micro text-muted-foreground sm:hidden">
+                <span className="text-label text-faint sm:hidden">
                   {t.insights.whatIfChange}
                 </span>
                 <MonoValue

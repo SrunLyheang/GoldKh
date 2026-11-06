@@ -7,10 +7,10 @@ import type { Realized } from "@/lib/calc/realized";
 import type { InsightsAggregates } from "@/lib/calc/insights";
 import { priceFromTroyOz } from "@/lib/calc/units";
 import { formatQuantity, formatUsd } from "@/lib/format/money";
+import { formatEntryDate } from "@/lib/format/datetime";
 import { t } from "@/lib/i18n/dictionary";
 import { unitLabels } from "@/lib/i18n/unit-labels";
 import { MonoValue } from "@/components/dashboard/mono-value";
-import { Surface } from "@/components/dashboard/surface";
 
 interface ReadoutsProps {
   holdings: Holdings;
@@ -38,24 +38,23 @@ function Stat({
   tone?: Tone;
 }) {
   return (
-    <Surface>
-      <p className="tt-label text-label text-muted-foreground">{label}</p>
-      <MonoValue tone={tone} className="mt-1.5 block text-figure font-semibold">
+    <div className="py-3">
+      <p className="text-detail text-muted-foreground">{label}</p>
+      <MonoValue tone={tone} className="figure mt-0.5 block text-figure-lg font-semibold leading-tight">
         {value}
       </MonoValue>
       {hint ? (
-        <MonoValue tone="muted" className="mt-1 block text-detail">
+        <MonoValue tone="muted" className="mt-0.5 block text-detail">
           {hint}
         </MonoValue>
       ) : null}
-    </Surface>
+    </div>
   );
 }
 
-// The headline figures at the top of Insights, shown as a 2×2 stat grid
-// in the same idiom as the dashboard's
-// Position row — a mono uppercase label, the figure emphasised, a muted
-// qualifier. Tiles render only when they have something to say.
+// The headline figures of Insights, written down the margin of the page:
+// a plain label, the figure in the ledger face, a quiet qualifier. Each
+// renders only when it has something to say.
 export function Readouts({
   holdings,
   gainLoss,
@@ -116,13 +115,13 @@ export function Readouts({
   }
 
   if (aggregates.largestBuy) {
-    const { primary: unitLabel } = unitLabels(aggregates.largestBuy.unit);
+    const { primaryLower: unitLabel } = unitLabels(aggregates.largestBuy.unit);
     tiles.push(
       <Stat
         key="largest"
         label={t.insights.readoutLargestLabel}
         value={`${formatQuantity(aggregates.largestBuy.quantity)} ${unitLabel}`}
-        hint={aggregates.largestBuy.transactionDate}
+        hint={formatEntryDate(aggregates.largestBuy.transactionDate)}
       />,
     );
   }
@@ -136,6 +135,6 @@ export function Readouts({
   }
 
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5">{tiles}</div>
+    <div className="grid grid-cols-1 gap-x-8 sm:grid-cols-2 lg:grid-cols-1">{tiles}</div>
   );
 }

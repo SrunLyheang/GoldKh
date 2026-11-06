@@ -48,7 +48,7 @@ const en = {
     per: (unit: string) => `per ${unit}`,
   },
   transactions: {
-    title: "Transaction History",
+    title: "The ledger",
     addTransaction: "Write an entry",
     date: "Date",
     quantity: "Quantity",
@@ -71,9 +71,9 @@ const en = {
   },
   dialog: {
     editTitle: "Edit transaction",
-    addTitle: "Add transaction",
+    addTitle: "Write an entry",
     editDescription: "Update the details of this transaction.",
-    addDescription: "Record a buy or sell against your gold holdings.",
+    addDescription: "Write down a buy or a sale you made at the shop.",
     quantity: "Quantity",
     totalPaid: "Total amount paid",
     perUnitEquiv: (unit: string) => `Price per ${unit}`,
@@ -87,8 +87,9 @@ const en = {
     priceSoftHigh:
       "This is well above the current spot price — double-check the total amount if that's unexpected.",
     date: "Date",
-    notes: "Notes (optional)",
-    saveTransaction: "Save transaction",
+    notes: "A note for yourself (optional)",
+    notesPlaceholder: "e.g. Psar Thmei, for the wedding",
+    saveTransaction: "Save to the notebook",
     savingChanges: "Saving changes…",
     savingTransaction: "Saving transaction…",
     exceedsHoldings: (quantity: string, unit: string) =>
@@ -218,7 +219,10 @@ const en = {
   },
   insights: {
     title: "Insights",
+    subtitle: "What your notebook adds up to.",
     readoutsTitle: "Readouts",
+    valueOverTimeCaption: "What your gold was worth each day, against what you'd paid for it.",
+    buyHistoryCaption: "Each buy against the world spot price on its day.",
     avgCostBelowSpot: (pct: string) =>
       `Your average cost is ${pct} below spot.`,
     avgCostAboveSpot: (pct: string) =>
@@ -229,9 +233,9 @@ const en = {
       `${unrealized} unrealized, ${realized} realized.`,
     largestBuy: (quantity: string, date: string) =>
       `Largest buy: ${quantity} on ${date}.`,
-    readoutAvgVsSpotLabel: "Avg cost vs spot",
+    readoutAvgVsSpotLabel: "Your average cost vs spot",
     readoutInvestedLabel: "Total invested",
-    readoutNetLabel: "Unrealized P&L",
+    readoutNetLabel: "Up or down so far",
     readoutLargestLabel: "Largest buy",
     belowSpot: "below spot",
     aboveSpot: "above spot",
@@ -239,7 +243,7 @@ const en = {
     acrossBuys: (count: number) =>
       `across ${count} ${count === 1 ? "buy" : "buys"}`,
     realizedSuffix: (amount: string) => `${amount} realized`,
-    valueOverTimeTitle: "Portfolio value over time",
+    valueOverTimeTitle: "Your gold over time",
     marketValue: "Market value",
     costBasis: "Cost basis",
     notEnoughData:
@@ -253,7 +257,7 @@ const en = {
     sortDate: "Date",
     sortVsSpot: "vs spot",
     noBuys: "No buys recorded yet.",
-    whatIfTitle: "What-if calculator",
+    whatIfTitle: "What if…",
     whatIfDescription:
       "See how a hypothetical buy or sell would change your position.",
     whatIfQuantity: "Quantity",
@@ -281,15 +285,20 @@ const en = {
   settings: {
     title: "Settings",
     accountTitle: "Account",
+    accountDescription: "Who this notebook belongs to.",
     signedInAs: "Signed in as",
     signOut: "Sign out",
     signOutDescription: "End your session on this device and return to the home page.",
-    preferencesTitle: "Preferences",
-    dataTitle: "Data",
-    defaultUnit: "Default display unit",
+    preferencesTitle: "How it reads",
+    preferencesDescription: "Saved on this device as soon as you change them.",
+    dataTitle: "Your data",
+    dataDescription: "Take your entries with you, or clear the notebook.",
+    defaultUnit: "Show prices in",
+    defaultUnitDescription: "The unit today's page opens in.",
+    themeDescription: "Night is a notebook under a lamp; Day is the same page by a window.",
     unitChi: "Chi",
     unitDamlung: "Damlung",
-    theme: "Theme",
+    theme: "Light",
     saved: "Saved",
     exportTransactions: "Export transactions",
     exportDescription: "Download all your transactions as a CSV file.",

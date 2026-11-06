@@ -46,9 +46,9 @@ describe("TransactionDialog", () => {
     vi.unstubAllGlobals();
   });
 
-  it("renders 'Add transaction' when there is no transaction prop", () => {
+  it("renders 'Write an entry' when there is no transaction prop", () => {
     renderDialog();
-    expect(screen.getByText("Add transaction")).toBeInTheDocument();
+    expect(screen.getByText("Write an entry")).toBeInTheDocument();
   });
 
   it("renders 'Edit transaction' when a transaction prop is passed", () => {
@@ -77,7 +77,7 @@ describe("TransactionDialog", () => {
 
     await user.type(screen.getByLabelText("Quantity"), "1.23456");
     await user.type(screen.getByLabelText("Total amount paid"), "300");
-    await user.click(screen.getByRole("button", { name: /save transaction/i }));
+    await user.click(screen.getByRole("button", { name: /save to the notebook/i }));
 
     expect(fetchMock).not.toHaveBeenCalled();
     expect(
@@ -99,7 +99,7 @@ describe("TransactionDialog", () => {
     const { onOpenChange } = renderDialog({ onOptimisticAdd, onAddSettled });
 
     await fillValidBuy(user);
-    await user.click(screen.getByRole("button", { name: /save transaction/i }));
+    await user.click(screen.getByRole("button", { name: /save to the notebook/i }));
 
     expect(onOptimisticAdd).toHaveBeenCalledOnce();
     const optimisticRow = onOptimisticAdd.mock.calls[0][0];
@@ -138,7 +138,7 @@ describe("TransactionDialog", () => {
 
     await user.type(screen.getByLabelText("Quantity"), "3");
     await user.type(screen.getByLabelText("Total amount paid"), "5585");
-    await user.click(screen.getByRole("button", { name: /save transaction/i }));
+    await user.click(screen.getByRole("button", { name: /save to the notebook/i }));
 
     // 5585 ÷ 3 = 1861.66666… → 1861.6667
     expect(onOptimisticAdd.mock.calls[0][0].pricePerUnit).toBe("1861.6667");
@@ -176,7 +176,7 @@ describe("TransactionDialog", () => {
     // chi is ~414× spot — a hard reject.
     await user.type(screen.getByLabelText("Quantity"), "1");
     await user.type(screen.getByLabelText("Total amount paid"), "100000");
-    await user.click(screen.getByRole("button", { name: /save transaction/i }));
+    await user.click(screen.getByRole("button", { name: /save to the notebook/i }));
 
     expect(
       await screen.findByText(/more than ten times the current spot price/i)
@@ -202,7 +202,7 @@ describe("TransactionDialog", () => {
       await screen.findByText(/well above the current spot price/i)
     ).toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: /save transaction/i }));
+    await user.click(screen.getByRole("button", { name: /save to the notebook/i }));
 
     await waitFor(() => {
       expect(onOpenChange).toHaveBeenCalledWith(false);
@@ -237,7 +237,7 @@ describe("TransactionDialog", () => {
       screen.queryByText(/current spot price/i)
     ).not.toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: /save transaction/i }));
+    await user.click(screen.getByRole("button", { name: /save to the notebook/i }));
 
     await waitFor(() => {
       expect(fetch).toHaveBeenCalledWith(
@@ -263,7 +263,7 @@ describe("TransactionDialog", () => {
     const { onOpenChange } = renderDialog({ onOptimisticAdd, onAddSettled });
 
     await fillValidBuy(user);
-    await user.click(screen.getByRole("button", { name: /save transaction/i }));
+    await user.click(screen.getByRole("button", { name: /save to the notebook/i }));
 
     await waitFor(() => {
       expect(toastError).toHaveBeenCalledWith(td.invalidInput);
@@ -287,7 +287,7 @@ describe("TransactionDialog", () => {
     renderDialog();
 
     await fillValidBuy(user);
-    await user.click(screen.getByRole("button", { name: /save transaction/i }));
+    await user.click(screen.getByRole("button", { name: /save to the notebook/i }));
 
     await waitFor(() => {
       expect(toastError).toHaveBeenCalledWith(td.rateLimited);
@@ -300,7 +300,7 @@ describe("TransactionDialog", () => {
     renderDialog();
 
     await fillValidBuy(user);
-    await user.click(screen.getByRole("button", { name: /save transaction/i }));
+    await user.click(screen.getByRole("button", { name: /save to the notebook/i }));
 
     await waitFor(() => {
       expect(toastError).toHaveBeenCalledWith(td.network);
@@ -318,7 +318,7 @@ describe("TransactionDialog", () => {
     renderDialog({ onOptimisticAdd: vi.fn(), onAddSettled: vi.fn() });
 
     await fillValidBuy(user);
-    await user.click(screen.getByRole("button", { name: /save transaction/i }));
+    await user.click(screen.getByRole("button", { name: /save to the notebook/i }));
 
     await waitFor(() => {
       expect(toastSuccess).toHaveBeenCalledWith(td.buyAdded("10", "Chi"));
@@ -367,7 +367,7 @@ describe("TransactionDialog", () => {
     const user = userEvent.setup();
     renderDialog({ transaction, existingTransactions: [], onEditSuccess });
 
-    await user.click(screen.getByRole("button", { name: /save transaction/i }));
+    await user.click(screen.getByRole("button", { name: /save to the notebook/i }));
 
     await waitFor(() => {
       expect(fetch).toHaveBeenCalledWith(
