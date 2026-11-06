@@ -3,12 +3,31 @@
 @import "shadcn/tailwind.css";
 @import "@clerk/ui/themes/shadcn.css";
 
-@custom-variant dark (&:is(.dark *));
+/* ════════════════════════════════════════════════════════════════════
+   GoldKh — "the family gold notebook"
+   One design system, two designed themes: Night (default, a notebook
+   under a lamp) and Day (the same notebook by a window). See DESIGN.md.
+   Every colour, corner, size and curve below is a token; components
+   read tokens, never hex.
+   ════════════════════════════════════════════════════════════════════ */
+
+@custom-variant dark (&:is([data-theme="night"] *));
 
 @theme inline {
-    --font-heading: var(--font-sans);
-    --font-sans: var(--font-plex-sans), ui-sans-serif, system-ui, sans-serif;
-    --font-mono: var(--font-plex-mono), ui-monospace, "SF Mono", monospace;
+    /* Families — loaded in app/layout.tsx with next/font.
+       Besley: Clarendon-style serif from the account-book era — headings
+       and the big figures. Red Hat Text: the reading face, open and
+       warm, real tabular figures, an unslashed zero. Kantumruy Pro: Khmer
+       script fallback. Shantell Sans: the user's own handwriting (notes
+       and margin remarks only — never a figure). There is no monospace
+       in this system: `font-mono` is pointed at the reading face and
+       every figure gets `tabular-nums`. */
+    --font-sans: var(--font-reading), var(--font-khmer), ui-sans-serif, system-ui, sans-serif;
+    --font-heading: var(--font-ledger), var(--font-khmer), Georgia, serif;
+    --font-serif: var(--font-ledger), var(--font-khmer), Georgia, serif;
+    --font-mono: var(--font-reading), var(--font-khmer), ui-sans-serif, system-ui, sans-serif;
+    --font-hand: var(--font-handwriting), var(--font-khmer), "Comic Sans MS", cursive;
+
     --color-state-gain: var(--state-gain);
     --color-sidebar-ring: var(--sidebar-ring);
     --color-sidebar-border: var(--sidebar-border);
@@ -41,695 +60,297 @@
     --color-card: var(--card);
     --color-foreground: var(--foreground);
     --color-background: var(--background);
-    --radius-sm: calc(var(--radius) * 0.6);
-    --radius-md: calc(var(--radius) * 0.8);
-    --radius-lg: var(--radius);
-    --radius-xl: calc(var(--radius) * 1.4);
-    --radius-2xl: calc(var(--radius) * 1.8);
-    --radius-3xl: calc(var(--radius) * 2.2);
-    --radius-4xl: calc(var(--radius) * 2.6);
+    /* Notebook-specific colours */
+    --color-page: var(--page);
+    --color-sunk: var(--sunk);
+    --color-ink-hand: var(--ink-hand);
+    --color-gold: var(--gold);
+    --color-gold-leaf: var(--gold-leaf);
+    --color-faint: var(--faint);
 
-    /* Dashboard type scale — see DESIGN.md § Typography. Semantic names,
-       NOT t-shirt sizes: these are additive utilities (`text-label`,
-       `text-figure`, …) and deliberately do NOT override Tailwind's
-       default `text-xs/sm/base/...` steps, so the landing tree is
-       untouched. Components migrate off `text-[Npx]` one-offs onto
-       these; new code uses them from the start. */
-    --text-micro: 0.625rem;        /* 10px — micro labels, sparingly */
-    --text-label: 0.6875rem;       /* 11px — labels, metadata, status (.tt-label) */
-    --text-detail: 0.8125rem;      /* 13px — secondary body, table cells, sublines */
-    --text-body: 0.9375rem;        /* 15px — body copy, section headings (.tt-heading) */
-    --text-emphasis: 1.0625rem;    /* 17px — emphasized body */
-    --text-figure: 1.1875rem;      /* 19px — stat-card values */
-    --text-figure-lg: 1.75rem;     /* 28px — sub-hero figures */
-    --text-display: 2.125rem;      /* 34px — hero price, mobile */
-    --text-display-lg: 2.875rem;   /* 46px — hero price, desktop */
+    /* Concentric radius scale: 22 → 14 → 10 → 6 → 4. A child's corner is
+       its parent's minus the padding between them. */
+    --radius-xs: 4px;
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 14px;
+    --radius-xl: 22px;
+    --radius-2xl: 22px;
+    --radius-3xl: 22px;
+    --radius-4xl: 22px;
+
+    /* Type scale — semantic names kept from the old system so every
+       component re-scales at once; the values are new and more
+       comfortable (body never below 14px, labels never below 12px). */
+    --text-micro: 0.75rem;        /* 12 — chart ticks only */
+    --text-label: 0.8125rem;      /* 13 — labels, metadata, status lines */
+    --text-detail: 0.875rem;      /* 14 — secondary body, table cells */
+    --text-body: 1rem;            /* 16 — body copy */
+    --text-emphasis: 1.125rem;    /* 18 — emphasized body, notebook rows */
+    --text-figure: 1.375rem;      /* 22 — figures in the position sum, h2s */
+    --text-figure-lg: 2rem;       /* 32 — sub-hero figures */
+    --text-display: 2.75rem;      /* 44 — hero price, phone */
+    --text-display-lg: 3.75rem;   /* 60 — hero price, desktop */
+
+    --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+    --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+    --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
 }
 
+/* ─── Night (default, also the pre-hydration frame) ─────────────────
+   A notebook open under a warm lamp. The desk is near-black umber, the
+   page is lifted to L* ≈ 19 so it reads as paper, not as a hole. Ink is
+   paper-cream; the user's handwriting is the soft blue of a ballpoint;
+   gold is the one accent. Contrast on the page: text 11.7:1, secondary
+   7.5:1, tertiary 4.9:1. */
+:root,
+:root[data-theme="night"],
+[data-theme="night"] {
+    color-scheme: dark;
+    --background: #1a1713;      /* the desk */
+    --page: #352f27;            /* the notebook page */
+    --sunk: #29241e;            /* inputs, wells — one step below the page */
+    --card: #352f27;
+    --card-foreground: #f3ead9;
+    --popover: #3e382f;         /* things that float above the page */
+    --popover-foreground: #f3ead9;
+    --foreground: #f3ead9;
+    --muted-foreground: #c9bda6;
+    --faint: #a3977f;
+    --primary: #e6b65a;         /* gold */
+    --primary-foreground: #241a08;
+    --gold: #e6b65a;
+    --gold-leaf: #e6b65a;
+    --ink-hand: #afc3ee;        /* ballpoint blue: the user's own words */
+    --secondary: #3e382f;
+    --secondary-foreground: #f3ead9;
+    --muted: #2e2922;
+    --accent: #423b31;
+    --accent-foreground: #f3ead9;
+    --destructive: #f2907f;     /* loss — and only loss / errors */
+    --state-gain: #74c997;      /* gain — and only gain */
+    --border: #4a4236;
+    --input: #5a5144;
+    --ring: #e6b65a;
+    --chart-1: #e6b65a;
+    --chart-2: #afc3ee;
+    --chart-3: #74c997;
+    --chart-4: #f2907f;
+    --chart-5: #f3ead9;
+    --rule: rgb(175 195 238 / 0.075);      /* the faint blue ruling */
+    --margin-line: rgb(230 182 90 / 0.28); /* the margin rule */
+    --shadow-float: 0 18px 50px -18px rgb(0 0 0 / 0.65), 0 2px 8px -2px rgb(0 0 0 / 0.4);
+    --shadow-page: 0 30px 60px -40px rgb(0 0 0 / 0.8);
+    --lamp: rgb(255 196 110 / 0.07);
+    --scrim: rgb(14 11 8 / 0.62);
+
+    --sidebar: #1a1713;
+    --sidebar-foreground: #f3ead9;
+    --sidebar-primary: #e6b65a;
+    --sidebar-primary-foreground: #241a08;
+    --sidebar-accent: #352f27;
+    --sidebar-accent-foreground: #f3ead9;
+    --sidebar-border: #4a4236;
+    --sidebar-ring: #e6b65a;
+}
+
+/* ─── Day ───────────────────────────────────────────────────────────
+   The same notebook by a window: warm paper on a light wood desk, blue
+   ballpoint ink, gold printed a shade darker so it reads as text. */
+:root[data-theme="day"],
+[data-theme="day"] {
+    color-scheme: light;
+    --background: #e8deca;
+    --page: #fbf6ea;
+    --sunk: #f1eada;
+    --card: #fbf6ea;
+    --card-foreground: #1f2a44;
+    --popover: #fffdf7;
+    --popover-foreground: #1f2a44;
+    --foreground: #1f2a44;
+    --muted-foreground: #4b5268;
+    --faint: #6b6e7c;
+    --primary: #1f2a44;          /* day buttons are ink */
+    --primary-foreground: #fbf6ea;
+    --gold: #86580e;             /* gold as text */
+    --gold-leaf: #d9a441;        /* gold as a fill */
+    --ink-hand: #2a4a8e;
+    --secondary: #efe6d3;
+    --secondary-foreground: #1f2a44;
+    --muted: #f1eada;
+    --accent: #ece2cd;
+    --accent-foreground: #1f2a44;
+    --destructive: #ad3329;
+    --state-gain: #21704a;
+    --border: #ddd1b9;
+    --input: #c9bba0;
+    --ring: #86580e;
+    --chart-1: #b07a1c;
+    --chart-2: #2a4a8e;
+    --chart-3: #21704a;
+    --chart-4: #ad3329;
+    --chart-5: #1f2a44;
+    --rule: rgb(42 74 142 / 0.10);
+    --margin-line: rgb(176 122 28 / 0.35);
+    --shadow-float: 0 18px 44px -20px rgb(80 56 20 / 0.35), 0 2px 6px -2px rgb(80 56 20 / 0.18);
+    --shadow-page: 0 30px 60px -44px rgb(80 56 20 / 0.45);
+    --lamp: rgb(255 255 255 / 0);
+    --scrim: rgb(60 44 20 / 0.32);
+
+    --sidebar: #e8deca;
+    --sidebar-foreground: #1f2a44;
+    --sidebar-primary: #1f2a44;
+    --sidebar-primary-foreground: #fbf6ea;
+    --sidebar-accent: #fbf6ea;
+    --sidebar-accent-foreground: #1f2a44;
+    --sidebar-border: #ddd1b9;
+    --sidebar-ring: #86580e;
+}
+
+/* Legacy aliases — older components reach these names. They now point
+   at the notebook tokens, so nothing renders as glass any more. */
 :root {
-    /* Base token layer — NOT a selectable theme. Two jobs: it is the
-       pre-hydration fallback (the frame before ThemeProvider sets
-       `data-theme="liquid-glass"`), and it is the layer the
-       non-liquid-glass themes derive their `--glass-*` / idiom tokens
-       from (Midnight, Emerald only override colours, then inherit the
-       frosted treatment computed here). Dark, warm-neutral,
-       square — deliberately plain so the fallback frame reads as
-       "loading", not as a distinct theme. Every real theme block below
-       is written `:root[data-theme="x"], [data-theme="x"]` so a nested
-       `<div data-theme="x">` (the picker's swatches) gets the full token
-       set, not just <html>. See DESIGN.md. */
-    --background: #0f0c08;
-    --foreground: #f5f1e8;
-    --card: #151009;
-    --card-foreground: #f5f1e8;
-    --popover: #151009;
-    --popover-foreground: #f5f1e8;
-    --primary: #e8b84b;
-    --primary-foreground: #1a1207;
-    --secondary: #1c1610;
-    --secondary-foreground: #f5f1e8;
-    --muted: #1c1610;
-    --muted-foreground: #a89a82;
-    --accent: #221a10;
-    --accent-foreground: #f5f1e8;
-    --destructive: #f87171;
-    --state-gain: #4ade80;
-    --border: #2a2013;
-    --input: #2a2013;
-    --ring: #e8b84b;
-    --chart-1: #e8b84b;
-    --chart-2: #8ea3b8;
-    --chart-3: #4ade80;
-    --chart-4: #f87171;
-    --chart-5: #f5f1e8;
-    /* Square by default; every rounded-* utility derives from this one
-       token. Each real theme block below sets its own corner. */
-    --radius: 0px;
-
-    /* Theme idiom tokens — plain base values; each `[data-theme]` block
-       below overrides them. Components reach the idiom only through
-       `.tt-label` / `.tt-heading` / `.tt-display` / `.tt-bracket`, never
-       by hardcoding it — that is what makes a new theme one CSS block.
-       See DESIGN.md's Theming section. */
-    --label-font: var(--font-mono);
-    --label-transform: uppercase;
-    --label-tracking: 0.08em;
-    --heading-font: var(--font-sans);
-    --heading-transform: uppercase;
-    --heading-tracking: -0.01em;
-    --heading-weight: 700;
-    --display-font: var(--font-mono);
-    --bracket-open: "[ ";
-    --bracket-close: " ]";
-    --shadow-lg: 4px 4px 0 0 var(--border);
-    --shadow-sm: 2px 2px 0 0 var(--border);
-
-    --sidebar: #151009;
-    --sidebar-foreground: #f5f1e8;
-    --sidebar-primary: #e8b84b;
-    --sidebar-primary-foreground: #1a1207;
-    --sidebar-accent: #221a10;
-    --sidebar-accent-foreground: #f5f1e8;
-    --sidebar-border: #2a2013;
-    --sidebar-ring: #e8b84b;
-
-    /* Liquid-glass surface tokens. The defaults here are DERIVED from
-       each theme's own --card / --foreground / --primary, so the five
-       non-default themes inherit a coherent frosted treatment for free
-       — only the two light themes (below) and the dedicated
-       `liquid-glass` block override them outright. Components reach glass only
-       through `.glass-surface` / `.glass-overlay` / `.glass-glow`,
-       never by hardcoding. See DESIGN.md. */
-    --glass-bg: color-mix(in oklab, var(--card) 80%, transparent);
-    --glass-blur: 14px;
-    --glass-border-from: color-mix(in oklab, var(--foreground) 30%, transparent);
-    /* Also the hairline-divider colour everywhere (row separators, field
-       dividers, in-card rules). Kept low, but high enough to actually
-       register against the near-black ground — 5% was effectively
-       invisible. See DESIGN.md. */
-    --glass-border-to: color-mix(in oklab, var(--foreground) 11%, transparent);
-    --glass-highlight: color-mix(in oklab, var(--foreground) 8%, transparent);
-    --glass-shadow: 0 24px 60px -30px rgb(0 0 0 / 0.7), 0 4px 14px -8px rgb(0 0 0 / 0.5);
-    --glass-radius: var(--radius);
-    --glass-scrim: rgb(0 0 0 / 0.55);
-    --glass-fallback-bg: color-mix(in oklab, var(--card) 94%, var(--background));
-    --glow-color: color-mix(in oklab, var(--primary) 35%, transparent);
-    --glow-radius: 460px;
-    --sparkle-opacity: 0.4;
-    --eyebrow-glyph: "";
-}
-
-/* ---- Ledger theme (minimalist-ui direction) --------------------------
-   Warm monochrome paper, editorial serif headings, soft borders and
-   shadows, rounded corners. Selectable from the sidebar theme toggle.
-   Adding another theme means another block just like this one — nothing
-   in the components changes. See DESIGN.md's Theming
-   section and the "Goldsmith's Ledger" mockup. */
-:root[data-theme="ledger"],
-[data-theme="ledger"] {
-    --background: #f7f6f3;
-    --foreground: #201f1c;
-    --card: #fcfbf9;
-    --card-foreground: #201f1c;
-    --popover: #fcfbf9;
-    --popover-foreground: #201f1c;
-    --primary: #201f1c;
-    --primary-foreground: #f7f6f3;
-    --secondary: #efede7;
-    --secondary-foreground: #201f1c;
-    --muted: #efede7;
-    --muted-foreground: #6b6862;
-    --accent: #eae7df;
-    --accent-foreground: #201f1c;
-    --destructive: #9e2f2c;
-    --state-gain: #35633a;
-    --border: #e6e2da;
-    --input: #d8d3c8;
-    --ring: #9a7b4f;
-    --chart-1: #9a7b4f;
-    --chart-2: #4f6272;
-    --chart-3: #35633a;
-    --chart-4: #9e2f2c;
-    --chart-5: #201f1c;
-
-    --radius: 8px;
-
-    /* Labels stay mono + uppercase (they read the same in both themes).
-       Headings and the hero price switch to the editorial serif and
-       lose the bracket framing; elevation goes soft. */
-    --heading-font: var(--font-newsreader), Georgia, "Times New Roman", serif;
-    --heading-transform: none;
-    --heading-tracking: -0.02em;
-    --heading-weight: 500;
-    --display-font: var(--font-newsreader), Georgia, "Times New Roman", serif;
-    --bracket-open: "";
-    --bracket-close: "";
-    --shadow-lg: 0 1px 2px 0 rgb(32 31 28 / 0.05);
-    --shadow-sm: 0 1px 2px 0 rgb(32 31 28 / 0.03);
-
-    --sidebar: #f7f6f3;
-    --sidebar-foreground: #201f1c;
-    --sidebar-primary: #201f1c;
-    --sidebar-primary-foreground: #f7f6f3;
-    --sidebar-accent: #eae7df;
-    --sidebar-accent-foreground: #201f1c;
-    --sidebar-border: #e6e2da;
-    --sidebar-ring: #9a7b4f;
-}
-
-/* ---- Midnight theme — "soft glass" -------------------------------
-   Deep cool blue-black, a bright indigo accent, and a completely
-   different elevation language from the base: no visible card borders,
-   large soft blue GLOW instead of a hard plate, generously rounded
-   corners. Headings are airy — sans, sentence-case, LIGHT weight,
-   positive tracking. Labels drop to sans too. No bracket framing.
-   See DESIGN.md's Theming section. */
-:root[data-theme="midnight"],
-[data-theme="midnight"] {
-    --background: #090d18;
-    --foreground: #eaeefb;
-    --card: #121a30;
-    --card-foreground: #eaeefb;
-    --popover: #141c34;
-    --popover-foreground: #eaeefb;
-    --primary: #7c9cff;
-    --primary-foreground: #0a1020;
-    --secondary: #1b2440;
-    --secondary-foreground: #eaeefb;
-    --muted: #1b2440;
-    --muted-foreground: #93a0c4;
-    --accent: #202b4d;
-    --accent-foreground: #eaeefb;
-    --destructive: #ff8087;
-    --state-gain: #5fe3a1;
-    --border: #1e2842;
-    --input: #2a3657;
-    --ring: #7c9cff;
-    --chart-1: #7c9cff;
-    --chart-2: #d0b48c;
-    --chart-3: #5fe3a1;
-    --chart-4: #ff8087;
-    --chart-5: #eaeefb;
-
-    --radius: 16px;
-
-    --label-font: var(--font-sans);
-    --label-transform: uppercase;
-    --label-tracking: 0.04em;
-    --heading-font: var(--font-sans);
-    --heading-transform: none;
-    --heading-tracking: 0.01em;
-    --heading-weight: 300;
-    --display-font: var(--font-mono);
-    --bracket-open: "";
-    --bracket-close: "";
-    --shadow-lg: 0 28px 64px -24px rgb(124 156 255 / 0.35), 0 6px 18px -8px rgb(0 0 0 / 0.55);
-    --shadow-sm: 0 12px 28px -14px rgb(124 156 255 / 0.28);
-
-    --sidebar: #0c1122;
-    --sidebar-foreground: #eaeefb;
-    --sidebar-primary: #7c9cff;
-    --sidebar-primary-foreground: #0a1020;
-    --sidebar-accent: #202b4d;
-    --sidebar-accent-foreground: #eaeefb;
-    --sidebar-border: #1e2842;
-    --sidebar-ring: #7c9cff;
-}
-
-/* ---- Emerald theme — "chunky" ----------------------------------
-   Deep forest green, a vivid emerald accent, very round corners and
-   a soft green-tinted shadow. Headings are the opposite of Midnight's:
-   sans, UPPERCASE, HEAVY (800), tightly tracked — a stout, confident
-   voice. Labels stay mono. No bracket framing.
-   See DESIGN.md's Theming section. */
-:root[data-theme="emerald"],
-[data-theme="emerald"] {
-    --background: #071410;
-    --foreground: #eafaf1;
-    --card: #0c211a;
-    --card-foreground: #eafaf1;
-    --popover: #0c211a;
-    --popover-foreground: #eafaf1;
-    --primary: #34d17e;
-    --primary-foreground: #04120b;
-    --secondary: #122b22;
-    --secondary-foreground: #eafaf1;
-    --muted: #122b22;
-    --muted-foreground: #86a99a;
-    --accent: #163a2c;
-    --accent-foreground: #eafaf1;
-    --destructive: #f5766f;
-    --state-gain: #34d17e;
-    --border: #1e4234;
-    --input: #1e4234;
-    --ring: #34d17e;
-    --chart-1: #34d17e;
-    --chart-2: #cf9b76;
-    --chart-3: #8ef0bb;
-    --chart-4: #f5766f;
-    --chart-5: #eafaf1;
-
-    --radius: 20px;
-
-    --label-tracking: 0.1em;
-    --heading-font: var(--font-sans);
-    --heading-transform: uppercase;
-    --heading-tracking: -0.03em;
-    --heading-weight: 800;
-    --display-font: var(--font-mono);
-    --bracket-open: "";
-    --bracket-close: "";
-    --shadow-lg: 0 20px 44px -18px rgb(52 209 126 / 0.26), 0 4px 12px -6px rgb(0 0 0 / 0.4);
-    --shadow-sm: 0 8px 20px -10px rgb(52 209 126 / 0.22);
-
-    --sidebar: #0a1b15;
-    --sidebar-foreground: #eafaf1;
-    --sidebar-primary: #34d17e;
-    --sidebar-primary-foreground: #04120b;
-    --sidebar-accent: #163a2c;
-    --sidebar-accent-foreground: #eafaf1;
-    --sidebar-border: #1e4234;
-    --sidebar-ring: #34d17e;
-}
-
-/* ---- Coral theme — "fresh / airy" ----------------------------
-   Warm blush-white paper, a punchy coral primary with a teal
-   counter-accent, generous rounding and a soft coral-tinted
-   shadow. Headings are sans, sentence-case, semibold, tight —
-   friendly and modern, the opposite of Ledger's editorial serif.
-   Grain darkens faintly (multiply), set below.
-   See DESIGN.md's Theming section. */
-:root[data-theme="coral"],
-[data-theme="coral"] {
-    --background: #fff7f4;
-    --foreground: #2a1a15;
-    --card: #ffffff;
-    --card-foreground: #2a1a15;
-    --popover: #ffffff;
-    --popover-foreground: #2a1a15;
-    --primary: #e14b45;
-    --primary-foreground: #ffffff;
-    --secondary: #ffe9e2;
-    --secondary-foreground: #2a1a15;
-    --muted: #f8ece7;
-    --muted-foreground: #8a6f66;
-    --accent: #ffe0d6;
-    --accent-foreground: #2a1a15;
-    --destructive: #b91c1c;
-    --state-gain: #0f9d8f;
-    --border: #f2ddd4;
-    --input: #e6cabd;
-    --ring: #e14b45;
-    --chart-1: #e14b45;
-    --chart-2: #3f8f86;
-    --chart-3: #0f9d8f;
-    --chart-4: #b91c1c;
-    --chart-5: #2a1a15;
-
     --radius: 14px;
-
-    --label-font: var(--font-sans);
-    --label-transform: uppercase;
-    --label-tracking: 0.1em;
-    --heading-font: var(--font-sans);
-    --heading-transform: none;
-    --heading-tracking: -0.02em;
-    --heading-weight: 600;
-    --display-font: var(--font-mono);
-    --bracket-open: "";
-    --bracket-close: "";
-    --shadow-lg: 0 24px 50px -22px rgb(225 75 69 / 0.22), 0 4px 14px -8px rgb(42 26 21 / 0.12);
-    --shadow-sm: 0 10px 24px -14px rgb(225 75 69 / 0.2);
-
-    --sidebar: #ffffff;
-    --sidebar-foreground: #2a1a15;
-    --sidebar-primary: #e14b45;
-    --sidebar-primary-foreground: #ffffff;
-    --sidebar-accent: #ffe0d6;
-    --sidebar-accent-foreground: #2a1a15;
-    --sidebar-border: #f2ddd4;
-    --sidebar-ring: #e14b45;
-}
-
-/* ---- Porcelain theme — "Swiss / flat" -------------------------
-   Cool near-white, a strong blue accent, crisp 3px corners and
-   NO shadow at all — elevation reads only through the hairline
-   border. Headings and labels are sans, UPPERCASE, widely tracked
-   — International-Typographic-Style signage. Distinct from Ledger,
-   which is warm paper + serif + soft shadow. Grain darkens faintly
-   (multiply), set below. See DESIGN.md's Theming. */
-:root[data-theme="porcelain"],
-[data-theme="porcelain"] {
-    --background: #fbfcfd;
-    --foreground: #0f1729;
-    --card: #ffffff;
-    --card-foreground: #0f1729;
-    --popover: #ffffff;
-    --popover-foreground: #0f1729;
-    --primary: #1d4ed8;
-    --primary-foreground: #ffffff;
-    --secondary: #eef1f6;
-    --secondary-foreground: #0f1729;
-    --muted: #eef1f6;
-    --muted-foreground: #5a6473;
-    --accent: #e6ebf3;
-    --accent-foreground: #0f1729;
-    --destructive: #c81e1e;
-    --state-gain: #15803d;
-    --border: #dce1e9;
-    --input: #c3cbd6;
-    --ring: #1d4ed8;
-    --chart-1: #1d4ed8;
-    --chart-2: #8a7355;
-    --chart-3: #15803d;
-    --chart-4: #c81e1e;
-    --chart-5: #0f1729;
-
-    --radius: 3px;
-
-    --label-font: var(--font-sans);
-    --label-transform: uppercase;
-    --label-tracking: 0.14em;
-    --heading-font: var(--font-sans);
-    --heading-transform: uppercase;
-    --heading-tracking: 0.12em;
-    --heading-weight: 600;
-    --display-font: var(--font-mono);
-    --bracket-open: "";
-    --bracket-close: "";
-    --shadow-lg: none;
-    --shadow-sm: none;
-
-    --sidebar: #ffffff;
-    --sidebar-foreground: #0f1729;
-    --sidebar-primary: #1d4ed8;
-    --sidebar-primary-foreground: #ffffff;
-    --sidebar-accent: #e6ebf3;
-    --sidebar-accent-foreground: #0f1729;
-    --sidebar-border: #dce1e9;
-    --sidebar-ring: #1d4ed8;
-}
-
-/* ---- Liquid Glass theme — the default -------------------------------
-   The welcome page's aesthetic brought into the signed-in app: a
-   near-black ground, amber #e8b84b accent, frosted white glass cards,
-   soft ambient shadows and an amber cursor glow. This is the only
-   fully hand-tuned glass theme; the other six render the same
-   `.glass-*` classes recoloured from their own palette. Set as the
-   default in lib/theme/theme-context.tsx. See DESIGN.md. */
-:root[data-theme="liquid-glass"],
-[data-theme="liquid-glass"] {
-    --background: #050505;
-    --foreground: #f4f1ea;
-    --card: #0c0b0a;
-    --card-foreground: #f4f1ea;
-    --popover: #100e0c;
-    --popover-foreground: #f4f1ea;
-    --primary: #e8b84b;
-    --primary-foreground: #1a1207;
-    --secondary: #16140f;
-    --secondary-foreground: #f4f1ea;
-    --muted: #16140f;
-    --muted-foreground: #a99f8c;
-    --accent: #1c1810;
-    --accent-foreground: #f4f1ea;
-    --destructive: #f87171;
-    --state-gain: #4ade80;
-    --border: #241f16;
-    --input: #241f16;
-    --ring: #e8b84b;
-    --chart-1: #e8b84b;
-    --chart-2: #93a3ba;
-    --chart-3: #4ade80;
-    --chart-4: #f87171;
-    --chart-5: #f4f1ea;
-
-    --radius: 16px;
-
-    --label-font: var(--font-mono);
-    --label-transform: uppercase;
-    --label-tracking: 0.08em;
-    --heading-font: var(--font-sans);
-    --heading-transform: none;
-    --heading-tracking: -0.02em;
-    --heading-weight: 600;
-    --display-font: var(--font-mono);
-    /* The ✦ eyebrow rides the existing bracket mechanism, so every
-       `.tt-bracket` section heading gets it with no JSX change. */
-    --bracket-open: "✦  ";
-    --bracket-close: "";
-    --shadow-lg: 0 28px 64px -28px rgb(0 0 0 / 0.8), 0 6px 20px -10px rgb(0 0 0 / 0.6);
-    --shadow-sm: 0 16px 40px -22px rgb(0 0 0 / 0.7);
-
-    --sidebar: #0a0908;
-    --sidebar-foreground: #f4f1ea;
-    --sidebar-primary: #e8b84b;
-    --sidebar-primary-foreground: #1a1207;
-    --sidebar-accent: #1c1810;
-    --sidebar-accent-foreground: #f4f1ea;
-    --sidebar-border: #241f16;
-    --sidebar-ring: #e8b84b;
-
-    /* Hand-tuned to match components/welcome/liquid-glass-landing.tsx. */
-    --glass-bg: rgba(255, 255, 255, 0.045);
-    --glass-blur: 14px;
-    --glass-border-from: rgba(255, 255, 255, 0.42);
-    /* Doubles as the hairline divider colour — raised from 0.02 (which
-       read as no border at all) to a faint but present hairline. */
-    --glass-border-to: rgba(255, 255, 255, 0.09);
-    --glass-highlight: rgba(255, 255, 255, 0.14);
-    --glass-shadow: 0 8px 32px 0 rgb(0 0 0 / 0.45);
-    --glass-radius: 20px;
-    --glass-scrim: rgb(0 0 0 / 0.6);
-    --glass-fallback-bg: rgba(24, 22, 20, 0.92);
-    --glow-color: rgba(232, 184, 75, 0.28);
-    --glow-radius: 460px;
-    --sparkle-opacity: 0.5;
-    --eyebrow-glyph: "✦ ";
-}
-
-/* Light themes: a dark-tinted frost + a soft (not deep) shadow reads
-   as glass on paper, and the ambient sparkle field is off — it only
-   registers on a dark ground. */
-:root[data-theme="ledger"], [data-theme="ledger"],
-:root[data-theme="porcelain"], [data-theme="porcelain"],
-:root[data-theme="coral"], [data-theme="coral"] {
-    --glass-bg: color-mix(in oklab, var(--card) 68%, transparent);
+    --glass-radius: 14px;
+    --glass-bg: var(--page);
+    --glass-border-to: color-mix(in oklab, var(--foreground) 10%, transparent);
     --glass-border-from: color-mix(in oklab, var(--foreground) 16%, transparent);
-    --glass-border-to: color-mix(in oklab, var(--foreground) 10%, transparent);
-    --glass-highlight: rgb(255 255 255 / 0.55);
-    --glass-shadow: 0 1px 2px rgb(15 23 41 / 0.06), 0 16px 40px -22px rgb(15 23 41 / 0.14);
-    --glass-scrim: rgb(15 23 41 / 0.28);
-    --glow-color: color-mix(in oklab, var(--primary) 20%, transparent);
+    --glass-scrim: var(--scrim);
+    --glass-fallback-bg: var(--popover);
+    --glow-color: color-mix(in oklab, var(--foreground) 7%, transparent);
     --sparkle-opacity: 0;
-}
 
-/* Dark idiom themes (Midnight, Emerald) render the same `.glass-*`
-   classes as Liquid Glass but were inheriting the warm-base `--glass-*`
-   values, which composite to a muddy opaque plate — worst at swatch
-   size. Give them Liquid Glass's subtle white frost so each card's own
-   colour shows through as tinted glass instead. */
-:root[data-theme="midnight"], [data-theme="midnight"],
-:root[data-theme="emerald"], [data-theme="emerald"] {
-    --glass-bg: rgba(255, 255, 255, 0.05);
-    --glass-border-from: color-mix(in oklab, var(--foreground) 38%, transparent);
-    --glass-border-to: color-mix(in oklab, var(--foreground) 10%, transparent);
-    --glass-highlight: rgba(255, 255, 255, 0.12);
-    --glass-fallback-bg: color-mix(in oklab, var(--card) 92%, var(--foreground));
+    --dur-press: 120ms;
+    --dur-micro: 160ms;
+    --dur-small: 200ms;
+    --dur-medium: 280ms;
+    --dur-large: 380ms;
+    --dur-hero: 600ms;
+    /* Old name for --ease-out, still read by a few keyframes. */
+    --ease-glide: cubic-bezier(0.23, 1, 0.32, 1);
+
+    /* The ruled-line pitch every notebook surface shares: rows, inputs
+       and the ruling itself sit on this 32px module. */
+    --line: 2rem;
 }
 
 @layer base {
   * {
     @apply border-border;
-    }
-  body {
-    @apply bg-background text-foreground;
-    }
+  }
   html {
     @apply font-sans;
-    }
-  /* One token-driven keyboard focus ring for every focusable element.
-     Components that ship their own focus-visible treatment (shadcn
-     Button, the Base UI primitives) set `focus-visible:outline-none`
-     and win on specificity, so this only fills the gap left by the
-     bespoke dashboard controls — the segmented control, sidebar nav,
-     theme picker, icon buttons — which previously fell back to the
-     inconsistent UA outline. See DESIGN.md. */
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-size: var(--text-body);
+    line-height: 1.5;
+    font-variant-numeric: tabular-nums;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3 {
+    text-wrap: balance;
+  }
+  p {
+    text-wrap: pretty;
+  }
+  /* One keyboard focus ring for everything bespoke. */
   :focus-visible {
     outline: 2px solid var(--ring);
     outline-offset: 2px;
-    }
+  }
+  ::selection {
+    background: color-mix(in oklab, var(--gold-leaf) 40%, transparent);
+  }
 }
 
-
-/* ─── Liquid Glass surfaces ──────────────────────────────────────────
-   `.glass-surface` — scrolling cards. NO backdrop-filter (it visibly
-   shivers under scroll/animation); the frost is faked with a near-
-   opaque tinted fill + a masked gradient-border ring + a soft ambient
-   shadow. `.glass-overlay` — non-scrolling overlays only (sidebar,
-   dialogs, popovers, dropdowns, sticky bars): real backdrop blur over
-   a more translucent fill. `.glass-glow` — a token-driven cursor glow,
-   generalised from `.spotlight-card`. All three read the per-theme
-   `--glass-*` / `--glow-*` tokens, so a theme switch recolours them
-   with no JSX change. See DESIGN.md. */
-.glass-surface {
-  position: relative;
-  background: var(--glass-bg);
-  border-radius: var(--glass-radius);
-  box-shadow: inset 0 1px 0 var(--glass-highlight), var(--glass-shadow);
-}
-/* Hero / primary surface — the frost fill is tinted toward the accent
-   for the gold-glass look. */
-.glass-surface--accent {
-  background:
-    linear-gradient(
-      160deg,
-      color-mix(in oklab, var(--primary) 14%, transparent),
-      transparent 60%
-    ),
-    var(--glass-bg);
-}
-/* In `components` so a positioning utility on the same element (the
-   dialog's `fixed`) still wins — an unlayered rule would beat it and
-   drop the dialog back into document flow. */
+/* ─── Surfaces ──────────────────────────────────────────────────────
+   `.page`          a notebook page: paper tone, faint ruling, soft corners.
+   `.page--plain`   the same paper without ruling (forms, settings).
+   `.glass-surface` legacy name → a plain page.
+   `.glass-overlay` legacy name → something that floats over the page
+                    (menus, dialogs, popovers, toasts): one step lighter,
+                    one soft shadow. No blur, no gradient ring.
+   `.glass-chrome`  legacy name → the desk colour (sticky bars). */
 @layer components {
+  .page,
+  .glass-surface {
+    position: relative;
+    background-color: var(--page);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-page);
+  }
+  .page {
+    background-image: repeating-linear-gradient(
+      to bottom,
+      transparent 0,
+      transparent calc(var(--line) - 1px),
+      var(--rule) calc(var(--line) - 1px),
+      var(--rule) var(--line)
+    );
+    background-position: 0 var(--rule-offset, 0px);
+  }
+  .page--plain {
+    background-image: none;
+  }
+  /* The vertical margin rule of an exercise book. Placed by the page's
+     own padding: `--margin-x` is where the rule sits. */
+  .page-margin::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: var(--margin-x, 2.5rem);
+    border-left: 1.5px solid var(--margin-line);
+    pointer-events: none;
+  }
+  .glass-surface--accent {
+    /* the old gold-glass hero; now just the page */
+  }
+
   .glass-overlay {
     position: relative;
-    /* Same fill as `.glass-surface` (no extra dilution) — overlays sit
-       over arbitrary content and were too see-through, worst on the
-       light themes. The frost comes from `backdrop-filter` below. */
-    background: var(--glass-bg);
-    border-radius: var(--glass-radius);
-    box-shadow: inset 0 1px 0 var(--glass-highlight), var(--glass-shadow);
-    backdrop-filter: blur(var(--glass-blur));
-    -webkit-backdrop-filter: blur(var(--glass-blur));
+    background-color: var(--popover);
+    color: var(--popover-foreground);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-float);
   }
 }
-.glass-surface::before,
-.glass-overlay::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  padding: 1px;
-  background: linear-gradient(
-    160deg,
-    var(--glass-border-from) 0%,
-    var(--glass-border-to) 45%,
-    var(--glass-border-from) 100%
-  );
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  pointer-events: none;
-}
-@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  .glass-overlay {
-    background: var(--glass-fallback-bg);
-  }
-}
-
-/* Flush chrome — the sidebar and sticky headers. Real backdrop blur
-   (they don't scroll their own content) but NO gradient-border ring:
-   it would round against the viewport edge. Pair with a single hairline
-   `border-*` on the meeting edge. */
 .glass-chrome {
-  background: color-mix(in oklab, var(--glass-bg) 70%, transparent);
-  backdrop-filter: blur(var(--glass-blur));
-  -webkit-backdrop-filter: blur(var(--glass-blur));
+  background-color: color-mix(in oklab, var(--background) 92%, transparent);
 }
-@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  .glass-chrome {
-    background: var(--glass-fallback-bg);
-  }
-}
-
 .glass-glow {
   position: relative;
 }
-.glass-glow::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  border-radius: inherit;
-  pointer-events: none;
-  opacity: var(--spot-opacity, 0);
-  transition: opacity 0.4s ease;
-  background: radial-gradient(
-    circle var(--glow-radius) at var(--spot-x, 50%) var(--spot-y, 50%),
-    var(--glow-color) 0%,
-    transparent 78%
-  );
-}
-@media (hover: hover) {
-  .glass-glow:hover::after {
-    opacity: 1;
-  }
-}
-@media (prefers-reduced-motion: no-preference) {
-  .glass-glow {
-    transition:
-      transform 0.3s cubic-bezier(0.22, 1, 0.36, 1),
-      box-shadow 0.3s ease;
-  }
-  .glass-glow:hover {
-    transform: translateY(-3px);
-  }
-}
 
-/* A faint fixed grain so the near-black background reads as a surface
-   rather than a flat fill. Pointer-events-none, decorative only.
-   No `mix-blend-mode` here on purpose: a blended full-viewport fixed
-   layer forces the compositor to re-blend the whole screen every
-   scroll frame (the mobile-scroll-jank root cause from the landing —
-   see progress-tracker.md). Plain low-opacity noise on its own layer
-   just stays put. */
+/* Paper grain — a whisper of fibre on the desk so it reads as a
+   material, not a fill. Static, own layer, no blend on Night. */
 .app-grain::before {
   content: "";
   position: fixed;
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  opacity: 0.035;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  opacity: 0.05;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.6 0 0 0 0 0.5 0 0 0 0 0.35 0 0 0 1 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
-
-/* On the light themes' paper the white noise needs to darken instead.
-   `multiply` is confined to these two opt-in themes rather than the
-   always-on default. */
-:root[data-theme="ledger"] .app-grain::before,
-:root[data-theme="porcelain"] .app-grain::before,
-:root[data-theme="coral"] .app-grain::before {
-  opacity: 0.03;
+:root[data-theme="day"] .app-grain::before {
+  opacity: 0.06;
   mix-blend-mode: multiply;
 }
 
-/* Expands an element's hit area to the 44px minimum from DESIGN.md's
-   accessibility commitment without changing its visual size — for icon
-   buttons and other small controls. `position: relative` on the element
-   itself is required for the pseudo-element to anchor correctly. */
+/* The lamp: one soft pool of warm light from the top-left, painted once
+   on the desk. Static — it never moves with the cursor. */
+.app-lamp {
+  background-image: radial-gradient(
+    ellipse 70% 55% at 22% -8%,
+    var(--lamp),
+    transparent 70%
+  );
+}
+
+/* Expands a small control's hit area to 44px without changing its look. */
 .tap-target {
   position: relative;
 }
@@ -742,78 +363,71 @@
   transform: translate(-50%, -50%);
 }
 
-/* Brutalist micro-typography — every label, nav item, table header, and
-   piece of metadata routes through this instead of plain muted text, per
-   the industrial-brutalist-ui skill's section 3.2. Mono + uppercase +
-   wide tracking reads as terminal/telemetry data rather than UI copy. */
+/* ─── Type roles ────────────────────────────────────────────────────
+   Kept as classes so every component follows one rule. Labels are
+   sentence-case reading face; headings are the ledger serif; the hero
+   figure is the ledger serif with tabular figures. The old bracket and
+   ✦ eyebrow framing render nothing. */
 .tt-label {
-  font-family: var(--label-font);
-  text-transform: var(--label-transform);
-  letter-spacing: var(--label-tracking);
+  font-family: var(--font-sans);
+  letter-spacing: 0;
+  text-transform: none;
 }
-
-/* Structural headers — tight negative tracking so uppercase glyphs read
-   as one solid block, per section 3.1. Used for section titles, not
-   body copy. */
 .tt-heading {
-  font-family: var(--heading-font);
-  text-transform: var(--heading-transform);
-  letter-spacing: var(--heading-tracking);
-  font-weight: var(--heading-weight);
+  font-family: var(--font-heading);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
 }
-
-/* The one hero price headline. The base keeps it on the mono tabular
-   face (DESIGN.md's numbers rule); a theme may point --display-font
-   at a serif. tabular-nums stays on either way so digits still align. */
-.tt-display {
-  font-family: var(--display-font);
+.tt-display,
+.figure {
+  font-family: var(--font-heading);
   font-variant-numeric: tabular-nums;
+  letter-spacing: -0.015em;
 }
-
-/* Bracket framing on section titles ("[ LEDGER ]"). The characters are
-   pseudo-element content so a theme blanks them through the tokens
-   without any JSX change. */
-.tt-bracket::before {
-  content: var(--bracket-open);
+.hand {
+  font-family: var(--font-hand);
+  color: var(--ink-hand);
+  font-variation-settings: "INFM" 60;
+  letter-spacing: 0.005em;
 }
-.tt-bracket::after {
-  content: var(--bracket-close);
-}
-
-/* Standalone ✦ eyebrow for headings that don't carry `.tt-bracket`
-   (empty states, sub-section titles). Renders nothing on themes whose
-   `--eyebrow-glyph` is "". */
+.tt-bracket::before,
+.tt-bracket::after,
 .tt-eyebrow::before {
-  content: var(--eyebrow-glyph);
-  color: var(--primary);
+  content: none;
 }
 
-/* Financial-figure change cue. A figure that changed on a data update
-   (refresh, add, sell) flashes its tone once and lands on the new value
-   — it still SNAPS, never re-rolls. Driven by lib/ui/use-value-pulse.ts
-   toggling `.value-pulse-active` and setting `--pulse-tone`. */
+/* The accountant's sum: a single rule above a total, a double rule
+   under it. On this page a line always means "this is a total". */
+.ledger-sum {
+  border-top: 1.5px solid color-mix(in oklab, var(--foreground) 70%, transparent);
+  border-bottom: 4px double color-mix(in oklab, var(--foreground) 70%, transparent);
+}
+
+/* Presses press (pointer-down, not release). */
+.press {
+  transition: transform var(--dur-press) var(--ease-out),
+    background-color var(--dur-micro) ease, color var(--dur-micro) ease;
+}
+.press:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+/* ─── Motion ────────────────────────────────────────────────────────
+   A changed figure flashes its tone once and lands — it never re-rolls. */
 @keyframes value-pulse {
   0% {
-    background-color: rgb(from var(--pulse-tone, var(--primary)) r g b / 0.2);
+    background-color: rgb(from var(--pulse-tone, var(--gold-leaf)) r g b / 0.22);
   }
   100% {
-    background-color: rgb(from var(--pulse-tone, var(--primary)) r g b / 0);
+    background-color: rgb(from var(--pulse-tone, var(--gold-leaf)) r g b / 0);
   }
 }
 .value-pulse-active {
-  animation: value-pulse 600ms var(--ease-glide) both;
-  border-radius: calc(var(--glass-radius) * 0.4);
-}
-@media (prefers-reduced-motion: reduce) {
-  .value-pulse-active {
-    animation: none;
-  }
+  animation: value-pulse 600ms var(--ease-out) both;
+  border-radius: var(--radius-xs);
 }
 
-/* Indeterminate progress sliver under the Transaction History header
-   while a post-mutation router.refresh() reconciles in a transition.
-   Compositor-only (transform). Reduced-motion callers render a static
-   full-width dimmed bar instead — see TransactionHistory. */
 @keyframes sync-indeterminate {
   0% {
     transform: translateX(-100%);
@@ -823,100 +437,12 @@
   }
 }
 
-/* ============================================================
-   Landing page — "Assay" editorial redesign
-   ============================================================
-   Self-contained from the dashboard's 6-theme system. The marketing
-   tree (components/welcome/*) carries its own two token sets, scoped to
-   a `data-landing-theme` attribute on the page wrapper, and its own
-   localStorage key (`goldkh-landing-theme`). Nothing here touches the
-   dashboard `:root` / `[data-theme]` blocks above. Warm bone paper,
-   Newsreader serif display, hairline bento, gold used only as the brand
-   mark and one hero rule. See context/progress-tracker.md. */
-[data-landing-theme="light"] {
-  --background: #f7f6f3;
-  --foreground: #1c1a17;
-  --card: #ffffff;
-  --card-foreground: #1c1a17;
-  --popover: #ffffff;
-  --popover-foreground: #1c1a17;
-  --primary: #1c1a17;
-  --primary-foreground: #f7f6f3;
-  --secondary: #f1efea;
-  --secondary-foreground: #1c1a17;
-  --muted: #f1efea;
-  --muted-foreground: #6b645a;
-  --accent: #eae7df;
-  --accent-foreground: #1c1a17;
-  --destructive: #9f2f2d;
-  --state-gain: #346538;
-  --border: #e7e3d9;
-  --input: #d8d3c8;
-  --ring: #6d8996;
-
-  --brand-gold: #b0812f;
-  --gain-tint: #edf3ec;
-  --loss-tint: #fdebec;
-
-  --radius: 10px;
-  --font-heading: var(--font-newsreader), Georgia, "Times New Roman", serif;
-}
-
-[data-landing-theme="dark"] {
-  --background: #171614;
-  --foreground: #ece8e0;
-  --card: #201e1b;
-  --card-foreground: #ece8e0;
-  --popover: #201e1b;
-  --popover-foreground: #ece8e0;
-  --primary: #ece8e0;
-  --primary-foreground: #171614;
-  --secondary: #262320;
-  --secondary-foreground: #ece8e0;
-  --muted: #262320;
-  --muted-foreground: #9a9287;
-  --accent: #2c2924;
-  --accent-foreground: #ece8e0;
-  --destructive: #e0705c;
-  --state-gain: #4caf7d;
-  --border: #302c27;
-  --input: #3a352f;
-  --ring: #8fa1ab;
-
-  --brand-gold: #d8a54c;
-  --gain-tint: rgb(76 175 125 / 0.12);
-  --loss-tint: rgb(224 112 92 / 0.12);
-
-  --radius: 10px;
-  --font-heading: var(--font-newsreader), Georgia, "Times New Roman", serif;
-}
-
-/* Paint the page ground behind the wrapper so a rubber-band overscroll
-   doesn't reveal the dark `:root` body underneath the light landing. */
-html:has([data-landing-theme="light"]) body {
-  background-color: #f7f6f3;
-}
-html:has([data-landing-theme="dark"]) body {
-  background-color: #171614;
-}
-
-/* --ease-glide is easeOutQuint-ish (matches motion-ui's `smooth` token),
-   shared by the dashboard/nav/stagger entrances below. */
-:root {
-  --ease-glide: cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-/* Dashboard section entrance. A cheap, JS-independent fade-up: a
-   keyframe with `both` fill that plays at first paint (SSR markup
-   included), staggered by a per-section `--enter-delay`. No
-   IntersectionObserver and no hidden resting state, so a section is
-   never blank waiting on hydration — the price is readable as soon as
-   the HTML lands. Compositor-only (opacity + transform), no blur.
-   Driven by `useSectionEnter`. */
+/* One short entrance on first load: the page settles onto the desk.
+   Plays at first paint from SSR markup, so nothing waits on hydration. */
 @keyframes dash-enter {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(8px);
   }
   to {
     opacity: 1;
@@ -924,747 +450,132 @@ html:has([data-landing-theme="dark"]) body {
   }
 }
 .dash-enter {
-  animation: dash-enter 0.5s var(--ease-glide) both;
+  animation: dash-enter var(--dur-medium) var(--ease-out) both;
   animation-delay: var(--enter-delay, 0ms);
 }
-@media (prefers-reduced-motion: reduce) {
-  .dash-enter {
-    animation: none;
+
+/* The pen writes: text revealed left to right, like ink going down.
+   Used once per new entry and on the landing notebook. */
+@keyframes ink-write {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
   }
 }
+.ink-write {
+  animation: ink-write 520ms var(--ease-out) both;
+  animation-delay: var(--ink-delay, 0ms);
+}
+@keyframes ink-underline {
+  from {
+    transform: scaleX(0.02);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+.ink-underline {
+  transform-origin: left center;
+  animation: ink-underline 600ms var(--ease-out) both;
+  animation-delay: var(--ink-delay, 0ms);
+}
 
-/* Nav bar: one authored entrance on first paint — the header eases
-   down from -10px and unblurs as the page loads, then never moves. */
-@keyframes landing-nav-enter {
+@media (prefers-reduced-motion: reduce) {
+  .value-pulse-active,
+  .dash-enter {
+    animation-name: none;
+  }
+  .ink-write,
+  .ink-underline {
+    animation: none;
+  }
+  .press:active:not(:disabled) {
+    transform: none;
+  }
+  /* Keep fades, drop movement. */
+  .dash-enter {
+    animation: dash-fade var(--dur-medium) ease both;
+  }
+}
+@keyframes dash-fade {
   from {
     opacity: 0;
-    transform: translateY(-10px);
-    filter: blur(6px);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
-    filter: blur(0);
-  }
-}
-.landing-nav-enter {
-  animation: landing-nav-enter 0.9s var(--ease-glide) both;
-}
-
-/* Staggered scroll-entry. Direct children of a `.landing-stagger`
-   container each start low, slightly shrunk and blurred, then glide in
-   once the container crosses into view (`.is-visible` toggled by the
-   same observer as `.landing-reveal`, via useInView). Long duration
-   with short delay steps so entries overlap heavily and read as one
-   continuous flow, not discrete pops. Delays are position-based so
-   markup order is entry order; capped so a longer list doesn't trail
-   off. */
-.landing-stagger > * {
-  opacity: 0;
-  transform: translateY(18px) scale(0.99);
-  filter: blur(6px);
-  transition:
-    opacity 0.9s var(--ease-glide),
-    transform 1s var(--ease-glide),
-    filter 1s var(--ease-glide);
-  will-change: transform, opacity, filter;
-}
-.landing-stagger.is-visible > * {
-  opacity: 1;
-  transform: none;
-  filter: blur(0);
-}
-.landing-stagger.is-visible > *:nth-child(1) {
-  transition-delay: 0ms;
-}
-.landing-stagger.is-visible > *:nth-child(2) {
-  transition-delay: 60ms;
-}
-.landing-stagger.is-visible > *:nth-child(3) {
-  transition-delay: 120ms;
-}
-.landing-stagger.is-visible > *:nth-child(4) {
-  transition-delay: 180ms;
-}
-.landing-stagger.is-visible > *:nth-child(5) {
-  transition-delay: 240ms;
-}
-.landing-stagger.is-visible > *:nth-child(n + 6) {
-  transition-delay: 300ms;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .landing-nav-enter {
-    animation: none;
-  }
-  .landing-stagger > * {
-    opacity: 1;
-    transform: none;
-    filter: none;
-    transition: none;
   }
 }
 
-/* ─── Liquid Glass Aesthetic (marketing tree only) ───────────────────────────
-   NOTE: this is a second, parallel glass implementation kept for the
-   welcome/landing pages (components/welcome/*). The signed-in app uses
-   the token-driven `.glass-surface` / `.glass-overlay` / `.glass-glow`
-   classes defined above instead. A change to the glass language may need
-   to be mirrored in both places until they are consolidated — see
-   context/glass-consolidation-plan.md. */
-.liquid-glass {
-  background: rgba(255, 255, 255, 0.03);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: none;
-  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.15), 0 8px 32px 0 rgba(0, 0, 0, 0.35);
-  position: relative;
-  overflow: hidden;
-}
-
-.liquid-glass::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  padding: 1px;
-  background: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.45) 0%,
-    rgba(255, 255, 255, 0.15) 20%,
-    rgba(255, 255, 255, 0.02) 40%,
-    rgba(255, 255, 255, 0.02) 60%,
-    rgba(255, 255, 255, 0.15) 80%,
-    rgba(255, 255, 255, 0.4) 100%
-  );
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  pointer-events: none;
-}
-
-.liquid-glass-gold {
-  background: rgba(232, 184, 75, 0.04);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: none;
-  box-shadow: inset 0 1px 1px rgba(232, 184, 75, 0.25), 0 8px 32px 0 rgba(0, 0, 0, 0.45);
-  position: relative;
-  overflow: hidden;
-}
-
-.liquid-glass-gold::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  padding: 1px;
-  background: linear-gradient(
-    180deg,
-    rgba(232, 184, 75, 0.55) 0%,
-    rgba(232, 184, 75, 0.18) 25%,
-    rgba(232, 184, 75, 0.02) 50%,
-    rgba(232, 184, 75, 0.18) 80%,
-    rgba(232, 184, 75, 0.45) 100%
-  );
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  pointer-events: none;
-}
-
-/* ─── Spotlight Card ─────────────────────────────────────────────────────────── */
-/* A cursor-tracking amber glow for the glass cards. SpotlightCard writes
-   --spot-x / --spot-y (percentages) and gates the layer with
-   --spot-opacity; the fill sits below the card content, which the
-   component lifts into its own `relative z-10` layer. */
-.spotlight-card {
-  position: relative;
-}
-.spotlight-card::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  border-radius: inherit;
-  pointer-events: none;
-  opacity: var(--spot-opacity, 0);
-  transition: opacity 0.4s ease;
-  background: radial-gradient(
-    circle 460px at var(--spot-x, 50%) var(--spot-y, 50%),
-    rgba(251, 191, 36, 0.3) 0%,
-    rgba(251, 191, 36, 0.14) 32%,
-    rgba(251, 191, 36, 0.05) 55%,
-    transparent 78%
-  );
-}
-
-/* Fallback for pointers/browsers where JS never drives the vars:
-   a centred glow still blooms on hover. */
-@media (hover: hover) {
-  .spotlight-card:hover::after {
-    opacity: 1;
-  }
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .spotlight-card {
-    transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1),
-      box-shadow 0.3s ease;
-  }
-  .spotlight-card:hover {
-    transform: translateY(-3px);
-    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.18),
-      0 16px 40px 0 rgba(0, 0, 0, 0.4), 0 0 28px 0 rgba(251, 191, 36, 0.12);
-  }
-}
-
-/* Smooth anchor scrolling only on pages that mount the liquid-glass
-   landing tree — never in the signed-in dashboard. */
-html:has(.liquid-glass-landing-root) {
-  scroll-behavior: smooth;
-}
-
-/* Render the welcome / landing page as if the browser were at ~67%
-   zoom, so visitors see more of the layout on entry. Scoped to the
-   landing content wrapper only (the dashboard is untouched), and NOT
-   applied to the landing root itself — GoldCursor / ScrollGoldBar sit
-   outside this wrapper so their pointer- and scroll-driven fixed layers
-   keep working in real viewport pixels. `zoom` (not transform: scale)
-   keeps layout flow, scrolling, and viewport units correct. */
-.liquid-glass-landing-zoom {
-  zoom: 0.67;
-}
-
-/* The hero sits inside the 0.67-zoom wrapper, so a plain `h-screen`
-   (100vh) would only cover 67% of the viewport. Dividing by the zoom
-   factor makes it render back to a full screen height on entry. */
-.liquid-glass-landing-zoom .liquid-glass-hero-fill {
-  height: calc(100vh / 0.67);
-  height: calc(100dvh / 0.67);
-}
-
-/* Typography mix for the landing tree: Fraunces (serif) sets every
-   heading, while Geist Sans keeps body copy and Geist Mono keeps the
-   eyebrow labels. Scoped to `.liquid-glass-landing-root` so the
-   dashboard and other themes are untouched. The compound selector
-   outranks the `font-bold` / `font-medium` / `tracking-tight`
-   utilities on the headings, so weight and tracking come from here. */
-.liquid-glass-landing-root :is(h1, h2, h3, h4) {
-  font-family: var(--font-fraunces), Georgia, "Times New Roman", serif;
-  font-weight: 500;
-  letter-spacing: -0.015em;
-}
-
-.liquid-glass-landing-root h1 {
-  font-weight: 400;
-  letter-spacing: -0.02em;
-}
-
-/* The one word we let Fraunces italic carry, as the page's signature. */
-.liquid-glass-landing-root .landing-accent {
-  font-style: italic;
-  font-weight: 400;
-}
-
-/* backdrop-filter is unsupported or disabled in some browsers/contexts;
-   without it the near-transparent glass surfaces vanish against the
-   black page, so raise the fill opacity as a fallback. */
-@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  .liquid-glass {
-    background: rgba(38, 38, 40, 0.9);
-  }
-  .liquid-glass-gold {
-    background: rgba(48, 40, 22, 0.92);
-  }
-}
-
-/* ─── Hero Visual Animations ─────────────────────────────────────────────────── */
-@keyframes goldGlow {
-  0%, 100% {
-    opacity: 0.6;
-    transform: scale(0.95);
-  }
-  50% {
-    opacity: 0.95;
-    transform: scale(1.08);
-  }
-}
-
-@keyframes beamPulseOrange {
-  0%, 100% {
-    opacity: 0.45;
-    filter: blur(20px);
-  }
-  50% {
-    opacity: 0.85;
-    filter: blur(14px);
-  }
-}
-
-@keyframes beamPulseCyan {
-  0%, 100% {
-    opacity: 0.35;
-    filter: blur(24px);
-  }
-  50% {
-    opacity: 0.75;
-    filter: blur(16px);
-  }
-}
-
-@keyframes goldShimmerSweep {
-  0% {
-    transform: translateX(-150%) translateY(-150%) rotate(45deg);
-    opacity: 0;
-  }
-  20% {
-    opacity: 0.8;
-  }
-  50% {
-    transform: translateX(150%) translateY(150%) rotate(45deg);
-    opacity: 0;
-  }
-  100% {
-    transform: translateX(150%) translateY(150%) rotate(45deg);
-    opacity: 0;
-  }
-}
-
-@keyframes floatGentle {
-  0%, 100% {
-    transform: translateY(0px) rotate(0deg);
-  }
-  50% {
-    transform: translateY(-8px) rotate(0.4deg);
-  }
-}
-
-.anim-gold-glow {
-  animation: goldGlow 4s ease-in-out infinite;
-}
-
-.anim-beam-orange {
-  animation: beamPulseOrange 3.5s ease-in-out infinite;
-}
-
-.anim-beam-cyan {
-  animation: beamPulseCyan 4.5s ease-in-out infinite;
-}
-
-.anim-gold-shimmer {
-  animation: goldShimmerSweep 5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-}
-
-.anim-float-gentle {
-  animation: floatGentle 6s ease-in-out infinite;
-}
-
-/* Respect the OS "reduce motion" setting for the hero visual layer,
-   matching the reduced-motion blocks maintained elsewhere in this file.
-   The autoplaying hero video and particle canvas are suppressed in the
-   component itself (animated-hero-image.tsx). */
-@media (prefers-reduced-motion: reduce) {
-  html:has(.liquid-glass-landing-root) {
-    scroll-behavior: auto;
-  }
-  .anim-gold-glow,
-  .anim-beam-orange,
-  .anim-beam-cyan,
-  .anim-gold-shimmer,
-  .anim-float-gentle {
-    animation: none;
-  }
-}
-
-/* ─── Interactive landing widgets ───────────────────────────────────────────── */
-
-/* Gold range sliders in the "Try it" simulator and the unit playground.
-   Native range inputs can't be styled through Tailwind alone, so the
-   track and thumb are set here once for both. */
-.sim-spot-range {
+/* ─── Range input (what-if + landing) ───────────────────────────────── */
+.notebook-range {
   -webkit-appearance: none;
   appearance: none;
-  height: 6px;
-  border-radius: 9999px;
-  background: linear-gradient(
-    90deg,
-    rgba(232, 184, 75, 0.25),
-    rgba(232, 184, 75, 0.7)
-  );
-  outline: none;
+  height: 44px;
+  background: transparent;
   cursor: pointer;
 }
-.sim-spot-range::-webkit-slider-thumb {
+.notebook-range::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 2px;
+  background: color-mix(in oklab, var(--foreground) 18%, transparent);
+}
+.notebook-range::-moz-range-track {
+  height: 4px;
+  border-radius: 2px;
+  background: color-mix(in oklab, var(--foreground) 18%, transparent);
+}
+.notebook-range::-webkit-slider-thumb {
   -webkit-appearance: none;
-  appearance: none;
-  width: 20px;
-  height: 20px;
-  border-radius: 9999px;
-  background: #e8b84b;
-  border: 3px solid #1a1207;
-  box-shadow: 0 0 12px rgba(232, 184, 75, 0.6);
+  width: 26px;
+  height: 26px;
+  margin-top: -11px;
+  border-radius: 50%;
+  background: var(--gold-leaf);
+  border: 3px solid var(--page);
+  box-shadow: 0 2px 6px rgb(0 0 0 / 0.3);
 }
-.sim-spot-range::-moz-range-thumb {
-  width: 18px;
-  height: 18px;
-  border-radius: 9999px;
-  background: #e8b84b;
-  border: 3px solid #1a1207;
-  box-shadow: 0 0 12px rgba(232, 184, 75, 0.6);
-}
-.sim-spot-range:focus-visible {
-  box-shadow: 0 0 0 3px rgba(232, 184, 75, 0.4);
+.notebook-range::-moz-range-thumb {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--gold-leaf);
+  border: 3px solid var(--page);
 }
 
-/* Illustrative price sparkline: draw the line on a loop, pulse the dot.
-   CSS-only so it costs nothing per scroll frame. */
-@keyframes sparkDraw {
-  0% {
-    stroke-dashoffset: 900;
-  }
-  70%,
-  100% {
-    stroke-dashoffset: 0;
-  }
-}
-@keyframes sparkPulse {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.25;
-  }
-}
-.spark-line {
-  animation: sparkDraw 4.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-}
-.spark-dot {
-  animation: sparkPulse 1.8s ease-in-out infinite;
-}
-
-/* New ledger rows fade + rise in as the visitor adds buys. */
-@keyframes simRowIn {
-  from {
-    opacity: 0;
-    transform: translateY(6px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-.sim-row {
-  animation: simRowIn 0.28s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .sim-row,
-  .spark-line,
-  .spark-dot {
-    animation: none;
-  }
-  .spark-line {
-    stroke-dashoffset: 0;
-  }
-}
-
-/* Auth screens (sign-in / sign-up): a slow gold aurora backdrop.
-   CSS-only so it costs nothing per frame; stilled for reduced motion. */
-@keyframes auth-aurora-drift-1 {
-  0%,
-  100% {
-    transform: translate3d(-12%, -8%, 0) scale(1);
-  }
-  50% {
-    transform: translate3d(10%, 6%, 0) scale(1.15);
-  }
-}
-@keyframes auth-aurora-drift-2 {
-  0%,
-  100% {
-    transform: translate3d(8%, 10%, 0) scale(1.1);
-  }
-  50% {
-    transform: translate3d(-10%, -6%, 0) scale(0.95);
-  }
-}
-@keyframes auth-aurora-drift-3 {
-  0%,
-  100% {
-    transform: translate3d(0, 6%, 0) scale(1);
-  }
-  50% {
-    transform: translate3d(-8%, -10%, 0) scale(1.2);
-  }
-}
-.auth-aurora-blob {
-  position: absolute;
-  border-radius: 9999px;
-  filter: blur(80px);
-  opacity: 0.55;
-  will-change: transform;
-}
-.auth-aurora-blob-1 {
-  top: -10%;
-  left: -5%;
-  width: 42vw;
-  height: 42vw;
-  background: radial-gradient(
-    circle at center,
-    color-mix(in oklch, var(--primary) 35%, transparent),
-    transparent 70%
-  );
-  animation: auth-aurora-drift-1 22s ease-in-out infinite;
-}
-.auth-aurora-blob-2 {
-  right: -8%;
-  bottom: -15%;
-  width: 48vw;
-  height: 48vw;
-  background: radial-gradient(
-    circle at center,
-    color-mix(in oklch, var(--primary) 22%, transparent),
-    transparent 70%
-  );
-  animation: auth-aurora-drift-2 28s ease-in-out infinite;
-}
-.auth-aurora-blob-3 {
-  top: 28%;
-  left: 34%;
-  width: 36vw;
-  height: 36vw;
-  background: radial-gradient(
-    circle at center,
-    color-mix(in oklch, var(--state-gain) 12%, transparent),
-    transparent 70%
-  );
-  animation: auth-aurora-drift-3 34s ease-in-out infinite;
-}
-.auth-aurora-vignette {
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(
-    ellipse at center,
-    transparent 35%,
-    var(--background) 100%
-  );
-}
-@media (prefers-reduced-motion: reduce) {
-  .auth-aurora-blob {
-    animation: none;
-  }
-}
-
-/* Ambient gold sparkle backdrop (see components/effects/sparkle-field.tsx).
-   Three tiled radial-gradient "star" layers drift upward at different
-   speeds and twinkle via opacity, plus one slow diagonal shimmer sweep.
-   Every animated property is a GPU-composited transform / opacity, so it
-   costs nothing per frame; fully stilled for reduced motion. */
-.sparkle-field__layer {
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: -320px;
-  bottom: -320px;
-  background-repeat: repeat;
-  /* No `will-change` at rest: the infinite transform/opacity animation
-     already promotes these to their own layer while running, and
-     SparkleField pauses the animation (animation-play-state) when the
-     field scrolls out of view — a resting `will-change` would keep the
-     GPU memory reserved through that pause for nothing. */
-}
-.sparkle-field__layer--a {
-  background-image:
-    radial-gradient(1.6px 1.6px at 24px 32px, rgba(245, 217, 138, 0.95), transparent 60%),
-    radial-gradient(1.4px 1.4px at 132px 88px, rgba(232, 184, 75, 0.85), transparent 60%),
-    radial-gradient(2px 2px at 210px 168px, rgba(255, 243, 214, 0.95), transparent 60%),
-    radial-gradient(1.2px 1.2px at 96px 232px, rgba(232, 184, 75, 0.7), transparent 60%);
-  background-size: 260px 300px;
-  animation:
-    sparkle-field-rise-a 17s linear infinite,
-    sparkle-field-twinkle 4s ease-in-out infinite;
-}
-.sparkle-field__layer--b {
-  background-image:
-    radial-gradient(1.4px 1.4px at 60px 40px, rgba(245, 217, 138, 0.8), transparent 60%),
-    radial-gradient(1.8px 1.8px at 240px 120px, rgba(255, 243, 214, 0.85), transparent 60%),
-    radial-gradient(1.2px 1.2px at 150px 280px, rgba(232, 184, 75, 0.7), transparent 60%);
-  background-size: 380px 420px;
-  opacity: 0.7;
-  animation:
-    sparkle-field-rise-b 27s linear infinite,
-    sparkle-field-twinkle 5.5s ease-in-out infinite;
-}
-.sparkle-field__layer--c {
-  background-image:
-    radial-gradient(2.4px 2.4px at 100px 90px, rgba(255, 243, 214, 0.9), transparent 55%),
-    radial-gradient(1.6px 1.6px at 320px 260px, rgba(232, 184, 75, 0.7), transparent 60%);
-  background-size: 520px 560px;
-  opacity: 0.55;
-  animation:
-    sparkle-field-rise-c 40s linear infinite,
-    sparkle-field-twinkle 7s ease-in-out infinite;
-}
-.sparkle-field__shimmer {
-  position: absolute;
-  inset: -40%;
-  background: linear-gradient(
-    115deg,
-    transparent 42%,
-    rgba(232, 184, 75, 0.1) 50%,
-    transparent 58%
-  );
-  animation: sparkle-field-shimmer 9s ease-in-out infinite;
-}
-@keyframes sparkle-field-rise-a {
-  from {
-    transform: translate3d(0, 0, 0);
-  }
-  to {
-    transform: translate3d(0, -300px, 0);
-  }
-}
-@keyframes sparkle-field-rise-b {
-  from {
-    transform: translate3d(0, 0, 0);
-  }
-  to {
-    transform: translate3d(0, -420px, 0);
-  }
-}
-@keyframes sparkle-field-rise-c {
-  from {
-    transform: translate3d(0, 0, 0);
-  }
-  to {
-    transform: translate3d(0, -560px, 0);
-  }
-}
-@keyframes sparkle-field-twinkle {
-  0%,
-  100% {
-    opacity: 0.35;
-  }
-  50% {
-    opacity: 0.9;
-  }
-}
-@keyframes sparkle-field-shimmer {
-  0%,
-  100% {
-    transform: translate3d(-12%, 0, 0);
-  }
-  50% {
-    transform: translate3d(12%, 0, 0);
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .sparkle-field__layer,
-  .sparkle-field__shimmer {
-    animation: none;
-  }
-}
-
-/* SparkleField adds this class via an IntersectionObserver when its
-   wrapper scrolls out of view, so the three rise/twinkle loops stop
-   costing compositor work while the user is reading further down the
-   dashboard. The fixed full-viewport uses (auth, landing) never leave
-   the viewport, so they never pause. */
-.sparkle-field--paused .sparkle-field__layer,
-.sparkle-field--paused .sparkle-field__shimmer {
-  animation-play-state: paused;
-}
-/* ─── Sonner toasts ──────────────────────────────────────────────────
-   The default sonner chrome (flat fill + hairline) read as a foreign
-   object on top of the liquid-glass system. This rebuilds the toast
-   with the same recipe as `.glass-overlay`: masked gradient-border
-   ring, inset top highlight, real ambient shadow, `--glass-radius`.
-   Success stays neutral glass (the check icon already reads as
-   success); error is the one variant that gets a colour treatment —
-   see the red-tint rules below — so a coloured side-tab never appears
-   on a routine confirmation. */
+/* ─── Toasts (Sonner) ───────────────────────────────────────────────
+   A slip of paper. Errors say so in words and in the loss colour on the
+   title; success stays neutral with its check mark. */
 [data-sonner-toaster] {
-  --width: 384px;
-  --gap: 12px;
+  --width: 380px;
+  --gap: 10px;
 }
 [data-sonner-toaster] [data-sonner-toast] {
-  --toast-close-button-transform: scale(0.9);
-  padding: 14px 16px 14px 18px;
+  padding: 14px 16px;
   gap: 12px;
   border: none;
-  border-radius: var(--glass-radius);
-  background: color-mix(in oklab, var(--glass-bg) 82%, transparent);
-  color: var(--card-foreground);
-  backdrop-filter: blur(var(--glass-blur));
-  -webkit-backdrop-filter: blur(var(--glass-blur));
-  box-shadow:
-    inset 0 1px 0 var(--glass-highlight),
-    var(--glass-shadow);
-}
-[data-sonner-toaster] [data-sonner-toast]::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  padding: 1px;
-  background: linear-gradient(
-    160deg,
-    var(--glass-border-from) 0%,
-    var(--glass-border-to) 45%,
-    var(--glass-border-from) 100%
-  );
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  pointer-events: none;
-}
-/* Success stays neutral frosted glass — the green check icon carries it.
-   Errors demand attention: the whole surface goes red-tinted glass, the
-   gradient-border ring turns red, and the title picks up the red. */
-[data-sonner-toaster] [data-sonner-toast][data-type="error"] {
-  background:
-    linear-gradient(
-      160deg,
-      color-mix(in oklab, var(--destructive) 24%, transparent),
-      color-mix(in oklab, var(--destructive) 7%, transparent) 72%
-    ),
-    color-mix(in oklab, var(--glass-bg) 82%, transparent);
-}
-[data-sonner-toaster] [data-sonner-toast][data-type="error"]::before {
-  background: linear-gradient(
-    160deg,
-    color-mix(in oklab, var(--destructive) 60%, var(--glass-border-from)) 0%,
-    color-mix(in oklab, var(--destructive) 34%, var(--glass-border-to)) 45%,
-    color-mix(in oklab, var(--destructive) 60%, var(--glass-border-from)) 100%
-  );
+  border-radius: var(--radius-lg);
+  background: var(--popover);
+  color: var(--popover-foreground);
+  box-shadow: var(--shadow-float);
+  font-family: var(--font-sans);
 }
 [data-sonner-toaster] [data-sonner-toast][data-type="error"] [data-title] {
-  color: color-mix(in oklab, var(--destructive) 78%, var(--card-foreground));
+  color: var(--destructive);
 }
 [data-sonner-toaster] [data-sonner-toast] [data-icon] {
-  margin-top: 1px;
+  margin-top: 2px;
   align-self: flex-start;
 }
 [data-sonner-toaster] [data-sonner-toast] [data-title] {
-  font-size: 13px;
-  font-weight: 550;
-  letter-spacing: -0.006em;
+  font-size: var(--text-detail);
+  font-weight: 600;
   line-height: 1.4;
 }
 [data-sonner-toaster] [data-sonner-toast] [data-description] {
-  margin-top: 3px;
+  margin-top: 2px;
   color: var(--muted-foreground);
-  font-size: 12.5px;
+  font-size: var(--text-label);
   line-height: 1.45;
-}
-@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  [data-sonner-toaster] [data-sonner-toast] {
-    background: var(--glass-fallback-bg);
-  }
-  [data-sonner-toaster] [data-sonner-toast][data-type="error"] {
-    background: color-mix(in oklab, var(--destructive) 16%, var(--glass-fallback-bg));
-  }
 }

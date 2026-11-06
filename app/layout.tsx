@@ -1,63 +1,80 @@
 import { ClerkProvider } from "@clerk/nextjs";
 import { shadcn } from "@clerk/ui/themes";
-import type { Metadata } from "next";
-import { IBM_Plex_Sans, IBM_Plex_Mono, Newsreader, Fraunces } from "next/font/google";
+import type { Metadata, Viewport } from "next";
+import {
+  Besley,
+  Kantumruy_Pro,
+  Red_Hat_Text,
+  Shantell_Sans,
+} from "next/font/google";
 import { cn } from "@/lib/utils";
+import { ThemeScript } from "@/lib/theme/theme-context";
 import "./globals.css";
 
-// UI / body face. IBM Plex Sans — a humanist grotesque with actual
-// character (the flared terminals, the true-italic), unlike the Geist
-// default it replaces.
-const plexSans = IBM_Plex_Sans({
-  subsets: ["latin"],
+// The reading face: a warm, open humanist sans that stays clear at small
+// sizes, with real tabular figures — every price and quantity lines up —
+// and a plain, unslashed zero. Body text, labels, tables and inputs.
+// See DESIGN.md § Typography.
+const reading = Red_Hat_Text({
+  subsets: ["latin", "latin-ext"],
   weight: ["400", "500", "600", "700"],
-  variable: "--font-plex-sans",
+  variable: "--font-reading",
 });
 
-// Every price, quantity and cost-basis figure. IBM Plex Mono has real
-// tabular figures and pairs with Plex Sans as one family, so the number
-// columns read as deliberate typesetting rather than "monospace =
-// technical".
-const plexMono = IBM_Plex_Mono({
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-  variable: "--font-plex-mono",
+// The ledger face: a Clarendon-style serif from the era of printed
+// account books. Headings and the big figures (with tabular figures on).
+const ledger = Besley({
+  subsets: ["latin", "latin-ext"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-ledger",
 });
 
-// Editorial serif for the Ledger theme's headings and hero price.
-// Referenced only from globals.css's `[data-theme="ledger"]` block.
-const newsreader = Newsreader({
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-  style: ["normal", "italic"],
-  variable: "--font-newsreader",
+// The user's own handwriting: only their notes and short margin remarks,
+// never a figure. The INFM axis is set in globals.css (.hand).
+const handwriting = Shantell_Sans({
+  subsets: ["latin", "latin-ext"],
+  axes: ["INFM"],
+  variable: "--font-handwriting",
 });
 
-// Display face for the marketing / landing page headings. Referenced
-// only from the `.liquid-glass-landing-root` rules in globals.css.
-const fraunces = Fraunces({
-  subsets: ["latin"],
+// Khmer script fallback for every role (ជី, ដំឡឹង, ៛) so Khmer words
+// render in a face designed for them rather than a system default.
+const khmer = Kantumruy_Pro({
+  subsets: ["khmer"],
   weight: ["400", "500", "600"],
-  style: ["normal", "italic"],
-  variable: "--font-fraunces",
+  variable: "--font-khmer",
 });
 
 export const metadata: Metadata = {
   title: "GoldKh",
-  description: "Track personal gold holdings against the live spot price.",
+  description:
+    "A notebook for the gold you keep: record buys and sells in chi and damlung and see what it's worth today.",
+};
+
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: dark)", color: "#1a1713" },
+    { media: "(prefers-color-scheme: light)", color: "#e8deca" },
+  ],
+  viewportFit: "cover",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
+      data-theme="night"
       className={cn(
-        plexSans.variable,
-        plexMono.variable,
-        newsreader.variable,
-        fraunces.variable
+        reading.variable,
+        ledger.variable,
+        handwriting.variable,
+        khmer.variable,
       )}
+      suppressHydrationWarning
     >
+      <head>
+        <ThemeScript />
+      </head>
       <body className="font-sans">
         <ClerkProvider
           afterSignOutUrl="/"

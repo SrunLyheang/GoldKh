@@ -19,7 +19,7 @@ describe("RealizedPanel", () => {
     const value = screen.getByText(
       (_, el) =>
         el?.tagName === "SPAN" &&
-        el.classList.contains("font-mono") &&
+        el.classList.contains("tabular-nums") &&
         el.textContent === "-$285.00"
     );
     expect(value).toBeInTheDocument();
@@ -28,7 +28,7 @@ describe("RealizedPanel", () => {
       screen.getByText(
         (_, el) =>
           el?.tagName === "SPAN" &&
-          el.classList.contains("font-mono") &&
+          el.classList.contains("tabular-nums") &&
           el.textContent === "-5.10%"
       )
     ).toBeInTheDocument();

@@ -2,18 +2,21 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { useSectionEnter } from "@/components/motion/use-section-enter";
+import { Button } from "@/components/ui/button";
 import { notify } from "@/lib/ui/toast";
 import { computePosition } from "@/lib/calc/position";
 import { fromTroyOz, priceFromTroyOz, type GoldUnit } from "@/lib/calc/units";
 import { usePrefs } from "@/lib/prefs/prefs-context";
 import type { ChartPoint } from "@/lib/calc/priceHistory";
+import { Plus } from "lucide-react";
+import { t } from "@/lib/i18n/dictionary";
 import { EmptyState } from "./empty-state";
 import { HeroPriceCard } from "./hero-price-card";
 import { PriceHistoryChart } from "./price-history-chart";
 import { RealizedPanel } from "./realized-panel";
 import { StatRow } from "./stat-row";
-import { TransactionHistory, type TransactionRow } from "./transaction-history";
+import { RecentEntries } from "./recent-entries";
+import type { TransactionRow } from "./transaction-history";
 import { TransactionDialog, type AddSettledResult } from "./transaction-dialog";
 import { useOptimisticTransactions } from "./use-optimistic-transactions";
 
@@ -53,18 +56,6 @@ export function DashboardContent({
   const [displayUnit, setDisplayUnit] = useState<GoldUnit>(prefs.displayUnit);
   const [isSyncing, startSync] = useTransition();
 
-  // Sections glide in on scroll-into-view, staggered. Hooks are called
-  // unconditionally; the wrappers below attach ref + class + delay.
-  const { ref: heroRef, revealClass: heroCls, style: heroStyle } =
-    useSectionEnter<HTMLDivElement>(0);
-  const { ref: statRef, revealClass: statCls, style: statStyle } =
-    useSectionEnter<HTMLDivElement>(80);
-  const { ref: realizedRef, revealClass: realizedCls, style: realizedStyle } =
-    useSectionEnter<HTMLDivElement>(140);
-  const { ref: historyRef, revealClass: historyCls, style: historyStyle } =
-    useSectionEnter<HTMLDivElement>(180);
-  const { ref: chartRef, revealClass: chartCls, style: chartStyle } =
-    useSectionEnter<HTMLDivElement>(200);
   const { rows, addOptimistic, settleAdd, markRemoved, unmarkRemoved } =
     useOptimisticTransactions(transactions);
 
@@ -104,42 +95,6 @@ export function DashboardContent({
     startSync(() => router.refresh());
   }
 
-  // Multi-select delete from the Transaction History panel. Optimistically
-  // hides every selected row, fires one bulk request, and rolls the whole
-  // batch back on failure. Returns success so the panel can clear its
-  // selection and close the confirm dialog.
-  async function handleBulkDelete(ids: string[]): Promise<boolean> {
-    ids.forEach(markRemoved);
-
-    let res: Response;
-    try {
-      res = await fetch("/api/transactions/bulk", {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ids }),
-      });
-    } catch {
-      ids.forEach(unmarkRemoved);
-      notify.error("Couldn't reach the server — nothing was deleted.");
-      return false;
-    }
-
-    if (!res.ok) {
-      ids.forEach(unmarkRemoved);
-      const body = await res.json().catch(() => null);
-      notify.error(body?.error?.message ?? "Couldn't delete — please try again.");
-      return false;
-    }
-
-    const body = await res.json().catch(() => null);
-    const deleted = body?.data?.deleted ?? ids.length;
-    notify.success(
-      `${deleted} transaction${deleted === 1 ? "" : "s"} deleted.`
-    );
-    startSync(() => router.refresh());
-    return true;
-  }
-
   // `rows` is newest-first for the history table; computePosition re-sorts
   // it oldest-first before replaying the ledger.
   const { holdings, gainLoss, realized, breakEvenPerDamlung } =
@@ -148,20 +103,74 @@ export function DashboardContent({
       [rows, pricePerTroyOz]
     );
 
+  const hasEntries = rows.length > 0;
+
+  // The open notebook. Left page: today's price and what you hold, ruled
+  // off as a sum. Right page: the latest entries. Below the spread, the
+  // price over time drawn on its own page. On a phone the pages stack and
+  // "Write an entry" sits in thumb reach above the tab bar.
   return (
-    <div className="flex flex-col gap-7 md:gap-9">
-      <div ref={heroRef} className={heroCls} style={heroStyle}>
-        <HeroPriceCard
-          pricePerTroyOz={pricePerTroyOz}
-          pricePerChi={pricePerChi}
-          pricePerDamlung={pricePerDamlung}
-          capturedAt={capturedAt}
-          isStale={isStale}
-          refreshCooldownEndsAt={refreshCooldownEndsAt}
-          marketOpen={marketOpen}
-          displayUnit={displayUnit}
-          onDisplayUnitChange={setDisplayUnit}
-        />
+    <div className="flex flex-col gap-6 md:gap-8">
+      <div className="dash-enter grid overflow-hidden rounded-xl rounded-tr-none shadow-(--shadow-page) md:grid-cols-[1.08fr_1fr] md:rounded-tl-xl max-md:rounded-tr-xl">
+        <div
+          className="page page-margin rounded-none px-5 pb-8 pt-5 [--margin-x:0.75rem] sm:px-10 sm:[--margin-x:1.75rem] md:pl-14 md:pr-10 md:pt-7 md:[--margin-x:2.25rem]"
+        >
+          <HeroPriceCard
+            pricePerTroyOz={pricePerTroyOz}
+            pricePerChi={pricePerChi}
+            pricePerDamlung={pricePerDamlung}
+            capturedAt={capturedAt}
+            isStale={isStale}
+            refreshCooldownEndsAt={refreshCooldownEndsAt}
+            marketOpen={marketOpen}
+            displayUnit={displayUnit}
+            onDisplayUnitChange={setDisplayUnit}
+          />
+          {hasEntries && (
+            <div className="mt-10">
+              <StatRow
+                totalChi={fromTroyOz(holdings.totalTroyOz, "chi")}
+                totalDamlung={fromTroyOz(holdings.totalTroyOz, "damlung")}
+                averageCostPerChi={priceFromTroyOz(
+                  holdings.averageCostPerTroyOz,
+                  "chi"
+                )}
+                averageCostPerDamlung={priceFromTroyOz(
+                  holdings.averageCostPerTroyOz,
+                  "damlung"
+                )}
+                marketValueUsd={gainLoss.marketValueUsd}
+                gainLossUsd={gainLoss.gainLossUsd}
+                gainLossPercent={gainLoss.gainLossPercent}
+                displayUnit={displayUnit}
+              />
+              {realized.saleCount > 0 && (
+                <RealizedPanel
+                  realizedUsd={realized.realizedUsd}
+                  realizedPercent={realized.realizedPercent}
+                  saleCount={realized.saleCount}
+                />
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* The spine: a soft fold between the pages, drawn as shade on
+            the right page's edge rather than a line. */}
+        <div className="page relative rounded-none px-5 pb-8 pt-5 sm:px-10 md:pt-7 md:shadow-[inset_14px_0_18px_-14px_rgb(0_0_0/0.35)] max-md:mt-0.5">
+          {hasEntries ? (
+            <RecentEntries
+              rows={rows}
+              currentPricePerTroyOz={pricePerTroyOz}
+              syncing={isSyncing}
+              onAddClick={() => setAddOpen(true)}
+              onDelete={handleDelete}
+              onEditSuccess={handleEditSuccess}
+            />
+          ) : (
+            <EmptyState onAddClick={() => setAddOpen(true)} />
+          )}
+        </div>
       </div>
 
       <TransactionDialog
@@ -173,61 +182,26 @@ export function DashboardContent({
         existingTransactions={rows}
       />
 
-      {rows.length === 0 ? (
-        <EmptyState onAddClick={() => setAddOpen(true)} />
-      ) : (
-        <>
-          <div ref={statRef} className={statCls} style={statStyle}>
-            <StatRow
-              totalChi={fromTroyOz(holdings.totalTroyOz, "chi")}
-              totalDamlung={fromTroyOz(holdings.totalTroyOz, "damlung")}
-              averageCostPerChi={priceFromTroyOz(
-                holdings.averageCostPerTroyOz,
-                "chi"
-              )}
-              averageCostPerDamlung={priceFromTroyOz(
-                holdings.averageCostPerTroyOz,
-                "damlung"
-              )}
-              marketValueUsd={gainLoss.marketValueUsd}
-              gainLossUsd={gainLoss.gainLossUsd}
-              gainLossPercent={gainLoss.gainLossPercent}
-              displayUnit={displayUnit}
-            />
-          </div>
-          {realized.saleCount > 0 && (
-            <div ref={realizedRef} className={realizedCls} style={realizedStyle}>
-              <RealizedPanel
-                realizedUsd={realized.realizedUsd}
-                realizedPercent={realized.realizedPercent}
-                saleCount={realized.saleCount}
-              />
-            </div>
-          )}
-          <div ref={historyRef} className={historyCls} style={historyStyle}>
-            <TransactionHistory
-              rows={rows}
-              currentPricePerTroyOz={pricePerTroyOz}
-              priceHistory={chartPoints}
-              syncing={isSyncing}
-              displayUnit={displayUnit}
-              onDelete={handleDelete}
-              onBulkDelete={handleBulkDelete}
-              onAddClick={() => setAddOpen(true)}
-              onEditSuccess={handleEditSuccess}
-              onCsvImported={() => startSync(() => router.refresh())}
-            />
-          </div>
-        </>
-      )}
-
-      <div ref={chartRef} className={chartCls} style={chartStyle}>
+      <div className="dash-enter [--enter-delay:60ms]">
         <PriceHistoryChart
           points={chartPoints}
           marketOpen={marketOpen}
           breakEvenPerDamlung={breakEvenPerDamlung}
         />
       </div>
+
+      {hasEntries && (
+        <div className="pointer-events-none fixed inset-x-0 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-30 flex justify-center px-4 md:hidden">
+          <Button
+            size="lg"
+            onClick={() => setAddOpen(true)}
+            className="press pointer-events-auto min-h-12 rounded-full px-6 shadow-(--shadow-float)"
+          >
+            <Plus className="h-4 w-4" aria-hidden="true" />
+            {t.transactions.addTransaction}
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

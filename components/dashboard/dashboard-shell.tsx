@@ -1,71 +1,52 @@
 "use client";
 
-import { Menu } from "lucide-react";
-import Image from "next/image";
-import { useState, type ReactNode } from "react";
+import Link from "next/link";
+import type { ReactNode } from "react";
 import { PrefsProvider } from "@/lib/prefs/prefs-context";
 import { ThemeProvider } from "@/lib/theme/theme-context";
 import { Toaster } from "@/components/ui/sonner";
+import { Wordmark } from "@/components/brand/wordmark";
 import { AccountButton } from "./account-button";
-import { Sidebar } from "./sidebar";
+import { NotebookTabBar, NotebookTabs } from "./notebook-tabs";
 import { SignOutButton } from "./sign-out-button";
 import { ThemeToggle } from "./theme-toggle";
 
-// Wraps the dashboard route so mobile can have a hamburger-triggered
-// drawer (Sidebar) plus a slim top bar, while desktop keeps the
-// original fixed-sidebar layout untouched (`md:ml-59` reserves the
-// space Sidebar occupies since it's `fixed`, out of flow).
+// The signed-in frame: a desk under a lamp with the notebook on it.
+// Desktop: wordmark and the index tabs on one line, the page directly
+// below so the active tab joins it. Phone: a slim top line and the tabs
+// as a bottom bar in thumb reach.
 export function DashboardShell({ children }: { children: ReactNode }) {
-  const [open, setOpen] = useState(false);
-
   return (
     <ThemeProvider>
       <PrefsProvider>
-        <div className="app-grain relative flex min-h-screen bg-background">
-          {/* Ambient dual-glow ground — a fixed radial wash built from
-              the theme's --glow-color, behind the z-10 content column.
-              Pure paint, pointer-transparent, still under any motion. */}
-          <div
-            aria-hidden="true"
-            className="pointer-events-none fixed inset-0 z-0"
-            style={{
-              background:
-                "radial-gradient(60% 50% at 15% 0%, var(--glow-color) 0%, transparent 60%), radial-gradient(50% 45% at 100% 100%, var(--glow-color) 0%, transparent 55%)",
-              opacity: 0.5,
-            }}
-          />
-          <Sidebar open={open} onClose={() => setOpen(false)} />
-          <div className="relative z-10 flex min-w-0 flex-1 flex-col md:ml-59">
-            <header className="glass-chrome sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-(--glass-border-to) px-4 py-3.5 md:hidden">
-              <button
-                type="button"
-                onClick={() => setOpen(true)}
-                aria-label="Open menu"
-                className="flex min-h-11 min-w-11 items-center justify-center rounded-sm text-muted-foreground hover:bg-(--glow-color) hover:text-foreground"
+        <div className="app-grain app-lamp relative min-h-dvh bg-background">
+          <a
+            href="#main"
+            className="sr-only z-50 rounded-md bg-page px-4 py-2 focus:not-sr-only focus:fixed focus:left-4 focus:top-4"
+          >
+            Skip to content
+          </a>
+          <div className="relative z-10 mx-auto flex w-full max-w-[1240px] flex-col px-4 pb-44 pt-4 sm:px-6 md:px-10 md:pb-16 md:pt-7">
+            <header className="flex items-end justify-between gap-4">
+              <Link
+                href="/dashboard"
+                className="mb-2.5 rounded-md"
+                aria-label="GoldKh, today's page"
               >
-                <Menu className="h-5 w-5" />
-              </button>
-              <span className="flex items-center gap-2 font-mono text-body font-semibold tracking-tight text-primary">
-                <Image
-                  src="/icon.svg"
-                  alt=""
-                  aria-hidden="true"
-                  width={20}
-                  height={20}
-                  className="h-5 w-5 rounded-sm"
-                />
-                GoldKh
-              </span>
-              <div className="flex shrink-0 items-center gap-2.5">
+                <Wordmark />
+              </Link>
+              <NotebookTabs className="hidden md:flex" />
+              <div className="mb-1.5 flex shrink-0 items-center gap-1">
                 <ThemeToggle />
                 <AccountButton />
                 <SignOutButton />
               </div>
             </header>
-            <main className="flex-1 px-4 py-7 md:px-10 md:py-9">
+            <main id="main" className="flex-1 pt-3 md:pt-0">
               {children}
             </main>
           </div>
+          <NotebookTabBar />
         </div>
         <Toaster />
       </PrefsProvider>

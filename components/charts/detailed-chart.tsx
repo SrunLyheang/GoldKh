@@ -110,8 +110,8 @@ function DetailedTooltip({
     return null;
   }
   return (
-    <div className="glass-overlay rounded-md px-3 py-2 text-popover-foreground">
-      <p className="font-mono text-detail tabular-nums text-muted-foreground">
+    <div className="glass-overlay px-3 py-2">
+      <p className="text-detail tabular-nums text-muted-foreground">
         {typeof label === "number" ? formatTooltipTime(label) : ""}
       </p>
       {payload.map((entry) => {
@@ -120,7 +120,7 @@ function DetailedTooltip({
         return (
           <p
             key={entry.dataKey}
-            className="flex items-center gap-1.5 font-mono text-detail font-semibold tabular-nums text-foreground"
+            className="flex items-center gap-1.5 text-detail font-semibold tabular-nums text-foreground"
           >
             {labelled && (
               <span
@@ -139,7 +139,7 @@ function DetailedTooltip({
       {referenceLines.map((ref, index) => (
         <p
           key={`ref-${index}`}
-          className="flex items-center gap-1.5 font-mono text-detail tabular-nums text-muted-foreground"
+          className="flex items-center gap-1.5 text-detail tabular-nums text-muted-foreground"
         >
           <span
             aria-hidden
@@ -251,7 +251,7 @@ export function DetailedChart({
             <div
               role="group"
               aria-label={t.chart.rangeLabel}
-              className="inline-flex shrink-0 items-center gap-0.5 rounded-lg border border-border bg-accent/60 p-0.5"
+              className="inline-flex shrink-0 items-center gap-0.5 rounded-lg bg-sunk p-1"
             >
               {PRESET_ORDER.map((preset) => {
                 // A window longer than stored history shows nothing extra
@@ -274,9 +274,9 @@ export function DetailedChart({
                       applyPreset(preset);
                     }}
                     className={cn(
-                      "tt-label rounded-md px-2.5 py-1 text-micro transition-colors",
+                      "press inline-flex min-h-9 items-center rounded-md px-3 text-detail font-medium",
                       active
-                        ? "bg-primary text-primary-foreground"
+                        ? "bg-popover text-foreground shadow-[0_1px_2px_rgb(0_0_0/0.18)]"
                         : "text-muted-foreground hover:text-foreground",
                       outOfRange && !active && "opacity-35",
                     )}
@@ -290,14 +290,14 @@ export function DetailedChart({
               <button
                 type="button"
                 onClick={resetZoom}
-                className="tt-label rounded-md border border-border px-2.5 py-1 text-micro text-muted-foreground transition-colors hover:text-foreground"
+                className="press inline-flex min-h-9 items-center rounded-md px-3 text-detail font-medium text-gold hover:bg-(--glow-color)"
               >
                 {t.chart.reset}
               </button>
             )}
           </div>
           <p className="text-label text-muted-foreground">
-            <span className="font-mono tabular-nums text-foreground">
+            <span className="tabular-nums text-foreground">
               {rangeCaption}
             </span>
             <span className="mx-1.5 text-border">·</span>
@@ -311,7 +311,7 @@ export function DetailedChart({
           <button
             type="button"
             onClick={onExpand}
-            className="tt-label inline-flex items-center gap-1 rounded-sm border border-border px-2 py-1 text-micro text-muted-foreground transition-colors hover:text-foreground"
+            className="press -mt-1 inline-flex min-h-9 items-center gap-1 rounded-md px-2 text-detail font-medium text-gold hover:bg-(--glow-color)"
           >
             {t.chart.expand} ↗
           </button>
@@ -345,7 +345,6 @@ export function DetailedChart({
           >
             <CartesianGrid
               stroke="var(--glass-border-to)"
-              strokeDasharray="3 3"
               vertical={false}
             />
             <XAxis
@@ -355,9 +354,9 @@ export function DetailedChart({
               domain={["dataMin", "dataMax"]}
               tickFormatter={formatAxisTime}
               tick={{
-                fontSize: 11,
+                fontSize: 12,
                 fill: "var(--muted-foreground)",
-                fontFamily: "var(--font-mono)",
+                fontFamily: "var(--font-sans)",
               }}
               tickLine={false}
               axisLine={false}
@@ -365,9 +364,9 @@ export function DetailedChart({
             />
             <YAxis
               tick={{
-                fontSize: 11,
+                fontSize: 12,
                 fill: "var(--muted-foreground)",
-                fontFamily: "var(--font-mono)",
+                fontFamily: "var(--font-sans)",
               }}
               tickLine={false}
               axisLine={false}
@@ -413,9 +412,9 @@ export function DetailedChart({
                         ? "insideTopLeft"
                         : "insideBottomLeft",
                     fill: "var(--foreground)",
-                    fontSize: 11,
+                    fontSize: 12,
                     fontWeight: 600,
-                    fontFamily: "var(--font-mono)",
+                    fontFamily: "var(--font-sans)",
                   }}
                 />
               );
@@ -426,9 +425,10 @@ export function DetailedChart({
                 type="monotone"
                 dataKey={s.key}
                 stroke={s.color}
-                strokeWidth={2}
+                strokeWidth={2.25}
+                strokeLinecap="round"
                 dot={false}
-                activeDot={{ r: 4 }}
+                activeDot={{ r: 5, stroke: "var(--page)", strokeWidth: 2 }}
                 connectNulls
                 isAnimationActive={drawOn}
                 animationDuration={CHART_DRAW_MS}
@@ -447,8 +447,8 @@ export function DetailedChart({
                 dataKey="t"
                 height={brushHeight}
                 stroke="var(--muted-foreground)"
-                fill="var(--muted)"
-                fillOpacity={0.2}
+                fill="var(--sunk)"
+                fillOpacity={0.6}
                 travellerWidth={8}
                 tickFormatter={formatAxisTime}
                 startIndex={startIndex}

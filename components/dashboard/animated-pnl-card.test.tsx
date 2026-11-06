@@ -27,7 +27,7 @@ describe("AnimatedPnlCard", () => {
       screen.getByText(
         (_, el) =>
           el?.tagName === "SPAN" &&
-          el.classList.contains("font-mono") &&
+          el.classList.contains("tabular-nums") &&
           el.textContent === "+4.20%"
       )
     ).toHaveClass("text-state-gain");
@@ -44,7 +44,7 @@ describe("AnimatedPnlCard", () => {
     const value = screen.getByText(
       (_, el) =>
         el?.tagName === "SPAN" &&
-        el.classList.contains("font-mono") &&
+        el.classList.contains("tabular-nums") &&
         el.textContent === "-$80.00"
     );
     expect(value).toHaveClass("text-destructive");
@@ -74,11 +74,11 @@ describe("AnimatedPnlCard", () => {
     expect(window.localStorage.getItem(KEY)).toBe("99");
   });
 
-  it("marks a loss with a tone left-border and a signed value", () => {
+  it("marks a loss with its tone and a signed value", () => {
     const { container } = render(
       <AnimatedPnlCard label="Unrealized Gain/Loss" gainLossUsd="-285" gainLossPercent="-5.1" />
     );
-    expect(container.querySelector(".border-l-destructive")).not.toBeNull();
+    expect(container.querySelector("[data-tone=\"loss\"]")).not.toBeNull();
     expect(container.querySelector("[data-sign-cell]")).not.toBeNull();
   });
 });

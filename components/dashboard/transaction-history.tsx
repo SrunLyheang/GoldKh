@@ -1,50 +1,25 @@
 "use client";
 
+// Shared row pieces for every list of transactions (today's Recent
+// entries and the Ledger page): the row type, the one derivation of what
+// a row displays, and the per-row edit / delete menu.
+
 import Decimal from "decimal.js";
-import {
-  ArrowDownLeft,
-  ArrowUpRight,
-  ChevronDown,
-  MoreVertical,
-  Pencil,
-  Plus,
-  TriangleAlert,
-  Trash2,
-} from "lucide-react";
-import Link from "next/link";
-import {
-  createContext,
-  useContext,
-  useMemo,
-  useState,
-  type KeyboardEvent,
-} from "react";
-import { cn } from "@/lib/utils";
-import { formatQuantity, formatUsd } from "@/lib/format/money";
+import { MoreVertical, Pencil, Trash2 } from "lucide-react";
+import { createContext, useContext, useState } from "react";
+import { formatKhr, formatUsd } from "@/lib/format/money";
 import { computeRowValuation } from "@/lib/calc/transactionRow";
 import type { LedgerEntry } from "@/lib/calc/ledgerEntry";
-import type { ChartPoint } from "@/lib/calc/priceHistory";
-import { spotPerDamlungOnDate } from "@/lib/calc/priceHistory";
 import { priceFromTroyOz, type GoldUnit } from "@/lib/calc/units";
 import { classifyPrice, isHardVerdict } from "@/lib/validation/priceSanity";
 import { t } from "@/lib/i18n/dictionary";
 import { unitLabels } from "@/lib/i18n/unit-labels";
-import { TransactionDetail } from "@/components/transactions/transaction-detail";
-import { BulkActionsBar } from "@/components/transactions/bulk-actions-bar";
-import { BulkDeleteDialog } from "@/components/transactions/bulk-delete-dialog";
-import { RowCheckbox } from "@/components/transactions/row-checkbox";
-import { useRowSelection } from "@/components/transactions/use-row-selection";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Button } from "@/components/ui/button";
-import { Magnetic } from "@/components/motion/magnetic";
-import { CsvDialog } from "./csv-dialog";
-import { MonoValue } from "./mono-value";
-import { Panel } from "./panel";
 import { TransactionDialog } from "./transaction-dialog";
 
 export interface TransactionRow extends LedgerEntry {
@@ -93,6 +68,11 @@ export function getRowDisplay(
         )} KHR`;
   // Lowercase to match the pre-i18n "10 chi"/"3 damlung" convention.
   const unitLabel = unitLabels(row.unit).primaryLower;
+  // A riel row's per-unit price is in riel — never print it with "$".
+  const perUnitLabel =
+    row.currency === "USD"
+      ? formatUsd(pricePerDisplayUnit)
+      : formatKhr(pricePerDisplayUnit);
 
   return {
     isBuy,
@@ -104,6 +84,7 @@ export function getRowDisplay(
     blankValueReason,
     paidAmount,
     unitLabel,
+    perUnitLabel,
   };
 }
 
@@ -133,14 +114,14 @@ export function RowActions({
         <button
           type="button"
           onClick={() => onDelete(row)}
-          className="tt-label border border-destructive px-2 py-1 text-label text-destructive hover:bg-destructive/10"
+          className="press min-h-9 rounded-md bg-destructive/15 px-3 text-detail font-semibold text-destructive hover:bg-destructive/25"
         >
           {t.transactions.delete}
         </button>
         <button
           type="button"
           onClick={() => setConfirming(false)}
-          className="tt-label border border-border px-2 py-1 text-label text-muted-foreground hover:bg-accent"
+          className="press min-h-9 rounded-md px-3 text-detail text-muted-foreground hover:bg-(--glow-color)"
         >
           {t.transactions.cancel}
         </button>
@@ -160,9 +141,9 @@ export function RowActions({
                 row.quantity,
                 unitLabels(row.unit).primary,
               )}
-              className="tap-target shrink-0 rounded-sm p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+              className="press tap-target shrink-0 rounded-md p-2 text-faint hover:bg-(--glow-color) hover:text-foreground"
             >
-              <MoreVertical className="h-3.5 w-3.5" />
+              <MoreVertical className="h-4 w-4" />
             </button>
           }
         />
@@ -189,609 +170,5 @@ export function RowActions({
         existingTransactions={allRows}
       />
     </>
-  );
-}
-
-// Enter / Space toggle a row's expander, matching a <button> (Space
-// otherwise scrolls the page).
-function expandKeyHandler(toggle: () => void) {
-  return (e: KeyboardEvent) => {
-    // Ignore keys aimed at nested controls (checkbox, actions menu).
-    if (e.target !== e.currentTarget) return;
-    if (e.key === "Enter" || e.key === " ") {
-      e.preventDefault();
-      toggle();
-    }
-  };
-}
-
-function Row({
-  row,
-  currentPricePerTroyOz,
-  displayUnit,
-  priceHistory,
-  selectMode,
-  expanded,
-  selected,
-  onToggleSelect,
-  onToggle,
-  onDelete,
-  onEditSuccess,
-}: {
-  row: TransactionRow;
-  currentPricePerTroyOz: string;
-  displayUnit: GoldUnit;
-  priceHistory: ChartPoint[];
-  selectMode: boolean;
-  expanded: boolean;
-  selected: boolean;
-  onToggleSelect: () => void;
-  onToggle: () => void;
-  onDelete: (row: TransactionRow) => void;
-  onEditSuccess: () => void;
-}) {
-  const {
-    isBuy,
-    isPending,
-    valuation,
-    pricePerDisplayUnit,
-    isGain,
-    priceLooksOffSpot,
-    blankValueReason,
-    paidAmount,
-    unitLabel,
-  } = getRowDisplay(row, currentPricePerTroyOz, displayUnit);
-
-  return (
-    <>
-      <tr
-        role="button"
-        tabIndex={0}
-        aria-expanded={expanded}
-        onClick={onToggle}
-        onKeyDown={expandKeyHandler(onToggle)}
-        className={cn(
-          "cursor-pointer border-b border-border last:border-0 outline-none focus-visible:bg-accent/50 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/70 hover:bg-accent/40",
-          isPending && "opacity-60",
-          (expanded || selected) && "bg-accent/40",
-        )}
-      >
-        {selectMode && (
-          <td className="py-3 pr-1 pl-4">
-            {isPending ? null : (
-              <RowCheckbox
-                checked={selected}
-                onCheckedChange={onToggleSelect}
-                label={`Select ${row.type} ${row.quantity} ${row.unit}`}
-              />
-            )}
-          </td>
-        )}
-        <td className="py-3 pr-3 pl-2">
-          <div className="flex items-center gap-2">
-            <ChevronDown
-              className={cn(
-                "h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform",
-                expanded && "rotate-180",
-              )}
-            />
-            <div
-              className={cn(
-                "flex h-6 w-6 shrink-0 items-center justify-center rounded-md",
-                isBuy ? "bg-state-gain/15" : "bg-destructive/15",
-              )}
-            >
-              {isBuy ? (
-                <ArrowDownLeft className="h-3.5 w-3.5 text-state-gain" />
-              ) : (
-                <ArrowUpRight className="h-3.5 w-3.5 text-destructive" />
-              )}
-            </div>
-            <span className="font-mono text-detail tabular-nums text-muted-foreground">
-              {row.transactionDate}
-            </span>
-          </div>
-        </td>
-        <td className="py-3 pr-3 text-detail font-medium text-foreground">
-          {isBuy ? t.transactions.buy : t.transactions.sell}{" "}
-          {formatQuantity(row.quantity)} {unitLabel}
-        </td>
-        <td className="py-3 pr-3 text-right font-mono text-detail tabular-nums text-foreground">
-          {paidAmount}
-        </td>
-        <td className="py-3 pr-3 text-right font-mono text-detail tabular-nums text-muted-foreground">
-          <span className="inline-flex items-center justify-end gap-1">
-            {priceLooksOffSpot && (
-              <span title={t.transactions.priceOffSpot} className="cursor-help">
-                <TriangleAlert
-                  className="h-3 w-3 text-destructive"
-                  aria-label={t.transactions.priceOffSpot}
-                />
-              </span>
-            )}
-            {formatUsd(pricePerDisplayUnit)}
-          </span>
-        </td>
-        <td className="py-3 pr-3 text-right font-mono text-detail tabular-nums text-foreground">
-          {valuation.currentValueUsd ? (
-            formatUsd(valuation.currentValueUsd)
-          ) : (
-            <span title={blankValueReason} className="cursor-help">
-              —
-            </span>
-          )}
-        </td>
-        <td className="py-3 pr-3 text-right font-mono text-detail tabular-nums">
-          {valuation.pnlUsd ? (
-            <MonoValue
-              signed
-              tone={isGain ? "gain" : "loss"}
-              className="text-detail"
-            >
-              {formatUsd(valuation.pnlUsd)}
-            </MonoValue>
-          ) : (
-            <span
-              title={blankValueReason}
-              className="cursor-help text-muted-foreground"
-            >
-              —
-            </span>
-          )}
-        </td>
-        <td
-          className="py-3 pl-1 text-right"
-          onClick={(e) => e.stopPropagation()}
-        >
-          {isPending ? (
-            <span className="text-label text-muted-foreground">
-              {t.transactions.saving}
-            </span>
-          ) : (
-            <RowActions
-              row={row}
-              currentPricePerTroyOz={currentPricePerTroyOz}
-              onDelete={onDelete}
-              onEditSuccess={onEditSuccess}
-            />
-          )}
-        </td>
-      </tr>
-      {expanded && (
-        <tr className="border-b border-border last:border-0">
-          <td colSpan={selectMode ? 8 : 7} className="p-0">
-            <TransactionDetail
-              row={row}
-              currentPricePerTroyOz={currentPricePerTroyOz}
-              displayUnit={displayUnit}
-              spotPerDamlungOnDate={spotPerDamlungOnDate(
-                priceHistory,
-                row.transactionDate,
-              )}
-            />
-          </td>
-        </tr>
-      )}
-    </>
-  );
-}
-
-// Same data as Row, as a card — the mobile substitute for the table.
-function TransactionCard({
-  row,
-  currentPricePerTroyOz,
-  displayUnit,
-  priceHistory,
-  selectMode,
-  expanded,
-  selected,
-  onToggleSelect,
-  onToggle,
-  onDelete,
-  onEditSuccess,
-}: {
-  row: TransactionRow;
-  currentPricePerTroyOz: string;
-  displayUnit: GoldUnit;
-  priceHistory: ChartPoint[];
-  selectMode: boolean;
-  expanded: boolean;
-  selected: boolean;
-  onToggleSelect: () => void;
-  onToggle: () => void;
-  onDelete: (row: TransactionRow) => void;
-  onEditSuccess: () => void;
-}) {
-  const {
-    isBuy,
-    isPending,
-    valuation,
-    pricePerDisplayUnit,
-    isGain,
-    priceLooksOffSpot,
-    blankValueReason,
-    paidAmount,
-    unitLabel,
-  } = getRowDisplay(row, currentPricePerTroyOz, displayUnit);
-
-  return (
-    <Panel
-      className={cn(
-        "flex flex-col gap-3.5 p-0",
-        isPending && "opacity-60",
-        selected && "ring-1 ring-primary/40",
-      )}
-    >
-      <div
-        role="button"
-        tabIndex={0}
-        aria-expanded={expanded}
-        onClick={onToggle}
-        onKeyDown={expandKeyHandler(onToggle)}
-        className={cn(
-          "flex min-h-11 cursor-pointer items-center justify-between gap-2 px-4 pt-4 outline-none focus-visible:bg-accent/40 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/70",
-          expanded && "bg-accent/30",
-        )}
-      >
-        <div className="flex min-w-0 items-center gap-2.5">
-          {selectMode && !isPending && (
-            <RowCheckbox
-              checked={selected}
-              onCheckedChange={onToggleSelect}
-              label={`Select ${row.type} ${row.quantity} ${row.unit}`}
-            />
-          )}
-          <div
-            className={cn(
-              "flex h-7 w-7 shrink-0 items-center justify-center rounded-md",
-              isBuy ? "bg-state-gain/15" : "bg-destructive/15",
-            )}
-          >
-            {isBuy ? (
-              <ArrowDownLeft className="h-4 w-4 text-state-gain" />
-            ) : (
-              <ArrowUpRight className="h-4 w-4 text-destructive" />
-            )}
-          </div>
-          <div className="min-w-0">
-            <p className="truncate text-body font-medium text-foreground">
-              {isBuy ? t.transactions.buy : t.transactions.sell}{" "}
-              {formatQuantity(row.quantity)} {unitLabel}
-            </p>
-            <MonoValue tone="muted" className="text-label">
-              {row.transactionDate}
-            </MonoValue>
-          </div>
-        </div>
-        <div
-          className="flex shrink-0 items-center gap-1.5"
-          onClick={(e) => e.stopPropagation()}
-        >
-          {isPending ? (
-            <span className="text-label text-muted-foreground">
-              {t.transactions.saving}
-            </span>
-          ) : (
-            <RowActions
-              row={row}
-              currentPricePerTroyOz={currentPricePerTroyOz}
-              onDelete={onDelete}
-              onEditSuccess={onEditSuccess}
-            />
-          )}
-          <ChevronDown
-            className={cn(
-              "h-4 w-4 text-muted-foreground transition-transform",
-              expanded && "rotate-180",
-            )}
-          />
-        </div>
-      </div>
-      <div className="grid grid-cols-2 gap-x-4 gap-y-3.5 px-4 pb-4">
-        <div>
-          <p className="tt-label text-label text-muted-foreground">
-            {t.transactions.paid}
-          </p>
-          <MonoValue className="mt-0.5 block text-detail">
-            {paidAmount}
-          </MonoValue>
-        </div>
-        <div>
-          <p className="tt-label text-label text-muted-foreground">
-            /{unitLabels(displayUnit).primaryLower}
-          </p>
-          <span className="mt-0.5 flex items-center gap-1">
-            {priceLooksOffSpot && (
-              <span title={t.transactions.priceOffSpot} className="cursor-help">
-                <TriangleAlert
-                  className="h-3 w-3 text-destructive"
-                  aria-label={t.transactions.priceOffSpot}
-                />
-              </span>
-            )}
-            <MonoValue tone="muted" className="block text-detail">
-              {formatUsd(pricePerDisplayUnit)}
-            </MonoValue>
-          </span>
-        </div>
-        <div>
-          <p className="tt-label text-label text-muted-foreground">
-            {t.transactions.currentValue}
-          </p>
-          {valuation.currentValueUsd ? (
-            <MonoValue className="mt-0.5 block text-detail">
-              {formatUsd(valuation.currentValueUsd)}
-            </MonoValue>
-          ) : (
-            <span
-              title={blankValueReason}
-              className="cursor-help text-detail text-muted-foreground"
-            >
-              —
-            </span>
-          )}
-        </div>
-        <div>
-          <p className="tt-label text-label text-muted-foreground">
-            {t.transactions.pnl}
-          </p>
-          {valuation.pnlUsd ? (
-            <MonoValue
-              tone={isGain ? "gain" : "loss"}
-              signed
-              className="mt-0.5 block text-detail"
-            >
-              {formatUsd(valuation.pnlUsd)}
-            </MonoValue>
-          ) : (
-            <span
-              title={blankValueReason}
-              className="cursor-help text-detail text-muted-foreground"
-            >
-              —
-            </span>
-          )}
-        </div>
-      </div>
-      {expanded && (
-        <TransactionDetail
-          row={row}
-          currentPricePerTroyOz={currentPricePerTroyOz}
-          displayUnit={displayUnit}
-          spotPerDamlungOnDate={spotPerDamlungOnDate(
-            priceHistory,
-            row.transactionDate,
-          )}
-        />
-      )}
-    </Panel>
-  );
-}
-
-// Presentational. `rows`, mutation handlers, and failure toasts live in
-// DashboardContent. Local concerns only: the compact overflow budget
-// (5 desktop rows / 3 mobile cards, rest by scroll) and the row-click expander.
-export function TransactionHistory({
-  rows,
-  currentPricePerTroyOz,
-  priceHistory = [],
-  syncing = false,
-  displayUnit = "damlung",
-  onDelete,
-  onBulkDelete,
-  onAddClick,
-  onEditSuccess,
-  onCsvImported = () => {},
-}: {
-  rows: TransactionRow[];
-  currentPricePerTroyOz: string;
-  priceHistory?: ChartPoint[];
-  syncing?: boolean;
-  displayUnit?: GoldUnit;
-  onDelete: (row: TransactionRow) => void;
-  onBulkDelete: (ids: string[]) => Promise<boolean>;
-  onAddClick: () => void;
-  onEditSuccess: () => void;
-  onCsvImported?: () => void;
-}) {
-  const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [csvOpen, setCsvOpen] = useState(false);
-  const [bulkOpen, setBulkOpen] = useState(false);
-  const [bulkPending, setBulkPending] = useState(false);
-  // Selection is opt-in (behind "Select"). Leaving select mode clears ticks
-  // so a stale selection can't linger invisibly.
-  const [selectMode, setSelectMode] = useState(false);
-  const selection = useRowSelection();
-  const toggle = (id: string) =>
-    setExpandedId((current) => (current === id ? null : id));
-
-  const enterSelectMode = () => {
-    setExpandedId(null);
-    setSelectMode(true);
-  };
-  const exitSelectMode = () => {
-    setSelectMode(false);
-    selection.clear();
-  };
-
-  // Optimistic (temp-) rows have no server id — keep them unselectable so a
-  // bulk delete never ships a "temp-…" id.
-  const selectableIds = useMemo(
-    () => rows.filter((r) => !r.id.startsWith("temp-")).map((r) => r.id),
-    [rows],
-  );
-
-  async function handleBulkConfirm() {
-    const ids = selection.selectedArray;
-    if (ids.length === 0) return;
-    setBulkPending(true);
-    const ok = await onBulkDelete(ids);
-    setBulkPending(false);
-    if (ok) {
-      selection.clear();
-      setBulkOpen(false);
-    }
-  }
-
-  return (
-    <div>
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-        <div className="flex items-baseline gap-3">
-          <Link
-            href="/dashboard/transactions"
-            className="tt-heading tt-bracket text-body text-foreground transition-colors hover:text-primary"
-          >
-            {t.transactions.title} →
-          </Link>
-          {/* Inline copy: locale is en-only and dictionary.ts is frozen this phase. */}
-          <Link
-            href="/dashboard/transactions"
-            className="tt-label text-label text-muted-foreground transition-colors hover:text-foreground"
-          >
-            View all →
-          </Link>
-        </div>
-        <div className="flex items-center gap-2">
-          {(rows.length > 0 || selectMode) && (
-            // Kept mounted while select mode is active so Cancel stays
-            // reachable even if the last row is deleted mid-selection.
-            <button
-              type="button"
-              onClick={selectMode ? exitSelectMode : enterSelectMode}
-              aria-pressed={selectMode}
-              className={cn(
-                "tt-label border px-2.5 py-1.5 text-label transition-colors",
-                selectMode
-                  ? "border-foreground bg-foreground text-background"
-                  : "border-border text-muted-foreground hover:bg-accent hover:text-foreground",
-              )}
-            >
-              {selectMode ? "Cancel" : "Select"}
-            </button>
-          )}
-          <button
-            type="button"
-            onClick={() => setCsvOpen(true)}
-            className="tt-label border border-border px-2.5 py-1.5 text-label text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-          >
-            {t.csv.importExport}
-          </button>
-          <Magnetic strength={10}>
-            <Button size="sm" onClick={onAddClick}>
-              <Plus className="h-4 w-4" />
-              <span className="tt-label text-label">
-                {t.transactions.addTransaction}
-              </span>
-            </Button>
-          </Magnetic>
-        </div>
-      </div>
-      {syncing && (
-        <div
-          role="progressbar"
-          aria-label={t.transactions.syncing}
-          className="mb-3 h-0.5 w-full overflow-hidden bg-border"
-        >
-          <div className="h-full w-1/3 bg-primary motion-safe:animate-[sync-indeterminate_1.1s_ease-in-out_infinite] motion-reduce:w-full motion-reduce:opacity-40" />
-        </div>
-      )}
-      {selection.selectedCount > 0 && (
-        <BulkActionsBar
-          count={selection.selectedCount}
-          onClear={selection.clear}
-          onDelete={() => setBulkOpen(true)}
-          className="mb-3"
-        />
-      )}
-      <AllRowsContext.Provider value={rows}>
-        {/* ~5 body rows before the container scrolls (§4.1). */}
-        <div className="hidden max-h-68 overflow-auto rounded-lg border border-border bg-card md:block">
-          <table className="w-full min-w-140 border-collapse">
-            <thead className="sticky top-0 z-10 bg-card">
-              <tr className="tt-label border-b border-border text-label text-muted-foreground">
-                {selectMode && (
-                  <th className="py-3 pr-1 pl-4">
-                    <RowCheckbox
-                      checked={selection.allSelected(selectableIds)}
-                      onCheckedChange={() => selection.toggleAll(selectableIds)}
-                      label="Select all transactions"
-                    />
-                  </th>
-                )}
-                <th className="py-3 pr-3 pl-2 text-left font-medium">
-                  {t.transactions.date}
-                </th>
-                <th className="py-3 pr-3 text-left font-medium">
-                  {t.transactions.quantity}
-                </th>
-                <th className="py-3 pr-3 text-right font-medium">
-                  {t.transactions.paid}
-                </th>
-                <th className="py-3 pr-3 text-right font-medium">
-                  /{unitLabels(displayUnit).primaryLower}
-                </th>
-                <th className="py-3 pr-3 text-right font-medium">
-                  {t.transactions.currentValue}
-                </th>
-                <th className="py-3 pr-3 text-right font-medium">
-                  {t.transactions.pnl}
-                </th>
-                <th className="py-3 pr-4" />
-              </tr>
-            </thead>
-            <tbody className="px-4">
-              {rows.map((row) => (
-                <Row
-                  key={row.id}
-                  row={row}
-                  currentPricePerTroyOz={currentPricePerTroyOz}
-                  displayUnit={displayUnit}
-                  priceHistory={priceHistory}
-                  selectMode={selectMode}
-                  expanded={expandedId === row.id}
-                  selected={selection.selectedIds.has(row.id)}
-                  onToggleSelect={() => selection.toggle(row.id)}
-                  onToggle={() => toggle(row.id)}
-                  onDelete={onDelete}
-                  onEditSuccess={onEditSuccess}
-                />
-              ))}
-            </tbody>
-          </table>
-        </div>
-        {/* ~3 cards before this list scrolls inside the panel (§4.1). */}
-        <div className="flex max-h-115 flex-col gap-3 overflow-auto md:hidden">
-          {rows.map((row) => (
-            <TransactionCard
-              key={row.id}
-              row={row}
-              currentPricePerTroyOz={currentPricePerTroyOz}
-              displayUnit={displayUnit}
-              priceHistory={priceHistory}
-              selectMode={selectMode}
-              expanded={expandedId === row.id}
-              selected={selection.selectedIds.has(row.id)}
-              onToggleSelect={() => selection.toggle(row.id)}
-              onToggle={() => toggle(row.id)}
-              onDelete={onDelete}
-              onEditSuccess={onEditSuccess}
-            />
-          ))}
-        </div>
-      </AllRowsContext.Provider>
-      <BulkDeleteDialog
-        open={bulkOpen}
-        onOpenChange={(open) => !bulkPending && setBulkOpen(open)}
-        count={selection.selectedCount}
-        pending={bulkPending}
-        onConfirm={handleBulkConfirm}
-      />
-      <CsvDialog
-        open={csvOpen}
-        onOpenChange={setCsvOpen}
-        rows={rows}
-        onImported={onCsvImported}
-      />
-    </div>
   );
 }

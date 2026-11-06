@@ -48,8 +48,8 @@ describe("TransactionsView", () => {
     await user.click(within(group).getByRole("button", { name: "Sell" }));
 
     expect(screen.getByText("1 transaction")).toBeInTheDocument();
-    expect(screen.getAllByText(/Sell 10 chi/).length).toBeGreaterThan(0);
-    expect(screen.queryByText(/Buy 10 chi/)).not.toBeInTheDocument();
+    expect(document.body.textContent).toMatch(/Sold\s*10 chi/);
+    expect(document.body.textContent).not.toMatch(/Bought\s*10 chi/);
   });
 
   it("bulk-deletes every selected row with one DELETE to the bulk route", async () => {

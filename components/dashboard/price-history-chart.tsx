@@ -10,7 +10,6 @@ import {
 import { ReferenceLineCaption } from "@/components/charts/reference-line-caption";
 import type { ChartPoint } from "@/lib/calc/priceHistory";
 import { t } from "@/lib/i18n/dictionary";
-import { Panel } from "./panel";
 
 interface PriceHistoryChartProps {
   points: ChartPoint[];
@@ -67,19 +66,22 @@ export function PriceHistoryChart({
   });
 
   return (
-    <Panel size="lg">
-      <div className="mb-3 flex items-center gap-2">
-        <Link
-          href="/dashboard/price"
-          className="tt-heading tt-bracket text-body text-foreground transition-colors hover:text-primary"
-        >
-          {t.chart.title} →
-        </Link>
-        {marketClosed && (
-          <span className="tt-bracket tt-label text-label text-muted-foreground">
-            {t.chart.marketClosed}
-          </span>
-        )}
+    <section
+      aria-labelledby="price-history"
+      className="page page--plain px-5 pb-6 pt-5 sm:px-10 sm:pt-7"
+    >
+      <div className="-mb-9 max-w-[calc(100%-7rem)]">
+        <h2 id="price-history" className="tt-heading text-figure text-foreground">
+          <Link
+            href="/dashboard/price"
+            className="rounded-sm transition-colors duration-(--dur-micro) hover:text-gold"
+          >
+            {t.chart.title} <span aria-hidden="true">→</span>
+          </Link>
+        </h2>
+        <p className="mt-0.5 text-label text-faint">
+          {marketClosed ? t.chart.marketClosed : t.chart.perDamlungCaption}
+        </p>
       </div>
 
       <DetailedChart
@@ -97,6 +99,6 @@ export function PriceHistoryChart({
           {t.chart.marketClosedNote}
         </p>
       )}
-    </Panel>
+    </section>
   );
 }

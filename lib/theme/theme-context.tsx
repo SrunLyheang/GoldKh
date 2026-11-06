@@ -2,29 +2,31 @@
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 
-const STORAGE_KEY = "goldkh-theme";
+export const THEME_STORAGE_KEY = "goldkh-theme";
 
-// Adding a theme = one entry here + one `:root[data-theme="<id>"]` token
-// block in globals.css; components just read tokens. Default is
-// `liquid-glass`. The bare `:root` block is not selectable — it's the
-// pre-hydration fallback and the base other themes derive `--glass-*` from.
-// One-render swap on mount; dashboard is behind auth + "use client", so no
-// SSR consequence.
+// Two designed themes, not seven recolours: Night (default — the
+// notebook under a lamp) and Day (the same notebook by a window). Adding
+// a theme is one token block in globals.css plus one entry here.
 export const THEMES = [
-  { id: "liquid-glass", label: "Liquid Glass" },
-  { id: "ledger", label: "Ledger" },
-  { id: "midnight", label: "Midnight" },
-  { id: "emerald", label: "Emerald" },
-  { id: "coral", label: "Coral" },
-  { id: "porcelain", label: "Porcelain" },
+  { id: "night", label: "Night" },
+  { id: "day", label: "Day" },
 ] as const;
 
 export type ThemeId = (typeof THEMES)[number]["id"];
 
 const THEME_IDS = THEMES.map((theme) => theme.id) as readonly string[];
 
-function isThemeId(value: string | null): value is ThemeId {
+export function isThemeId(value: string | null): value is ThemeId {
   return value !== null && THEME_IDS.includes(value);
+}
+
+// Runs before first paint (see ThemeScript) so a Day reader never sees a
+// flash of Night. Kept tiny and dependency-free; storage may throw in
+// private modes, which simply leaves the server default (night).
+export const THEME_BOOT_SCRIPT = `try{var t=localStorage.getItem("${THEME_STORAGE_KEY}");if(t==="day"||t==="night")document.documentElement.setAttribute("data-theme",t)}catch(e){}`;
+
+export function ThemeScript() {
+  return <script dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />;
 }
 
 interface ThemeContextValue {
@@ -34,32 +36,35 @@ interface ThemeContextValue {
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
-// Client-only, localStorage-backed: renders the default, then reads the
-// stored preference in a mount effect (one-render swap, no SSR consequence).
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setThemeState] = useState<ThemeId>("liquid-glass");
+  const [theme, setThemeState] = useState<ThemeId>("night");
 
   useEffect(() => {
-    const stored = window.localStorage.getItem(STORAGE_KEY);
+    let stored: string | null = null;
+    try {
+      stored = window.localStorage.getItem(THEME_STORAGE_KEY);
+    } catch {
+      // Storage blocked — keep the default.
+    }
     if (isThemeId(stored)) {
-      // In an effect, not a lazy initializer: reading localStorage there
-      // would make the client's first paint disagree with the server.
+      // In an effect, not a lazy initializer, so the first client render
+      // matches the server's.
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setThemeState(stored);
     }
   }, []);
 
   useEffect(() => {
-    const root = document.documentElement;
-    root.setAttribute("data-theme", theme);
-    // Clear on change/unmount so the dashboard theme doesn't leak onto
-    // routes outside this provider (e.g. marketing pages).
-    return () => root.removeAttribute("data-theme");
+    document.documentElement.setAttribute("data-theme", theme);
   }, [theme]);
 
   function setTheme(next: ThemeId) {
     setThemeState(next);
-    window.localStorage.setItem(STORAGE_KEY, next);
+    try {
+      window.localStorage.setItem(THEME_STORAGE_KEY, next);
+    } catch {
+      // Non-fatal: the switch still applies for this visit.
+    }
   }
 
   return (

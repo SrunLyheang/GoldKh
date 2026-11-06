@@ -5,12 +5,14 @@ import { useEffect, useState } from "react";
 import { formatPercent, formatUsd } from "@/lib/format/money";
 import { PULSE_TONE, toneFromAmount } from "@/lib/format/tone";
 import type { CSSProperties } from "react";
-import { COUNT_UP_MS, SMOOTH_EASE } from "@/lib/ui/use-count-up";
+import { SMOOTH_EASE } from "@/lib/ui/use-count-up";
+
+const PNL_ROLL_MS = 900;
 import { useValuePulse } from "@/lib/ui/use-value-pulse";
 import { cn } from "@/lib/utils";
 import { SizedFigure } from "./count-up-value";
 import { MonoValue } from "./mono-value";
-import { Surface } from "./surface";
+import { t } from "@/lib/i18n/dictionary";
 
 // Unlike the other stat cards (which roll up from zero), the Unrealized
 // Gain/Loss figure rolls from the value the user last saw — persisted in
@@ -88,7 +90,9 @@ function PnlRollingFigure({
     setSizerText(previousStr.length > settledStr.length ? previousStr : settledStr);
 
     const controls = animate(previous, current, {
-      duration: COUNT_UP_MS / 1000,
+      // Under a second: long enough to read as "it moved", short enough
+      // not to hold up the person who just wants the number.
+      duration: PNL_ROLL_MS / 1000,
       ease: SMOOTH_EASE,
       onUpdate: (v) => setRolling(formatUsd(String(v))),
       onComplete: () => {
@@ -109,7 +113,7 @@ function PnlRollingFigure({
       signed
       sizerText={sizerText}
       displayText={display}
-      className="block text-figure font-semibold"
+      className="figure block text-figure-lg font-semibold"
     />
   );
 }
@@ -125,24 +129,31 @@ export function AnimatedPnlCard({
 }) {
   const tone = toneFromAmount(gainLossUsd);
   const pulsing = useValuePulse(gainLossUsd);
+  const words = tone === "gain" ? t.stat.up : t.stat.down;
 
+  // The bottom line of the position, ruled off as a total. The one figure
+  // that may move on arrival: it rolls from the value you saw last time to
+  // today's, because that change is the news.
   return (
-    <Surface
-      className={cn(
-        tone === "gain" && "bg-state-gain/6 border-l-2 border-l-state-gain",
-        tone === "loss" && "bg-destructive/6 border-l-2 border-l-destructive"
-      )}
+    <div
+      data-tone={tone}
+      className="ledger-sum mt-2 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 py-2.5"
     >
-      <p className="tt-label text-label text-muted-foreground">{label}</p>
-      <span
-        className={cn("mt-1.5 block", pulsing && "value-pulse-active")}
-        style={{ "--pulse-tone": PULSE_TONE[tone] ?? "var(--primary)" } as CSSProperties}
-      >
-        <PnlRollingFigure gainLossUsd={gainLossUsd} tone={tone} />
-      </span>
-      <MonoValue tone={tone} signed className="mt-1 block text-detail">
-        {formatPercent(gainLossPercent)}
-      </MonoValue>
-    </Surface>
+      <p className="font-serif text-figure text-foreground">
+        {words}
+        <span className="sr-only"> ({label})</span>
+      </p>
+      <p className="flex items-baseline gap-2">
+        <span
+          className={cn("inline-block px-1", pulsing && "value-pulse-active")}
+          style={{ "--pulse-tone": PULSE_TONE[tone] ?? "var(--gold-leaf)" } as CSSProperties}
+        >
+          <PnlRollingFigure gainLossUsd={gainLossUsd} tone={tone} />
+        </span>
+        <MonoValue tone={tone} signed className="text-detail font-medium">
+          {formatPercent(gainLossPercent)}
+        </MonoValue>
+      </p>
+    </div>
   );
 }

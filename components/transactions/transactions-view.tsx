@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
 import { cn } from "@/lib/utils";
+import { formatEntryDate } from "@/lib/format/datetime";
 import { useSectionEnter } from "@/components/motion/use-section-enter";
 import { formatQuantity, formatUsd } from "@/lib/format/money";
 import { notify } from "@/lib/ui/toast";
@@ -128,7 +129,7 @@ function ViewRow({
           }
         }}
         className={cn(
-          "cursor-pointer border-b border-(--glass-border-to) last:border-0 hover:bg-(--glow-color) focus:outline-none focus-visible:bg-(--glow-color)",
+          "cursor-pointer border-b border-(--glass-border-to) last:border-0 transition-colors duration-(--dur-micro) hover:bg-(--glow-color) focus:outline-none focus-visible:bg-(--glow-color)",
           d.isPending && "opacity-60",
           (expanded || selected) && "bg-(--glow-color)"
         )}
@@ -152,34 +153,31 @@ function ViewRow({
                 expanded && "rotate-180"
               )}
             />
-            <div
-              className={cn(
-                "flex h-6 w-6 shrink-0 items-center justify-center rounded-md",
-                d.isBuy ? "bg-state-gain/15" : "bg-destructive/15"
-              )}
-            >
-              {d.isBuy ? (
-                <ArrowDownLeft className="h-3.5 w-3.5 text-state-gain" />
-              ) : (
-                <ArrowUpRight className="h-3.5 w-3.5 text-destructive" />
-              )}
-            </div>
-            <span className="font-mono text-detail tabular-nums text-muted-foreground">
-              {row.transactionDate}
+            <span className="text-detail tabular-nums text-muted-foreground" title={row.transactionDate}>
+              {formatEntryDate(row.transactionDate)}
             </span>
           </div>
         </td>
-        <td className="py-3 pr-3 text-detail font-medium text-foreground">
-          {d.isBuy ? t.transactions.buy : t.transactions.sell}{" "}
-          {formatQuantity(row.quantity)} {d.unitLabel}
+        <td className="py-3 pr-3 text-body text-foreground">
+          <span className={cn("mr-1.5", !d.isBuy && "text-muted-foreground")}>
+            {d.isBuy ? t.recent.bought : t.recent.sold}
+          </span>
+          <span className="font-medium tabular-nums">
+            {formatQuantity(row.quantity)} {d.unitLabel}
+          </span>
+          {row.notes && (
+            <span className="hand ml-2 text-detail" title={row.notes}>
+              {row.notes.length > 42 ? `${row.notes.slice(0, 40)}…` : row.notes}
+            </span>
+          )}
         </td>
-        <td className="py-3 pr-3 text-right font-mono text-detail tabular-nums text-foreground">
+        <td className="py-3 pr-3 text-right text-detail tabular-nums text-foreground">
           {d.paidAmount}
         </td>
-        <td className="py-3 pr-3 text-right font-mono text-detail tabular-nums text-muted-foreground">
-          {formatUsd(d.pricePerDisplayUnit)}
+        <td className="py-3 pr-3 text-right text-detail tabular-nums text-muted-foreground">
+          {d.perUnitLabel}
         </td>
-        <td className="py-3 pr-3 text-right font-mono text-detail tabular-nums text-foreground">
+        <td className="py-3 pr-3 text-right text-detail tabular-nums text-foreground">
           {d.valuation.currentValueUsd ? (
             formatUsd(d.valuation.currentValueUsd)
           ) : (
@@ -188,7 +186,7 @@ function ViewRow({
             </span>
           )}
         </td>
-        <td className="py-3 pr-3 text-right font-mono text-detail tabular-nums">
+        <td className="py-3 pr-3 text-right text-detail tabular-nums">
           {d.valuation.pnlUsd ? (
             <MonoValue signed tone={d.isGain ? "gain" : "loss"} className="text-detail">
               {formatUsd(d.valuation.pnlUsd)}
@@ -256,11 +254,11 @@ function ViewCard({
   const d = getRowDisplay(row, currentPricePerTroyOz, displayUnit);
 
   return (
-    <Panel
+    <div
       className={cn(
-        "flex flex-col p-0",
+        "flex flex-col border-b border-(--glass-border-to) last:border-0",
         d.isPending && "opacity-60",
-        selected && "ring-1 ring-primary/40"
+        selected && "bg-(--glow-color)"
       )}
     >
       <div
@@ -274,7 +272,7 @@ function ViewCard({
             onToggle();
           }
         }}
-        className="flex min-h-11 cursor-pointer items-center justify-between gap-2 px-4 py-3.5 focus:outline-none focus-visible:bg-(--glow-color)"
+        className="flex min-h-14 cursor-pointer items-center justify-between gap-2 px-1 py-2.5 focus:outline-none focus-visible:bg-(--glow-color)"
       >
         <div className="flex min-w-0 items-center gap-2.5">
           {selectMode && !d.isPending && (
@@ -284,29 +282,31 @@ function ViewCard({
               label={`Select ${row.type} ${row.quantity} ${row.unit}`}
             />
           )}
-          <div
-            className={cn(
-              "flex h-7 w-7 shrink-0 items-center justify-center rounded-md",
-              d.isBuy ? "bg-state-gain/15" : "bg-destructive/15"
-            )}
-          >
-            {d.isBuy ? (
-              <ArrowDownLeft className="h-4 w-4 text-state-gain" />
-            ) : (
-              <ArrowUpRight className="h-4 w-4 text-destructive" />
-            )}
-          </div>
           <div className="min-w-0">
-            <p className="truncate text-body font-medium text-foreground">
-              {d.isBuy ? t.transactions.buy : t.transactions.sell}{" "}
-              {formatQuantity(row.quantity)} {d.unitLabel}
+            <p className="truncate text-body text-foreground">
+              <span className={cn(!d.isBuy && "text-muted-foreground")}>
+                {d.isBuy ? t.recent.bought : t.recent.sold}
+              </span>{" "}
+              <span className="font-medium tabular-nums">
+                {formatQuantity(row.quantity)} {d.unitLabel}
+              </span>
             </p>
-            <MonoValue tone="muted" className="text-label">
-              {row.transactionDate}
-            </MonoValue>
+            <p className="truncate text-label text-faint tabular-nums">
+              {formatEntryDate(row.transactionDate)} · {d.paidAmount}
+              {row.notes && <span className="hand ml-1.5 text-label"> {row.notes}</span>}
+            </p>
           </div>
         </div>
-        <div className="flex shrink-0 items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+        <div className="flex shrink-0 items-center gap-1" onClick={(e) => e.stopPropagation()}>
+          {d.valuation.pnlUsd ? (
+            <MonoValue signed tone={d.isGain ? "gain" : "loss"} className="text-detail font-medium">
+              {formatUsd(d.valuation.pnlUsd)}
+            </MonoValue>
+          ) : (
+            <span className="text-label text-faint" title={d.blankValueReason}>
+              {row.currency !== "USD" ? t.recent.inRiel : t.recent.soldNote}
+            </span>
+          )}
           {!d.isPending && (
             <RowActions
               row={row}
@@ -314,25 +314,6 @@ function ViewCard({
               onDelete={onDelete}
               onEditSuccess={onEditSuccess}
             />
-          )}
-          <ChevronDown
-            className={cn("h-4 w-4 text-muted-foreground transition-transform", expanded && "rotate-180")}
-          />
-        </div>
-      </div>
-      <div className="grid grid-cols-2 gap-x-4 gap-y-3.5 px-4 pb-4">
-        <div>
-          <p className="tt-label text-label text-muted-foreground">{t.transactions.paid}</p>
-          <MonoValue className="mt-0.5 block text-detail">{d.paidAmount}</MonoValue>
-        </div>
-        <div>
-          <p className="tt-label text-label text-muted-foreground">{t.transactions.pnl}</p>
-          {d.valuation.pnlUsd ? (
-            <MonoValue signed tone={d.isGain ? "gain" : "loss"} className="mt-0.5 block text-detail">
-              {formatUsd(d.valuation.pnlUsd)}
-            </MonoValue>
-          ) : (
-            <span className="text-detail text-muted-foreground">—</span>
           )}
         </div>
       </div>
@@ -344,7 +325,7 @@ function ViewCard({
           spotPerDamlungOnDate={spotPerDamlungOnDate(priceHistory, row.transactionDate)}
         />
       )}
-    </Panel>
+    </div>
   );
 }
 
@@ -468,20 +449,8 @@ export function TransactionsView({
   const toggle = (id: string) =>
     setExpandedId((cur) => (cur === id ? null : id));
 
-  return (
-    <div
-      ref={revealRef}
-      style={revealStyle}
-      className={cn("flex flex-col gap-5", revealClass)}
-    >
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <Link
-          href="/dashboard"
-          className="tt-label text-label text-muted-foreground transition-colors hover:text-foreground"
-        >
-          ← {t.chart.backToDashboard}
-        </Link>
-        <div className="flex items-center gap-2">
+  const actions = (
+    <div className="flex items-center gap-1">
           {(visible.length > 0 || selectMode) && (
             // Inline copy: locale is en-only and dictionary.ts is frozen
             // this phase (plan §11 Phase 0). Kept mounted while select mode
@@ -492,10 +461,10 @@ export function TransactionsView({
               onClick={selectMode ? exitSelectMode : enterSelectMode}
               aria-pressed={selectMode}
               className={cn(
-                "tt-label rounded-full border px-2.5 py-1.5 text-label transition-colors",
+                "press inline-flex min-h-10 items-center rounded-md px-3.5 text-detail font-medium",
                 selectMode
-                  ? "border-foreground bg-foreground text-background"
-                  : "border-(--glass-border-to) text-muted-foreground hover:bg-(--glow-color) hover:text-foreground"
+                  ? "bg-foreground text-background"
+                  : "text-muted-foreground hover:bg-(--glow-color) hover:text-foreground"
               )}
             >
               {selectMode ? "Cancel" : "Select"}
@@ -504,18 +473,31 @@ export function TransactionsView({
           <button
             type="button"
             onClick={() => setCsvOpen(true)}
-            className="tt-label rounded-full border border-(--glass-border-to) px-2.5 py-1.5 text-label text-muted-foreground transition-colors hover:bg-(--glow-color) hover:text-foreground"
+            className="press inline-flex min-h-10 items-center rounded-md px-3.5 text-detail font-medium text-gold hover:bg-(--glow-color)"
           >
             {t.csv.importExport}
           </button>
         </div>
-      </div>
+  );
 
-      <h1 className="tt-heading tt-bracket text-emphasis text-foreground">
-        {t.transactions.title}
-      </h1>
-
-      <Panel size="lg" className="flex flex-col gap-4">
+  return (
+    <div
+      ref={revealRef}
+      style={revealStyle}
+      className={cn("flex flex-col gap-5", revealClass)}
+    >
+      <Panel size="lg" className="page--plain flex flex-col gap-5 rounded-tl-none max-md:rounded-tl-xl">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h1 className="tt-heading text-figure-lg text-foreground">
+              {t.transactions.title}
+            </h1>
+            <p className="mt-1 text-detail text-muted-foreground">
+              {t.recent.subtitle(transactions.length)}
+            </p>
+          </div>
+          {actions}
+        </div>
         <TransactionFilters
           value={form}
           onChange={setForm}
@@ -529,9 +511,9 @@ export function TransactionsView({
         ) : (
           <>
             <AllRowsContext.Provider value={transactions}>
-              <div className="hidden overflow-x-auto rounded-lg border border-(--glass-border-to) md:block">
+              <div className="hidden overflow-x-auto md:block">
                 <table className="w-full min-w-140 border-collapse">
-                  <thead className="glass-chrome sticky top-0 z-10">
+                  <thead className="sticky top-0 z-10 bg-page">
                     <tr className="border-b border-(--glass-border-to)">
                       {selectMode && (
                         <th className="py-3 pr-1 pl-4">
@@ -551,16 +533,16 @@ export function TransactionsView({
                         dir={sortDir}
                         onClick={() => onHeaderClick("date")}
                       />
-                      <th className="py-3 pr-3 text-left tt-label text-label font-medium text-muted-foreground">
+                      <th className="py-3 pr-3 text-left text-label font-medium text-faint">
                         {t.transactions.quantity}
                       </th>
-                      <th className="py-3 pr-3 text-right tt-label text-label font-medium text-muted-foreground">
+                      <th className="py-3 pr-3 text-right text-label font-medium text-faint">
                         {t.transactions.paid}
                       </th>
-                      <th className="py-3 pr-3 text-right tt-label text-label font-medium text-muted-foreground">
+                      <th className="py-3 pr-3 text-right text-label font-medium text-faint">
                         /{displayUnit}
                       </th>
-                      <th className="py-3 pr-3 text-right tt-label text-label font-medium text-muted-foreground">
+                      <th className="py-3 pr-3 text-right text-label font-medium text-faint">
                         {t.transactions.currentValue}
                       </th>
                       <SortHeader
@@ -593,7 +575,7 @@ export function TransactionsView({
                   </tbody>
                 </table>
               </div>
-              <div className="flex flex-col gap-3 md:hidden">
+              <div className="-mx-1 flex flex-col md:hidden">
                 {visible.map((row) => (
                   <ViewCard
                     key={row.id}
@@ -622,7 +604,7 @@ export function TransactionsView({
             count={visibleSelectedIds.length}
             onClear={selection.clear}
             onDelete={() => setBulkOpen(true)}
-            className="shadow-lg"
+            className="shadow-(--shadow-float)"
           />
         </div>
       )}

@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/loading";
-import { Magnetic } from "@/components/motion/magnetic";
 import { cn } from "@/lib/utils";
 import { t } from "@/lib/i18n/dictionary";
 import { requestPriceRefresh } from "@/lib/price/requestPriceRefresh";
@@ -102,14 +101,13 @@ export function RefreshButton({
 
   // Magnetic self-gates to a no-op on touch / reduced-motion.
   return (
-    <Magnetic strength={10}>
       <Button
-        variant="secondary"
+        variant="ghost"
         size="sm"
         aria-disabled={busy || inCooldown || marketClosed}
         className={cn(
-          "border-(--glass-border-to) bg-(--glass-bg) hover:bg-(--glow-color)",
-          (busy || inCooldown || marketClosed) && "opacity-50",
+          "press -mr-2 min-h-11 gap-1.5 px-3 text-gold hover:bg-(--glow-color) hover:text-gold",
+          (busy || inCooldown || marketClosed) && "cursor-not-allowed opacity-55",
         )}
         title={
           marketClosed
@@ -121,8 +119,7 @@ export function RefreshButton({
         onClick={handleClick}
       >
         {busy ? <Spinner size="xs" /> : <RefreshCw className="h-4 w-4" />}
-        <span className="tt-label text-label">{t.refresh.label}</span>
+        <span className="text-detail font-medium">{t.refresh.label}</span>
       </Button>
-    </Magnetic>
   );
 }

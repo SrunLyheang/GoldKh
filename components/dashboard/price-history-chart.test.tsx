@@ -22,7 +22,7 @@ const points: ChartPoint[] = [
 describe("PriceHistoryChart section-title link", () => {
   it("links the section title to /dashboard/price", () => {
     render(<PriceHistoryChart points={points} />);
-    const link = screen.getByRole("link", { name: /price history/i });
+    const link = screen.getByRole("link", { name: /gold over time/i });
     expect(link).toHaveAttribute("href", "/dashboard/price");
   });
 

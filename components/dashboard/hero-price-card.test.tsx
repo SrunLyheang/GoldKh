@@ -30,11 +30,11 @@ describe("HeroPriceCard", () => {
     expect(screen.getByText(/\$282\.12\/chi/)).toBeInTheDocument();
   });
 
-  it('labels a fresh price "Live"', () => {
+  it('labels a fresh price "Up to date"', () => {
     renderCard({ isStale: false });
     // The "[ ]" framing is pseudo-element content driven by theme tokens,
     // so it is not part of the DOM text — assert the word and timestamp.
-    expect(screen.getByText("Live")).toBeInTheDocument();
+    expect(screen.getByText("Up to date")).toBeInTheDocument();
     expect(screen.getByText(/as of/)).toBeInTheDocument();
   });
 
@@ -54,10 +54,10 @@ describe("HeroPriceCard", () => {
     }
   });
 
-  it('labels a stale price "Stale", not "Live"', () => {
+  it('labels a stale price "Last known price", not "Up to date"', () => {
     renderCard({ isStale: true });
-    expect(screen.getByText("Stale")).toBeInTheDocument();
-    expect(screen.queryByText("Live")).not.toBeInTheDocument();
+    expect(screen.getByText("Last known price")).toBeInTheDocument();
+    expect(screen.queryByText("Up to date")).not.toBeInTheDocument();
   });
 
   it("shows a market-closed note when the market is closed", () => {
@@ -77,7 +77,7 @@ describe("HeroPriceCard", () => {
   it("shows the spot-vs-retail-premium disclaimer", () => {
     renderCard();
     expect(
-      screen.getByText(/price differently from the global spot rate/)
+      screen.getByText(/Gold shops in Cambodia set their own/)
     ).toBeInTheDocument();
   });
 

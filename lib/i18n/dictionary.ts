@@ -5,8 +5,8 @@
 // `t` is imported directly and there is no runtime locale plumbing.
 const en = {
   nav: {
-    dashboard: "Dashboard",
-    transactions: "Transactions",
+    dashboard: "Today",
+    transactions: "Ledger",
     price: "Price",
     insights: "Insights",
     settings: "Settings",
@@ -16,12 +16,14 @@ const en = {
   },
   hero: {
     pricePer: (unit: string) => `Price per ${unit}`,
-    live: "Live",
-    stale: "Stale",
+    goldToday: "Gold today",
+    per: (unit: string) => `a ${unit}`,
+    live: "Up to date",
+    stale: "Last known price",
     asOf: (time: string) => `as of ${time}`,
     marketClosed: "Market closed — prices resume Monday.",
     disclaimer:
-      "Cambodian gold shops price differently from the global spot rate shown here, so your local buying/selling price may not match exactly.",
+      "This is the world spot price. Gold shops in Cambodia set their own buy and sell prices, so yours may differ a little.",
   },
   unit: { chi: "Chi", damlung: "Damlung" },
   refresh: {
@@ -34,17 +36,20 @@ const en = {
     marketClosed: "Market's closed — prices resume Monday",
   },
   stat: {
-    sectionLabel: "Position",
-    totalHoldings: "Total Holdings",
-    averageCost: "Average Cost",
-    marketValue: "Market Value",
-    gainLoss: "Unrealized Gain/Loss",
+    sectionLabel: "What you hold",
+    totalHoldings: "In the notebook",
+    averageCost: "You paid, on average",
+    costBasis: "Cost of what you hold",
+    marketValue: "Worth today",
+    gainLoss: "Up or down so far",
+    up: "Up so far",
+    down: "Down so far",
     atCurrentSpot: "at current spot",
     per: (unit: string) => `per ${unit}`,
   },
   transactions: {
     title: "Transaction History",
-    addTransaction: "Add transaction",
+    addTransaction: "Write an entry",
     date: "Date",
     quantity: "Quantity",
     paid: "Paid",
@@ -106,15 +111,29 @@ const en = {
       network: "No connection. Check your internet and try again.",
     },
   },
+  recent: {
+    title: "Recent entries",
+    subtitle: (count: number) =>
+      count === 1 ? "1 entry in the notebook" : `${count} entries in the notebook`,
+    bought: "Bought",
+    sold: "Sold",
+    at: "at",
+    inRiel: "in riel",
+    soldNote: "sold",
+    openLedger: "Open the ledger",
+    allEntries: (count: number) => `All ${count} entries in the ledger`,
+    write: "Write an entry",
+  },
   empty: {
-    title: "No holdings yet",
+    title: "A clean page",
     description:
-      "Record your first buy to start tracking your gold against the live spot price.",
+      "Write down the gold you already have, and this page keeps the sums for you.",
     steps: [
-      "Add a buy — enter what you paid and how much gold.",
-      "We value it against the live spot price, updated through the day.",
-      "See your holdings, average cost, and unrealized gain or loss.",
+      "Write an entry for each buy: how much gold, and what you paid.",
+      "GoldKh values it against the world spot price through the day.",
+      "Today's page shows what you hold, what it cost and what it's worth.",
     ],
+    example: "e.g. 3 Feb — bought 2 chi at $455 a chi, for the wedding",
   },
   chart: {
     notEnoughHistory:
@@ -123,7 +142,8 @@ const en = {
     marketClosedNote:
       "Showing the last price from Friday's close. Trading resumes Monday.",
     // Detailed price chart (/dashboard/price) + the shared DetailedChart.
-    title: "Price History",
+    title: "Gold over time",
+    perDamlungCaption: "World spot price, per damlung",
     spotPrice: "Spot price",
     currentPrice: "Current price",
     asOf: (time: string) => `as of ${time}`,

@@ -6,11 +6,8 @@ import { formatPercent, formatUsd } from "@/lib/format/money";
 import { PULSE_TONE, toneFromAmount } from "@/lib/format/tone";
 import { t } from "@/lib/i18n/dictionary";
 import { cn } from "@/lib/utils";
-import { COUNT_UP_MS } from "@/lib/ui/use-count-up";
 import { useValuePulse } from "@/lib/ui/use-value-pulse";
-import { CountUpValue } from "./count-up-value";
 import { MonoValue } from "./mono-value";
-import { Surface } from "./surface";
 
 interface RealizedPanelProps {
   realizedUsd: string;
@@ -65,62 +62,55 @@ export function RealizedPanel({
   const pulsing = useValuePulse(realizedUsd);
 
   return (
-    <Surface size="lg">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between sm:gap-8">
-        <div className="min-w-0">
-          <button
-            type="button"
-            onClick={toggle}
-            aria-expanded={!collapsed}
-            aria-controls={collapsed ? undefined : bodyId}
-            aria-label={collapsed ? t.realized.show : t.realized.hide}
-            className="-m-1 flex items-center gap-1.5 rounded p-1 outline-none transition-colors hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50"
-          >
-            <ChevronDown
-              className={cn(
-                "h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform",
-                !collapsed && "rotate-180",
-              )}
-            />
-            <p className="tt-label text-label text-muted-foreground">
-              <span className="tt-bracket">{t.realized.eyebrow}</span>{" "}
-              {t.realized.fromSales(saleCount)}
-            </p>
-          </button>
-          {!collapsed && (
-            <div id={bodyId}>
-              <span
-                className={cn("mt-1.5 block", pulsing && "value-pulse-active")}
-                style={{ "--pulse-tone": PULSE_TONE[tone] ?? "var(--primary)" } as CSSProperties}
-              >
-                {/* Isolated in CountUpValue so the per-frame roll doesn't
-                    re-render this glass panel. */}
-                <CountUpValue
-                  target={Number(realizedUsd)}
-                  from={0}
-                  durationMs={COUNT_UP_MS}
-                  format={(value) => formatUsd(String(value))}
-                  tone={tone}
-                  signed
-                  className="block text-display font-semibold tracking-tight leading-tight sm:text-display-lg"
-                />
-              </span>
-              <MonoValue
-                tone={isBreakEven ? "muted" : tone}
-                signed
-                className="mt-1 block text-detail"
-              >
-                {formatPercent(realizedPercent)}
-              </MonoValue>
-            </div>
-          )}
-        </div>
+    <aside
+      aria-label={`${t.realized.eyebrow} ${t.realized.fromSales(saleCount)}`}
+      className="mt-6"
+    >
+      {/* A note in the margin, in the user's own hand: money already
+          made (or lost) on gold that has left the notebook. It can be
+          folded away for a shared screen. */}
+      <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+        <button
+          type="button"
+          onClick={toggle}
+          aria-expanded={!collapsed}
+          aria-controls={collapsed ? undefined : bodyId}
+          aria-label={collapsed ? t.realized.show : t.realized.hide}
+          className="press -mx-1 inline-flex min-h-9 items-center gap-1.5 rounded-md px-1 text-detail text-muted-foreground hover:text-foreground"
+        >
+          <ChevronDown
+            aria-hidden="true"
+            className={cn(
+              "h-4 w-4 shrink-0 transition-transform duration-(--dur-micro)",
+              collapsed && "-rotate-90",
+            )}
+          />
+          <span className="hand text-body">
+            {t.realized.eyebrow} {t.realized.fromSales(saleCount)}
+          </span>
+        </button>
         {!collapsed && (
-          <p className="max-w-[34ch] text-label leading-relaxed text-muted-foreground sm:text-right">
-            {t.realized.caption}
-          </p>
+          <span
+            id={bodyId}
+            className="inline-flex items-baseline gap-2 text-emphasis"
+          >
+            <span
+              className={cn("inline-block px-1", pulsing && "value-pulse-active")}
+              style={{ "--pulse-tone": PULSE_TONE[tone] ?? "var(--gold-leaf)" } as CSSProperties}
+            >
+              <MonoValue tone={tone} signed className="font-sans font-semibold">
+                {formatUsd(realizedUsd)}
+              </MonoValue>
+            </span>
+            <MonoValue tone={isBreakEven ? "muted" : tone} signed className="font-sans text-detail">
+              {formatPercent(realizedPercent)}
+            </MonoValue>
+          </span>
         )}
       </div>
-    </Surface>
+      {!collapsed && (
+        <p className="mt-1 max-w-[46ch] text-label text-faint">{t.realized.caption}</p>
+      )}
+    </aside>
   );
 }

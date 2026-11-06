@@ -1,16 +1,12 @@
+import type { CSSProperties } from "react";
 import type { GoldUnit } from "@/lib/calc/units";
 import { formatClockTime } from "@/lib/format/datetime";
 import { formatUsd } from "@/lib/format/money";
 import { t } from "@/lib/i18n/dictionary";
 import { unitLabels } from "@/lib/i18n/unit-labels";
-import type { CSSProperties } from "react";
-import { COUNT_UP_MS } from "@/lib/ui/use-count-up";
 import { useValuePulse } from "@/lib/ui/use-value-pulse";
 import { cn } from "@/lib/utils";
-import { SparkleField } from "@/components/effects/sparkle-field";
-import { CountUpValue } from "./count-up-value";
 import { MonoValue } from "./mono-value";
-import { Surface } from "./surface";
 import { RefreshButton } from "./refresh-button";
 import { SegmentedControl } from "./segmented-control";
 
@@ -26,6 +22,11 @@ interface HeroPriceCardProps {
   onDisplayUnitChange?: (unit: GoldUnit) => void;
 }
 
+// "Gold today" — the first thing written on today's page. It sits on the
+// page (no card of its own): a dated status line, the price as the
+// page's headline, and the same price in the other units underneath.
+// Freshness is a quiet line, never an alarm: a stale price is a normal
+// state between shop visits (DESIGN.md § Degraded & stale states).
 export function HeroPriceCard({
   pricePerTroyOz,
   pricePerChi,
@@ -43,90 +44,76 @@ export function HeroPriceCard({
   const isChi = displayUnit === "chi";
   const headlinePrice = isChi ? pricePerChi : pricePerDamlung;
   const secondaryPrice = isChi ? pricePerDamlung : pricePerChi;
-  const { primary: primaryUnitLabel, secondaryLower: secondaryUnitLabel } =
-    unitLabels(displayUnit);
+  const {
+    primary: primaryUnitLabel,
+    primaryLower,
+    secondaryLower: secondaryUnitLabel,
+  } = unitLabels(displayUnit);
 
-  // Trigger on the unit-independent spot so a unit toggle doesn't pulse.
+  // Keyed on the unit-independent spot so a unit toggle doesn't pulse.
   const pulsing = useValuePulse(pricePerTroyOz);
 
   return (
-    <Surface size="lg" variant="accent" tilt className="relative overflow-hidden">
-      <div className="absolute inset-x-0 top-0 h-1 bg-primary" />
-      <SparkleField
-        className="pointer-events-none absolute inset-0"
-        style={{ opacity: "calc(var(--sparkle-opacity) * 0.6)" }}
-      />
-      <div className="relative z-10 flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between sm:gap-8">
-        <div>
-          <div className="flex flex-wrap items-center gap-2.5">
-            <p className="tt-label text-label text-muted-foreground">
-              {t.hero.pricePer(primaryUnitLabel)}
-            </p>
-            {onDisplayUnitChange && (
-              <SegmentedControl
-                ariaLabel="Display unit"
-                value={displayUnit}
-                onChange={onDisplayUnitChange}
-                options={[
-                  { value: "chi", label: t.unit.chi },
-                  { value: "damlung", label: t.unit.damlung },
-                ]}
-              />
+    <section aria-labelledby="gold-today">
+      <div className="flex min-h-11 flex-wrap items-center justify-between gap-x-4 gap-y-1">
+        <p className="flex items-center gap-2 text-label text-muted-foreground">
+          <span
+            aria-hidden="true"
+            className={cn(
+              "inline-block h-2 w-2 rounded-full",
+              isStale ? "bg-faint" : "bg-state-gain",
             )}
-          </div>
-          {/* The price readout is the dashboard's page title — the only h1
-              on the route. The small label above names the unit it's in. */}
-          <h1
-            className={cn("mt-1.5 block", pulsing && "value-pulse-active")}
-            style={{ "--pulse-tone": "var(--primary)" } as CSSProperties}
-          >
-            {/* Rolls from zero to the live price on every page entry. A
-                unit toggle afterwards snaps (see useCountUp's `from`
-                mode). Isolated in CountUpValue so the per-frame roll
-                doesn't re-render the tilting glass hero card. */}
-            <CountUpValue
-              target={Number(headlinePrice)}
-              from={0}
-              durationMs={COUNT_UP_MS}
-              format={(value) => formatUsd(String(value))}
-              className="tt-display block text-display font-semibold tracking-tight leading-tight sm:text-display-lg"
-            />
-          </h1>
-          <MonoValue tone="muted" className="mt-1.5 block text-detail">
-            {formatUsd(pricePerTroyOz)}/oz · {formatUsd(secondaryPrice)}/
-            {secondaryUnitLabel}
-          </MonoValue>
-        </div>
-        <div className="flex shrink-0 flex-col items-start gap-2.5 sm:items-end">
-          <div className="flex items-center gap-1.5">
-            <span
-              className={
-                isStale
-                  ? "h-1.5 w-1.5 bg-muted-foreground"
-                  : "h-1.5 w-1.5 bg-state-gain"
-              }
-            />
-            <MonoValue tone="muted" className="tt-label text-label">
-              <span className="tt-bracket">
-                {isStale ? t.hero.stale : t.hero.live}
-              </span>{" "}
-              {t.hero.asOf(timeLabel)}
-            </MonoValue>
-          </div>
-          {marketClosed && (
-            <MonoValue tone="muted" className="tt-label text-label">
-              {t.hero.marketClosed}
-            </MonoValue>
-          )}
-          <RefreshButton
-            cooldownEndsAt={refreshCooldownEndsAt}
-            marketClosed={marketClosed}
           />
-        </div>
+          <span className="font-medium text-foreground/90">
+            {isStale ? t.hero.stale : t.hero.live}
+          </span>
+          <span>{t.hero.asOf(timeLabel)}</span>
+        </p>
+        <RefreshButton
+          cooldownEndsAt={refreshCooldownEndsAt}
+          marketClosed={marketClosed}
+        />
       </div>
-      <p className="relative z-10 mt-5 border-t border-(--glass-border-to) pt-4 text-label text-muted-foreground">
+      {marketClosed && (
+        <p className="text-label text-muted-foreground">{t.hero.marketClosed}</p>
+      )}
+
+      <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
+        <h2 id="gold-today" className="tt-heading text-figure text-foreground">
+          {t.hero.goldToday}
+        </h2>
+        {onDisplayUnitChange && (
+          <SegmentedControl
+            ariaLabel="Display unit"
+            value={displayUnit}
+            onChange={onDisplayUnitChange}
+            options={[
+              { value: "chi", label: t.unit.chi },
+              { value: "damlung", label: t.unit.damlung },
+            ]}
+          />
+        )}
+      </div>
+      <p className="sr-only">{t.hero.pricePer(primaryUnitLabel)}</p>
+
+      {/* The price is the page's title — the only h1 on the route. */}
+      <h1
+        className={cn("mt-1 flex flex-wrap items-baseline gap-x-3", pulsing && "value-pulse-active")}
+        style={{ "--pulse-tone": "var(--gold-leaf)" } as CSSProperties}
+      >
+        <span className="tt-display text-display font-semibold leading-[1.05] text-foreground sm:text-display-lg">
+          {formatUsd(headlinePrice)}
+        </span>
+        <span className="font-serif text-emphasis text-muted-foreground">
+          {t.hero.per(primaryLower)}
+        </span>
+      </h1>
+      <MonoValue tone="muted" className="mt-2 block text-detail">
+        {formatUsd(secondaryPrice)}/{secondaryUnitLabel} · {formatUsd(pricePerTroyOz)}/oz
+      </MonoValue>
+      <p className="mt-3 max-w-[52ch] text-label leading-relaxed text-faint">
         {t.hero.disclaimer}
       </p>
-    </Surface>
+    </section>
   );
 }

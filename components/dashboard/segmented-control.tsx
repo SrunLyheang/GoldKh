@@ -7,11 +7,9 @@ interface SegmentedControlOption<T extends string> {
   label: string;
 }
 
-// The one shared segmented control — a generic role="group" shape with
-// pressed-state styling and sizing, kept separate from its options so a
-// style change lands in a single place. Every toggle inherits this glass
-// look: the unit toggle, transaction filters, what-if tabs, the settings
-// preferences rows, and the chart presets.
+// A two-or-three way switch set into the page (a well, one step below the
+// paper). The chosen option is a raised slip of paper with gold ink.
+// Switched tens of times a day, so it changes colour only — no slide.
 export function SegmentedControl<T extends string>({
   options,
   value,
@@ -30,26 +28,29 @@ export function SegmentedControl<T extends string>({
       role="group"
       aria-label={ariaLabel}
       className={cn(
-        "inline-flex shrink-0 items-center gap-0.5 rounded-lg border border-(--glass-border-to) bg-(--glass-bg) p-0.5",
-        className
+        "inline-flex shrink-0 items-center gap-0.5 rounded-lg bg-sunk p-1",
+        className,
       )}
     >
-      {options.map((option) => (
-        <button
-          key={option.value}
-          type="button"
-          onClick={() => onChange(option.value)}
-          aria-pressed={value === option.value}
-          className={cn(
-            "tt-label inline-flex min-h-8 items-center rounded-md px-2.5 py-1 text-label transition-colors",
-            value === option.value
-              ? "bg-primary text-primary-foreground"
-              : "text-muted-foreground hover:text-foreground"
-          )}
-        >
-          {option.label}
-        </button>
-      ))}
+      {options.map((option) => {
+        const on = value === option.value;
+        return (
+          <button
+            key={option.value}
+            type="button"
+            onClick={() => onChange(option.value)}
+            aria-pressed={on}
+            className={cn(
+              "press inline-flex min-h-9 items-center rounded-md px-3 text-detail font-medium",
+              on
+                ? "bg-popover text-foreground shadow-[0_1px_2px_rgb(0_0_0/0.18)]"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            {option.label}
+          </button>
+        );
+      })}
     </div>
   );
 }

@@ -8,7 +8,7 @@ import { EmptyState } from "./empty-state";
 describe("EmptyState", () => {
   it("renders the empty-holdings prompt", () => {
     render(<EmptyState onAddClick={() => {}} />);
-    expect(screen.getByText("No holdings yet")).toBeInTheDocument();
+    expect(screen.getByText("A clean page")).toBeInTheDocument();
   });
 
   it("calls onAddClick when the button is clicked", async () => {
@@ -16,7 +16,7 @@ describe("EmptyState", () => {
     const user = userEvent.setup();
     render(<EmptyState onAddClick={onAddClick} />);
 
-    await user.click(screen.getByRole("button", { name: /add transaction/i }));
+    await user.click(screen.getByRole("button", { name: /write an entry/i }));
 
     expect(onAddClick).toHaveBeenCalledOnce();
   });
