@@ -22,9 +22,7 @@ interface InsightsContentProps {
 }
 
 // Client shell for the Insights route: runs every pure calc once and
-// hands each section its slice. All four sections are a Panel size="lg"
-// in the dashboard's 32px block rhythm with a .tt-heading .tt-bracket
-// header.
+// hands each section its slice, laid out as notebook pages.
 export function InsightsContent({
   transactions,
   snapshots,

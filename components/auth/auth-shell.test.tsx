@@ -1,12 +1,7 @@
 // @vitest-environment jsdom
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { AuthShell } from "./auth-shell";
-
-// The mascot panel pulls in motion + pointer listeners; not what this covers.
-vi.mock("./auth-mascot", () => ({
-  AuthMascot: () => <div data-testid="auth-mascot" />,
-}));
 
 describe("AuthShell", () => {
   it("renders the heading, subheading and form children", () => {

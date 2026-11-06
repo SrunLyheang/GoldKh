@@ -147,7 +147,7 @@ function Fields({
             onChange={(e) =>
               set({ amountPaid: sanitizeDecimal(e.target.value) })
             }
-            className="w-32 pl-5 font-mono tabular-nums"
+            className="w-32 pl-5 tabular-nums"
           />
         </div>
       </label>
@@ -160,7 +160,7 @@ function Fields({
             type="date"
             value={value.dateFrom}
             onChange={(e) => set({ dateFrom: e.target.value })}
-            className="w-35 min-w-0 font-mono"
+            className="w-35 min-w-0"
           />
           <span className="text-muted-foreground">–</span>
           <Input
@@ -168,7 +168,7 @@ function Fields({
             type="date"
             value={value.dateTo}
             onChange={(e) => set({ dateTo: e.target.value })}
-            className="w-35 min-w-0 font-mono"
+            className="w-35 min-w-0"
           />
         </div>
       </div>
@@ -182,7 +182,7 @@ function Fields({
             placeholder="0"
             value={value.quantity}
             onChange={(e) => set({ quantity: sanitizeDecimal(e.target.value) })}
-            className="w-20 font-mono tabular-nums"
+            className="w-20 tabular-nums"
           />
           <Select
             value={value.quantityUnit}

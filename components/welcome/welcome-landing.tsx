@@ -1,7 +1,7 @@
 "use client";
 
-import { LiquidGlassLanding } from "./liquid-glass-landing";
+import { NotebookLanding } from "./notebook-landing";
 
 export function WelcomeLanding() {
-  return <LiquidGlassLanding />;
+  return <NotebookLanding />;
 }

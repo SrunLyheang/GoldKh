@@ -241,7 +241,7 @@ export function CsvDialog({
                             key={r.line}
                             className="border-b border-border last:border-0"
                           >
-                            <td className="px-3 py-2 font-mono text-muted-foreground">
+                            <td className="px-3 py-2 text-muted-foreground">
                               {r.line}
                             </td>
                             <td className="py-2 pr-3">

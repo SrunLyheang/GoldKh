@@ -15,9 +15,10 @@ through it.
 ## Design System
 
 Always read `DESIGN.md` before making any visual or UI decision. All font
-choices, colors, spacing, the type scale, the 7 themes, motion, and the
-stale-state spec are defined there. Do not deviate without explicit user
+choices, colors, spacing, the type scale, the Night / Day themes, motion,
+and the stale-state spec are defined there. Do not deviate without explicit user
 approval. In QA / review mode, flag any code that doesn't match `DESIGN.md`
 — especially new `text-[Npx]` arbitrary sizes (use the `text-label` /
-`text-figure` / … scale), hardcoded corners (use `--radius-*`), and any
-staleness styled with `--destructive` instead of muted grey.
+`text-figure` / … scale), hardcoded corners (use `--radius-*`), hex colours instead of tokens,
+boxes inside boxes or a rule under every row, and any staleness styled
+with `--destructive` instead of the quiet "Last known price" line.

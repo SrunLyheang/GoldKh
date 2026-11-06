@@ -1,398 +1,272 @@
 # Design System — GoldKh
 
-> Canonical design reference for the signed-in app. Supersedes the
-> `context/ui-context.md` that older `globals.css` comments point at
-> (that file never existed — see [Sharpen #5](#5-the-phantom-ui-contextmd)).
-> Read this before any visual or UI change. The landing page
-> (`components/welcome/*`, `data-landing-theme`) is a separate scoped
-> tree and is out of scope here except where noted.
+> The family gold notebook. Canonical reference for every surface: the
+> public landing page, sign-in / sign-up, and the signed-in app. Read it
+> before any visual or UI change. Tokens live in `app/globals.css`.
 
 ---
 
-## Product Context
+## The idea
 
-- **What this is:** A personal portfolio tracker for physical gold. Users log
-  buys and sells made in person at Cambodian gold shops; the dashboard derives
-  holdings, weighted-average cost, market value, and gain/loss against a cached
-  live spot price on every load.
-- **Who it's for:** People who think in **chi** and **damlung** and treat gold as
-  savings, not a trading instrument — local holders in Cambodia and the diaspora
-  tracking gold held back home.
-- **Space / peers:** Net-worth and bullion trackers — BullionVault, Empower,
-  Kubera. GoldKh deliberately sits opposite them: record-keeping, not trading.
-- **Project type:** Data-dense web app (dashboard-first), plus one marketing
-  surface (the landing page) that redirects to the dashboard once signed in.
+GoldKh is the notebook a family keeps for its gold: what was bought, at
+which shop, for whom, and what it all adds up to today. Every screen is
+a page of that notebook.
 
-### The memorable thing
+- **Feeling (the owner's words, 2026-11-06):** cosy and homely, like a
+  family savings notebook. Dark by default, a notebook open under a lamp.
+- **The memorable thing:** it always just works, and it reads like your
+  own book. There's always a price with an honest time on it, and the
+  sums are always right.
+- **Voice:** plain, warm and precise, the way a careful relative would
+  say it. Buttons are verbs ("Write an entry", "Save to the notebook").
+  It explains the mechanism ("a weighted average, so a sale never changes
+  what the rest cost you") and states limits honestly ("gold shops set
+  their own prices, so yours may differ a little"). It never sells
+  urgency.
+- **Not a trading terminal.** No tickers, no telemetry type, no glowing
+  numbers. Green and red mean gain and loss, and nothing else.
 
-**"It always just works."** Never a blank, never an error screen — always a
-price with an honest timestamp, always a trustworthy position figure. Every
-design decision serves that. See [Degraded & Stale States](#degraded--stale-states),
-which is the section that makes this real.
+### The feeling table
 
-### Voice
-
-Plain, precise, unhyped. Explain the mechanism ("weighted average, not FIFO").
-State limits honestly ("your local price may not match"). Never sell urgency.
-Financial green / red carry meaning only — gain or loss — never decoration.
+| Layer | What "cosy family notebook" decides |
+|---|---|
+| Temperature | A warm umber desk with a paper page on it. Neutrals sit within ~40° of gold's hue. Both themes are warm. |
+| Type | An account-book serif (Besley) for headings and the big figures, a calm reading sans for everything else, and the user's own notes in a handwriting face. |
+| Rhythm | Unhurried. Rows sit on a 32px ruled line (`--line`), and groups are separated by space. |
+| Shape | Paper: 22px page corners, 10px controls, binding holes and a margin rule on example pages. |
+| First screen | An open two-page spread: today's price and position as a ruled-off sum on the left, recent entries on the right. |
+| Motion | Calm in the app. Ink "writes" a new line and the sum's double rule re-draws (landing only). |
+| Copy | "Bought 2 chi at $455 a chi", "What you hold", "Up so far", "Write an entry". |
+| Sound | None (the owner chose no sound). |
 
 ---
 
-## Aesthetic Direction
+## Themes: Night and Day
 
-- **Direction:** Industrial / utilitarian at the core (mono micro-typography,
-  bracket-framed section headers, tabular figures reading as telemetry), with a
-  **theme layer** that lets the same components present as anything from frosted
-  luxury to Swiss-flat.
-- **Decoration level:** `liquid-glass` (the default) is **intentional** — a
-  near-black ground with faint fixed grain, frosted glass cards, a single amber
-  accent, a low-opacity sparkle field, and a cursor glow. The other five themes
-  range from **minimal** (Porcelain: no shadow at all) to **intentional**
-  (Emerald: soft green-tinted elevation).
-- **Mood:** A calm savings ledger you check between shop visits, not a trading
-  terminal. Research consensus for this category — "in financial UI, calm is
-  credibility" — GoldKh answers it with restraint in the figures and color,
-  and permits personality in the surface treatment.
-- **Reference points:** Mercury (calm money surface), BullionVault app (holdings
-  valuation + honest "as of"), Empower (net-worth-over-time chart clarity).
+There are two designed themes (not recolours of one). Night is the default
+and the server-rendered frame. Day is stored per device under
+`goldkh-theme`, and a tiny boot script (`THEME_BOOT_SCRIPT` in
+`lib/theme/theme-context.tsx`) applies it before first paint. The switch
+lives in the header and in Settings.
 
-### Themes
+| Token | Night | Day | Meaning |
+|---|---|---|---|
+| `--background` | `#1a1713` | `#e8deca` | the desk |
+| `--page` | `#352f27` (L\*≈19) | `#fbf6ea` | the notebook page |
+| `--sunk` | `#29241e` | `#f1eada` | wells: inputs, switches (one step below the page) |
+| `--popover` | `#3e382f` | `#fffdf7` | things that float: menus, dialogs, toasts |
+| `--foreground` | `#f3ead9` | `#1f2a44` | ink |
+| `--muted-foreground` | `#c9bda6` | `#4b5268` | secondary text (7.5:1 / 7.2:1 on the page) |
+| `--faint` | `#a3977f` | `#6b6e7c` | tertiary text (4.9:1 / 4.7:1 on the page) |
+| `--gold` | `#e6b65a` | `#86580e` | gold as text and icon (the one accent) |
+| `--gold-leaf` | `#e6b65a` | `#d9a441` | gold as a fill (the back cover, the range thumb) |
+| `--ink-hand` | `#afc3ee` | `#2a4a8e` | ballpoint blue: the user's own words only |
+| `--state-gain` | `#74c997` | `#21704a` | gain, and only gain |
+| `--destructive` | `#f2907f` | `#ad3329` | loss, errors and deleting. Nothing else |
+| `--rule` / `--margin-line` | faint blue / faint gold | same, tuned | the page's ruling and margin |
 
-Seven idioms. `liquid-glass` is the default and the only fully hand-tuned glass
-theme; the rest recolor the same `.glass-*` / `.tt-*` classes from their own
-palette. Adding a theme is one CSS block in `globals.css` and zero component
-changes — that property must be preserved.
+Primary text on the page is 11.7:1 (Night) and 13.2:1 (Day). Every pair
+above clears WCAG AA, accents included.
 
-| Theme | Ground | Accent | Corner | Heading voice | Elevation |
-|-------|--------|--------|--------|---------------|-----------|
-| **Liquid Glass** (default) | near-black `#050505` | amber `#e8b84b` | 16px | sans, sentence, 600, tight | frosted glass + ambient shadow + ✦ eyebrow |
-| **Midnight** | blue-black `#090d18` | indigo `#7c9cff` | 16px | sans, sentence, **light 300**, airy | borderless, large soft blue glow |
-| **Emerald** | forest `#071410` | emerald `#34d17e` | 20px | sans, **UPPERCASE, heavy 800**, tight | chunky, green-tinted shadow |
-| **Ledger** | warm paper `#f7f6f3` | ink `#201f1c` / brass `#9a7b4f` | 8px | **Newsreader serif**, 500, no brackets | soft 1px shadow |
-| **Coral** | blush `#fff7f4` | coral `#e14b45` / teal `#0f9d8f` | 14px | sans, sentence, 600, tight | soft coral-tinted shadow |
-| **Porcelain** | cool white `#fbfcfd` | blue `#1d4ed8` | 3px | sans, **UPPERCASE, wide-tracked** | **no shadow** — hairline border only |
-| _base_ (`:root`) | `#0f0c08` | amber `#e8b84b` | 0px | — | pre-hydration fallback, not selectable |
-
-Theme list and default live in `lib/theme/theme-context.tsx`. Every real theme
-block is written `:root[data-theme="x"], [data-theme="x"]` so a nested
-`<div data-theme="x">` (the picker swatches) gets the full token set.
+Adding a theme is one token block in `globals.css` plus one entry in
+`THEMES`. Components never read hex. The only fixed colours are the back
+cover's `cover-ink` / `cover-paper`, which read the same in both themes.
 
 ---
 
 ## Typography
 
-### Families
+| Role | Face | Variable | Notes |
+|---|---|---|---|
+| Headings, the big figures | **Besley** (400–700) | `--font-ledger` → `font-serif`, `.tt-heading`, `.tt-display`, `.figure` | Clarendon-style, from the era of printed account books. Has tabular figures. |
+| Reading: body, labels, tables, inputs | **Red Hat Text** (400–700) | `--font-reading` → `font-sans` | Open and warm, real tabular figures, unslashed zero. |
+| The user's own words | **Shantell Sans** (INFM 60) | `--font-handwriting` → `.hand` | Notes and short margin remarks only, in `--ink-hand`. **Never a figure.** |
+| Khmer script | **Kantumruy Pro** | `--font-khmer` | Fallback in every stack (ជី, ដំឡឹង, មាស). |
 
-| Role | Font | Loaded as | Why |
-|------|------|-----------|-----|
-| **UI / body** | IBM Plex Sans (400/500/600/700) | `--font-plex-sans` (next/font) | Humanist grotesque with real character — flared terminals, true italic — vs. a generic system stack. |
-| **Every figure** — price, quantity, cost basis, %  | IBM Plex Mono (400/500/600) | `--font-plex-mono` | Real tabular figures; pairs with Plex Sans as one family, so number columns read as typesetting, not "monospace = technical". |
-| **Ledger theme** headings + hero price | Newsreader (400/500/600, + italic) | `--font-newsreader` | Editorial serif. Referenced only from the `[data-theme="ledger"]` block. |
-| **Landing display** | Fraunces (400/500/600, + italic) | `--font-fraunces` | Marketing-page headings only (`components/welcome/*`). |
+There is **no monospace**. `font-mono` points at the reading face, and
+every figure gets `tabular-nums` (through `MonoValue`, kept under its old
+name).
 
-**Rule:** all numbers render on the mono face with `font-variant-numeric:
-tabular-nums`, reached through `.tt-display` for the hero figure and
-`MonoValue` / `CountUpValue` elsewhere. A theme may repoint `--display-font`
-at a serif (Ledger does); `tabular-nums` stays on regardless so digits still
-align.
+### Scale (semantic names, rem-based so text zoom works)
 
-### Idiom tokens (the theming seam)
+| Utility | px | Use |
+|---|---|---|
+| `text-micro` | 12 | chart ticks only |
+| `text-label` | 13 | labels, metadata, status lines |
+| `text-detail` | 14 | secondary body, table cells |
+| `text-body` | 16 | body copy (line-height 1.5) |
+| `text-emphasis` | 18 | emphasized body, notebook rows |
+| `text-figure` | 22 | section headings (h2), figures in a sum |
+| `text-figure-lg` | 32 | page titles, the bottom line |
+| `text-display` / `-lg` | 44 / 60 | today's price (phone / desktop) |
+| `text-hero` | clamp(40–72) | the landing headline only |
 
-Components never hardcode a heading font, transform, or tracking. They apply a
-`.tt-*` class; the class reads a per-theme token. This is what makes a new
-theme one CSS block.
-
-| Class | Reads | Used for |
-|-------|-------|----------|
-| `.tt-label` | `--label-font`, `--label-transform`, `--label-tracking` | every label, nav item, table header, status line, metadata |
-| `.tt-heading` | `--heading-font`, `--heading-transform`, `--heading-tracking`, `--heading-weight` | section titles (not body copy) |
-| `.tt-display` | `--display-font` + always `tabular-nums` | the one hero price headline |
-| `.tt-bracket` | `--bracket-open` / `--bracket-close` pseudo-content | section-title framing — `[ STAT ]`, or `✦ STAT` on Liquid Glass, or nothing on Ledger |
-| `.tt-eyebrow` | `--eyebrow-glyph` | standalone ✦ before empty-state / sub-section titles |
-
-### Scale — **Sharpen #1**
-
-**Problem:** the dashboard has no scale. Components hardcode `text-[11px]` (×74),
-`text-[13px]` (×24), `text-[15px]` (×16), `text-[12px]` / `text-[12.5px]`,
-`text-[10px]`, `text-[19px]`, `text-[11.5px]`, `text-[34px]`, `text-[46px]`,
-`text-[17px]` … as one-off arbitrary values. The landing tree separately uses
-Tailwind's default `text-3xl` / `text-4xl`.
-
-**The scale** (semantic names, not t-shirt sizes — matches the `.tt-label`
-philosophy; scaffolded as tokens in `globals.css`, see below):
-
-| Token / utility | rem | px | Role | Replaces the one-offs |
-|-----------------|-----|-----|------|----------------------|
-| `text-micro` | 0.625 | 10 | micro labels (use sparingly) | `text-[10px]` |
-| `text-label` | 0.6875 | 11 | labels, metadata, status lines — the `.tt-label` workhorse | `text-[11px]`, `text-[11.5px]` |
-| `text-detail` | 0.8125 | 13 | secondary body, table cells, sublines, disclaimers | `text-[12px]`, `text-[12.5px]`, `text-[13px]` |
-| `text-body` | 0.9375 | 15 | body copy, section headings (`.tt-heading`) | `text-[14px]`, `text-[15px]` |
-| `text-emphasis` | 1.0625 | 17 | emphasized body | `text-[17px]` |
-| `text-figure` | 1.1875 | 19 | stat-card values | `text-[19px]` |
-| `text-figure-lg` | 1.75 | 28 | sub-hero figures | `text-[28px]` |
-| `text-display` | 2.125 | 34 | hero price, mobile | `text-[34px]` |
-| `text-display-lg` | 2.875 | 46 | hero price, desktop | `text-[46px]`, `text-[40px]` |
-
-**Line-height:** body `1.5`; `.tt-heading` `1.2`; `.tt-display` and the hero
-price `1.05` (`leading-tight` / `leading-none`).
-**Tracking:** per theme via `--heading-tracking` / `--label-tracking`; never set
-ad hoc on a component.
-
-**Migration:** the tokens exist now; components move off `text-[Npx]` onto these
-utilities incrementally (a `/design-review` job). New code uses the utilities
-from day one — no new `text-[Npx]` arbitrary values.
+No `text-[Npx]` arbitrary sizes.
 
 ---
 
-## Color
+## Structure: space first, lines last
 
-- **Approach:** restrained. One accent per theme; color otherwise means one of
-  exactly two things — **gain** or **loss**.
-- **Model:** shadcn semantic tokens (`--background`, `--foreground`, `--card`,
-  `--primary`, `--muted`, `--muted-foreground`, `--border`, `--accent`,
-  `--destructive`, `--ring`, `--popover`, `--secondary`, `--sidebar-*`) plus
-  GoldKh additions:
-  - `--state-gain` — the **only** positive-financial color. There is no
-    `--state-loss`; loss reuses `--destructive`. Gain/loss is the one place
-    color is allowed to carry meaning.
-  - `--chart-1..5` — see [Charts](#charts--sharpen-4).
-  - `--glass-*`, `--glow-*`, `--sparkle-opacity` — surface treatment, see
-    [Surfaces](#surfaces).
-- **Accent usage:** `--primary` is the brand mark, the hero top-rule, the focus
-  ring, the count-up pulse tone, and `chart-1`. It is not a button-fill default
-  beyond the primary CTA.
-- **Dark vs light themes:** four dark (`liquid-glass`, `midnight`, `emerald`,
-  base) and three light (`ledger`, `coral`, `porcelain`). Light themes get a
-  dark-tinted frost + soft shadow (so glass still reads as glass on paper) and
-  the sparkle field off. This is handled in `globals.css`, not per component.
-- **Contrast:** body text and figures must clear WCAG AA (4.5:1). The muted
-  foreground on each theme is tuned to still register against its ground —
-  `--muted-foreground` is for de-emphasis, never for text a user must read
-  precisely (a figure is never muted-only).
+- **Surfaces.** `.page` is a notebook page (paper tone, faint ruling,
+  22px corners, a soft page shadow). `.page--plain` is the same without
+  ruling, for forms, settings and charts. `.page-margin` draws the margin
+  rule. `.glass-overlay` (legacy name) is anything that floats: one step
+  lighter plus `--shadow-float`, with no blur and no gradient ring.
+- **The separation ladder.** Space, then alignment, then tonal surface
+  (`--sunk` / `--popover`), then elevation (floating things only), and a
+  line last.
+- **A line means something.** Lines are allowed in only three places:
+  - dense tables (the Ledger, Buy history), as hairlines from
+    `--glass-border-to`;
+  - the ruled paper itself (`--rule`);
+  - the accountant's sum (`.ledger-sum`): a single rule over a total and
+    a double rule under it.
+- **No boxes inside boxes.** A page holds content directly. The old
+  stat cards, readout tiles and settings panels are gone.
+- **Corners (concentric):** `--radius-xl` 22 (pages, sheets) →
+  `--radius-lg` 14 (popovers, toasts) → `--radius-md` 10 (buttons, inputs)
+  → `--radius-sm` 6 → `--radius-xs` 4. Round (`rounded-full`) is only
+  for dots, the theme switch, round icon buttons and chips.
+- **Control heights:** 36 (`sm`), 40 (default), 48 (`lg`). Every target
+  is ≥ 44px or carries `.tap-target`.
 
-### Figure precision (`lib/format/money.ts`)
+### Layouts
 
-| Value | Rule |
-|-------|------|
-| USD amounts | `Intl.NumberFormat` currency, max 2 fraction digits |
-| Quantities (chi / damlung) | max 4 fraction digits (matches DB `numeric(_,4)`); trailing zeros trimmed, never rounds away an entered digit |
-| Percent | always signed (`+1.25%` / `-0.80%`), 2 fraction digits |
+| Surface | Form |
+|---|---|
+| Shell | The wordmark (GoldKh + មាស), with **index tabs** standing on the page below (Today, Ledger, Price, Insights, Settings). On phones the tabs are a **bottom tab bar** in thumb reach. Night/Day, account and sign-out sit top right. |
+| Today (`/dashboard`) | **The open spread.** The left page has the status line, "Gold today", the price, the shop-price note, then "What you hold": the weight said the shop's way ("2 damlung 5 chi"), four ledger lines, the ruled-off "Up so far", and the realized note in the user's hand. The right page has recent entries (max 7, edit/delete on each) and a link to the Ledger. Below the spread, "Gold over time" sits on its own page. On phones the pages stack and "Write an entry" floats above the tab bar. |
+| Ledger | One plain page: title, count, Select and Import/Export, the filters, then a dense ruled table (compact rows on phones). Buys and sells are told apart in words, never in green/red. |
+| Price | One plain page: title, today's price, the freshness line, the full chart and the shop-price note. |
+| Insights | Two rows of differently weighted pages. First, figures down the margin beside "Your gold over time". Then "Buy history" beside a "What if…" scratch pad. |
+| Settings | One page. Each group has its name and a sentence on the left and its rows on the right, separated by space. |
+| Sign in / up | The notebook's inside cover: a gold-leaf flyleaf ("This notebook belongs to ____") beside the form page. |
+| Landing (`/`) | The notebook itself (see below). |
 
-Formatting is presentation-only — it never does money math. All math is decimal
-(`decimal.js`), derived on every load, never persisted.
+### The landing page
 
----
+The **hero** is an example page the visitor can write in
+(`components/welcome/example-notebook.tsx`):
 
-## Spacing & Layout
+- They add lines ("Bought 3 chi at $500 a chi"), cross lines out, and
+  watch the sum re-total with a fresh double rule.
+- They move "If gold were…" to re-value the same gold.
+- It is labelled as an example, saves nothing, and its price is marked
+  indicative.
+- It has a full keyboard path, its form errors are tied to their inputs,
+  and results are announced in a live region.
 
-- **Base unit:** 4px (Tailwind default scale). Dashboard spacing stays on-scale
-  (`gap-4`, `gap-5`, `mb-4`, `mt-1.5`, `pt-4`) — keep it there; no arbitrary
-  `[Npx]` margins/paddings.
-- **Density:** comfortable. Short-visit product — the dashboard is a check-in,
-  so vertical rhythm favors scanning (section label → figure → subline) over
-  packing.
-- **Grid:** stat row is `grid-cols-2` → `lg:grid-cols-4`. Dashboard content is a
-  single column of stacked sections (hero → stats → realized → history → chart),
-  each entering on a staggered fade-up.
-- **Border radius:** hierarchical, all derived from one per-theme `--radius`:
+After the hero come the back pages, one job each:
 
-  | Token | Value |
-  |-------|-------|
-  | `--radius-sm` | `--radius * 0.6` |
-  | `--radius-md` | `--radius * 0.8` |
-  | `--radius-lg` | `--radius` |
-  | `--radius-xl` | `--radius * 1.4` |
-  | `--radius-2xl` | `--radius * 1.8` |
-  | `--radius-3xl` .. `--radius-4xl` | `* 2.2` .. `* 2.6` |
+- Chi & damlung: a drawing of ten chi leaves = one 37.5 g damlung, plus
+  the fixed conversions.
+- "You write it down. It keeps the sums." in a ledger's two columns.
+- "What GoldKh is not."
+- A gold-leaf back cover with the sign-up.
 
-  `--radius` ranges from `0px` (base) to `20px` (Emerald). Glass surfaces use
-  `--glass-radius` (defaults to `--radius`, Liquid Glass overrides to 20px).
-  Never hardcode a corner value.
-
----
-
-## Surfaces
-
-Reached only through classes, never hardcoded. All read per-theme `--glass-*` /
-`--glow-*` tokens, so a theme switch recolors them with no JSX change.
-
-| Class | For | Treatment |
-|-------|-----|-----------|
-| `.glass-surface` | scrolling cards | **no** `backdrop-filter` (it shivers under scroll); near-opaque tinted fill + masked gradient-border ring + ambient shadow |
-| `.glass-surface--accent` | hero / primary surface | above + fill tinted toward `--primary` (the gold-glass look) |
-| `.glass-overlay` | non-scrolling overlays only — sidebar, dialogs, popovers, dropdowns, sticky bars | real `backdrop-filter: blur(--glass-blur)` over a translucent fill; `@supports` fallback to opaque `--glass-fallback-bg` |
-| `.glass-chrome` | sidebar + sticky headers | real blur, **no** gradient ring (would round against the viewport edge); pair with one hairline `border-*` on the meeting edge |
-| `.glass-glow` | cards that respond to the cursor | token-driven radial glow at `--spot-x/y`; lifts `translateY(-3px)` on hover under `hover: hover` + `prefers-reduced-motion: no-preference` |
-| `.app-grain` | page root | fixed low-opacity (0.035) SVG fractal-noise layer, own compositor layer, **no** `mix-blend-mode` on dark (blended full-viewport fixed layer = scroll jank); `multiply` only on the three light themes |
-
-Hairline dividers everywhere (row separators, in-card rules) use
-`--glass-border-to`.
+There is no invented social proof and no fabricated figures.
 
 ---
 
 ## Motion
 
-- **Approach:** intentional. Entrances and state transitions only; nothing
-  decorative on the dashboard. (The landing tree has its own longer, showier
-  reveal choreography — out of scope here.)
-- **Easing:**
+Level: **Standard** in the app, **Expressive** on the landing (one
+signature moment). Tokens are in `globals.css`.
 
-  | Token | Curve | Use |
-  |-------|-------|-----|
-  | `--ease-glide` | `cubic-bezier(0.16, 1, 0.3, 1)` (easeOutQuint-ish) | dashboard section entrances, nav entrance, value pulse, staggered reveals — **the default** |
-  | _hover lift_ | `cubic-bezier(0.22, 1, 0.36, 1)` | `.glass-glow` hover transform/shadow only |
-  | `SMOOTH_EASE` `[0.37,0,0.63,1]` | ease-in-out | the count-up number roll (`lib/ui/use-count-up.ts`) |
+| Token | Value | Use |
+|---|---|---|
+| `--ease-out` | `cubic-bezier(0.23, 1, 0.32, 1)` | entering, leaving, most UI |
+| `--ease-in-out` | `cubic-bezier(0.77, 0, 0.175, 1)` | something on screen moving |
+| `--ease-drawer` | `cubic-bezier(0.32, 0.72, 0, 1)` | sheets (the entry dialog on phones) |
+| `--dur-press` / `-micro` / `-small` / `-medium` / `-large` / `-hero` | 120 / 160 / 200 / 280 / 380 / 600ms | press, hover/colour, menus, toasts/page entrance, sheets, the ink moment |
 
-  Prefer `--ease-glide`. New motion that isn't a hover lift or a number roll
-  uses it.
-- **Duration:** micro 150–200ms · short ~280–300ms (row-in, hover) · medium
-  500–600ms (section entrance 500ms, value pulse 600ms) · count-up roll 2200ms
-  (`COUNT_UP_MS`, first load only). Nothing on the dashboard runs longer than
-  the count-up.
-- **Compositor-only:** animate `transform` and `opacity` only. No animated
-  `width` / `height` / `top` / `left`, no animated `blur`, no `transition: all`.
-- **`prefers-reduced-motion: reduce` is mandatory.** Every effect has a reduced
-  path: section entrances render static, the value pulse is suppressed, the
-  count-up snaps, the sync sliver becomes a static dimmed bar, `.glass-glow`
-  doesn't lift. A new effect without a reduced path is incomplete.
-
-### Number-animation policy — **Sharpen #2**
-
-One rule, currently spread across `use-count-up`, `use-value-pulse`, and
-`AnimatedPnlCard`:
-
-| Situation | Behavior | Mechanism |
-|-----------|----------|-----------|
-| **First page entry** | Total Holdings, Average Cost, Market Value, and the hero price **roll up from zero** over `COUNT_UP_MS` (2200ms). Unrealized Gain/Loss rolls from its **last-seen** value instead. | `CountUpValue` with `from={0}` / `AnimatedPnlCard` |
-| **Unit toggle** (chi ↔ damlung) | figures **snap** — no roll. It's a re-projection, not a new value. | `useCountUp` `from` mode |
-| **Data update** (refresh, add, sell) | the figure **flashes its tone once** (`--pulse-tone`, 600ms) and **lands on the new value — it snaps, never re-rolls.** | `useValuePulse` → `.value-pulse-active` |
-| **Post-mutation reconcile** | an indeterminate sliver runs under the Transaction History header while `router.refresh()` settles inside a `useTransition` — the page never blanks. | `sync-indeterminate` keyframe |
-
-New figure displays follow this exactly. Never re-roll a figure on a data
-change; the roll is a first-impression flourish, not a change indicator.
+- **Presses press.** `.press` scales to 0.97 on pointer-down.
+- **Page entrance.** One short fade-and-settle (`.dash-enter`, 280ms)
+  that plays from SSR markup, so nothing waits on hydration.
+- **The number policy.**
+  - Figures land on their value. They do **not** roll up from zero on
+    every visit, because data you read every day doesn't move for style.
+  - The one exception is "Up so far", which rolls (900ms) from the value
+    you last saw to today's, because that change is the news.
+  - A changed figure flashes its tone once (`.value-pulse-active`) and
+    snaps.
+  - A unit toggle snaps.
+- **Ink.** `.ink-write` (a clip-path reveal, 520ms) when a new line is
+  written. `.ink-underline` re-draws the sum's rules.
+- **Phone dialogs** rise as a bottom sheet and leave the way they came.
+- **Reduced motion:** fades stay, movement goes, and ink appears at once.
+- **Never:** `ease-in` on UI, `transition: all`, `scale(0)`, animated
+  width/height/top/left, cursor glow, tilt, magnetic buttons or sparkle
+  fields.
 
 ---
 
-## Degraded & Stale States
+## Degraded & stale states
 
-**This is the section that delivers "it always just works."** Research rule for
-the category: *showing staleness matters more than showing freshness — a cached
-figure without disclosure is worse than showing nothing; a visible timestamp
-plus a retry control turn a broken screen into an honest one.*
+The price is always present (see `PRODUCT.md`). Freshness is a quiet line
+with a dot and words, never an alarm:
 
-### The price is always present
+| State | Dot | Words |
+|---|---|---|
+| Fresh (< 30 min) | `--state-gain` | **Up to date** · as of 6:43 PM |
+| Stale (≥ 30 min) | `--faint` | **Last known price** · as of 6:43 PM |
+| Market closed | — | extra line: "Market closed — prices resume Monday." |
 
-The dashboard shows the last known snapshot with an "as of" timestamp rather
-than an error, even when every upstream provider is down. Snapshots are
-append-only, written on dashboard load — there is no scheduled job. A stale
-price is a **normal** state (users check in between in-person shop visits), not
-a failure. Design it as the confident default, **not** a warning.
+Never `--destructive` for staleness. Red means loss.
 
-### Freshness states (current, canonical — see `hero-price-card.tsx`)
-
-| State | Threshold | Dot | Label | Tone |
-|-------|-----------|-----|-------|------|
-| **Live** | snapshot < 30 min old | `--state-gain` (green), `1.5×1.5` | `[ LIVE ] as of {clock time}` | confident, unremarkable |
-| **Stale** | snapshot ≥ 30 min old | `--muted-foreground` (grey), same size | `[ STALE ] as of {clock time}` | **muted, not alarm.** Grey dot, `.tt-label`, mono. No red, no icon, no banner. |
-| **Market closed** | provider reports closed | — | extra `.tt-label` line: `market closed` | muted |
-
-Never use `--destructive` for staleness. Red means financial loss, not old
-data. Any surface that shows the price (hero, chart header, insights readouts)
-uses this same dot + `[ STATE ] as of {time}` treatment — do not invent a
-second staleness style.
-
-### Manual refresh
-
-- `RefreshButton` reads `refreshCooldownEndsAt`. A refresh within 5 minutes of
-  the last is on **cooldown** — the button shows the remaining time and is
-  disabled; it is not hidden.
-- Disabled affordance: reduced opacity + `cursor: not-allowed`. Same as every
-  disabled control.
-- Market-closed disables refresh with the reason shown, not a silent no-op.
-
-### Empty & error
-
-- **No transactions yet:** `EmptyState` — a warm one-line message + the primary
-  "Add transaction" action + a ✦ eyebrow. Never a bare "No items."
-- **A mutation fails:** rolled back optimistically and reported through the
-  shared Sonner toast. There is no second in-page error banner.
-- **Standing disclaimer:** every price surface carries the "local buy/sell
-  prices won't match the global spot" line, hairline-separated, `text-detail`,
-  muted. It's context, not an error.
-
-### Snap, don't blank
-
-Post-mutation refreshes run inside `useTransition` so the page never goes
-blank. Sections use a keyframe with `both` fill that plays at first paint (SSR
-markup included) — a section is never blank waiting on hydration; the price is
-readable as soon as the HTML lands.
+- **Refresh** is a gold text button. During cooldown it stays visible,
+  dims, says why on hover, and toasts the wait time.
+- **Empty:** the right page becomes "A clean page", with three numbered
+  steps, a faint example line in handwriting, and "Write an entry".
+- **Loading:** a skeleton of the real spread (`app/dashboard/loading.tsx`),
+  not a spinner.
+- **Mutations:** optimistic, and reconciled inside a transition. "Syncing…"
+  shows under Recent entries. Failures arrive as a toast in words.
 
 ---
 
-## Charts — **Sharpen #4**
+## Charts
 
-Recharts 3. `--chart-1..5` are defined per theme but series assignment was never
-written down. Canonical mapping:
+Recharts 3. Horizontal gridlines only, in the hairline colour, so they
+read as the page's ruling. Ticks use the reading face at 12px.
 
 | Slot | Token | Semantic |
-|------|-------|----------|
-| `chart-1` | `--primary` (accent) | the **primary series** — spot price over time, portfolio value over time |
-| `chart-2` | a per-theme tone set **off `chart-1`'s hue** (not `--muted-foreground`) | secondary series — the cost-basis line, which must stay legible next to `chart-1` in every theme. The dashed reference/average line uses `--muted-foreground` directly, not this slot. |
-| `chart-3` | `--state-gain` | **gain** — positive area/segments on the P&L-over-time chart |
-| `chart-4` | `--destructive` | **loss** — negative area/segments |
-| `chart-5` | `--foreground` | high-contrast marker — the "now" point, a highlighted selection |
+|---|---|---|
+| `chart-1` | gold | the primary series (spot price, portfolio value) |
+| `chart-2` | ballpoint blue | the secondary series (cost basis) |
+| `chart-3` / `chart-4` | gain / loss | gain or loss segments |
+| `chart-5` | ink | the "now" marker |
 
-Rules:
-- Gain/loss on any chart uses `chart-3` / `chart-4` — the same green/red meaning
-  as everywhere else. A value-over-time chart that crosses break-even is green
-  above, red below.
-- Axes and gridlines: `--border` at low opacity; axis labels `.tt-label`
-  `text-micro` / `text-label`, `--muted-foreground`. Gridlines horizontal only
-  unless the x-axis carries meaning the reader must measure against.
-- Tooltip: `.glass-overlay` surface, figures on the mono face, `tabular-nums`,
-  same precision as `lib/format/money.ts`.
-- The chart header carries the same freshness dot + `as of` treatment as the
-  hero when it plots live price.
-- Respect `prefers-reduced-motion`: no draw-on animation when reduced.
+The average-cost line is dashed `--muted-foreground`. The draw-on runs
+600ms on first mount only, and not under reduced motion.
 
 ---
 
-## The phantom `ui-context.md` — **Sharpen #5**
+## Accessibility (WCAG 2.2 AA)
 
-`globals.css` references `context/ui-context.md` ~15 times and `PRODUCT.md`
-calls it "the signed-in design system." **The file was never created.**
-
-- `DESIGN.md` (this file) is now the canonical reference.
-- A 2-line stub at `context/ui-context.md` points here, so the existing code
-  comments resolve to something real.
-- New code comments cite `DESIGN.md`, not `context/ui-context.md`.
-
----
-
-## Accessibility
-
-No formal WCAG target is set as a product requirement. Existing practice to
-preserve:
-
-- One token-driven `:focus-visible` ring (`2px solid var(--ring)`, `2px`
-  offset) fills the gap for bespoke dashboard controls; shadcn / Base UI
-  primitives ship their own and win on specificity. Never `outline: none`
-  without a replacement.
-- Every motion effect has both a `prefers-reduced-motion` path **and** a
-  touch / small-viewport path.
-- Financial figures snap rather than re-roll on data change (see the
-  number-animation policy).
-- Body text and figures clear 4.5:1. A precise figure is never
-  `--muted-foreground`-only.
-- Touch targets ≥ 44px on interactive elements.
+- Contrast as in the token table, in both themes.
+- A skip link on the shell and the landing, plus one `:focus-visible`
+  ring (`2px var(--ring)`).
+- `aria-current="page"` on the active tab.
+- Switches use `aria-pressed` / `role="switch"`. Form errors use
+  `aria-invalid` and `aria-describedby`. Dynamic results are announced in
+  live regions.
+- Colour is never the only signal. Gain/loss carry a sign and words ("Up
+  so far"), buys/sells carry words, and freshness carries words.
+- Text sizes are in rem. Targets are ≥ 44px. Safe-area insets are
+  respected on the bottom bar and sheets.
 
 ---
 
-## Decisions Log
+## Decisions log (taste record)
 
-| Date | Decision | Rationale |
-|------|----------|-----------|
-| 2026-09-03 | DESIGN.md created (codify + 5 sharpen sections) | `/design-consultation`. Codified the existing 7-theme token system; added a written type scale, an explicit number-animation policy, a canonical stale-state spec, chart-color assignment, and resolved the phantom `context/ui-context.md`. |
-| 2026-09-03 | Stale price = muted grey, never red | Users check in between in-person shop visits; a 30-min-old price is normal, not an error. Red is reserved for financial loss. Research: "showing staleness matters more than showing freshness." |
-| 2026-09-03 | Type scale uses semantic names (`text-label`, `text-figure`…), added as new tokens | Additive — does not override Tailwind's default `text-*` steps, so the landing tree is unaffected. Matches the role-based `.tt-*` philosophy. |
-| 2026-09-04 | `chart-2` retuned per theme off `chart-1`'s hue (was `--muted-foreground`) | On the Insights two-line chart the cost-basis line was near-indistinguishable from the market-value line in `midnight` / `emerald` / `ledger`. `chart-2` is used only there; the dashed reference line takes `--muted-foreground` directly. |
+| Date | Decision | Why |
+|---|---|---|
+| 2026-09-03 | DESIGN.md created (7 themes, liquid glass, mono figures) | `/design-consultation`. Superseded below. |
+| 2026-11-06 | **Redesign: the family gold notebook** | The owner asked for a redesign of the dashboard, every page and the landing with Unslop Design 1.6. Interview answers: feeling **cosy / homely**, reference **a family savings notebook**, **replace** the 7-theme / glass / mono system, motion **Standard in the app, Expressive on the landing**, **no sound**. |
+| 2026-11-06 | **Take A, the open spread**, chosen from three first-screen takes | Rejected: B (one page ending in a balance) and C (a price sticky note beside the notebook). |
+| 2026-11-06 | **Dark by default** (Night), with Day kept as a designed second theme | The owner chose "darker by default" over the paper-first palette. |
+| 2026-11-06 | **The user's notes in handwriting**, figures never | The owner said yes to handwriting for their own words. |
+| 2026-11-06 | Figures no longer roll up from zero on every visit | Frequency rule: a daily check-in shouldn't wait on decoration. "Up so far" still rolls from the last-seen value. |
+| 2026-11-06 | Buys/sells labelled in words, not green/red icons | Green and red carry gain/loss only. |
+| 2026-11-06 | Fixed: a riel row's per-unit price was printed with "$" | Found in the Phase 0 review (`getRowDisplay.perUnitLabel`). |

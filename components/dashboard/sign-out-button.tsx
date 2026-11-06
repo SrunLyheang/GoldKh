@@ -50,7 +50,7 @@ export function SignOutButton({ className }: { className?: string }) {
         aria-label={t.nav.signOut}
         title={t.nav.signOut}
         className={cn(
-          "inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-full border border-(--glass-border-to) bg-accent/60 text-muted-foreground transition-colors hover:bg-(--glow-color) hover:text-foreground disabled:opacity-60",
+          "press inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-(--glow-color) hover:text-foreground disabled:opacity-60",
           className
         )}
       >

@@ -24,7 +24,7 @@ export function BulkActionsBar({
   return (
     <div
       className={cn(
-        "glass-overlay flex flex-wrap items-center justify-between gap-2 rounded-full px-4 py-2",
+        "glass-overlay flex flex-wrap items-center justify-between gap-2 rounded-lg px-4 py-2",
         className
       )}
     >
@@ -42,7 +42,7 @@ export function BulkActionsBar({
         <button
           type="button"
           onClick={onDelete}
-          className="tt-label inline-flex items-center gap-1 rounded-full border border-destructive px-2.5 py-1.5 text-label text-destructive transition-colors hover:bg-destructive/10"
+          className="press inline-flex min-h-10 items-center gap-1.5 rounded-md bg-destructive/15 px-3.5 text-detail font-semibold text-destructive hover:bg-destructive/25"
         >
           <Trash2 className="h-3 w-3" />
           Delete

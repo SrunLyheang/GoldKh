@@ -1,7 +1,6 @@
 "use client";
 
-import { ArrowDownLeft, ArrowUpRight, ChevronDown } from "lucide-react";
-import Link from "next/link";
+import { ChevronDown } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition } from "react";
 import { cn } from "@/lib/utils";

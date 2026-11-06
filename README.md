@@ -23,7 +23,7 @@
 | **Price Chart**  | Full-screen interactive spot-price chart with zoom and range presets |
 | **Insights**     | Portfolio value over time, per-buy quality, what-if calculator       |
 | **Transactions** | Filterable table with row detail, CSV import/export                  |
-| **Settings**     | Account management, display preferences, themes                      |
+| **Settings**     | Account management, display preferences, Night / Day theme           |
 
 ---
 

@@ -1,9 +1,12 @@
 import type { ReactNode } from "react";
-import { UserRound } from "lucide-react";
-import { SparkleField } from "@/components/effects/sparkle-field";
-import { AuthMascot } from "./auth-mascot";
+import Link from "next/link";
+import { Wordmark } from "@/components/brand/wordmark";
 import { BackToWelcome } from "./back-to-welcome";
 
+// Sign in / sign up: the notebook opened to its inside cover. Left, the
+// cover's flyleaf ("this notebook belongs to …", the line waiting for a
+// name); right, the form on a plain page. On a phone only the form page
+// shows, with the wordmark above it.
 export function AuthShell({
   heading,
   subheading,
@@ -14,36 +17,28 @@ export function AuthShell({
   children: ReactNode;
 }) {
   return (
-    <main className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-10">
-      {/* page background */}
-      <div aria-hidden className="absolute inset-0 -z-10 bg-background" />
-      <div
-        aria-hidden
-        className="absolute inset-0 -z-10"
-        style={{
-          background:
-            "radial-gradient(58% 42% at 50% 8%, rgba(232,184,75,0.16), transparent 70%), radial-gradient(42% 32% at 88% 104%, rgba(232,184,75,0.10), transparent 72%)",
-        }}
-      />
-      <SparkleField className="pointer-events-none absolute inset-0" />
-
-      <div className="relative z-10 grid w-full min-w-0 max-w-[980px] overflow-hidden rounded-2xl border border-white/10 bg-background shadow-[0_40px_120px_-24px_rgba(0,0,0,0.7)] md:grid-cols-2">
-        {/* brand panel */}
-        <div className="relative hidden min-h-[560px] min-w-0 bg-white md:block">
-          <AuthMascot />
+    <main className="app-grain app-lamp relative flex min-h-dvh flex-col items-center justify-center bg-background px-4 py-10">
+      <Link href="/" aria-label="GoldKh, home" className="relative z-10 mb-6 rounded-md md:hidden">
+        <Wordmark />
+      </Link>
+      <div className="relative z-10 grid w-full min-w-0 max-w-[980px] overflow-hidden rounded-xl shadow-(--shadow-float) md:grid-cols-[0.9fr_1fr]">
+        <div className="relative hidden min-h-[34rem] flex-col justify-between bg-gold-leaf px-10 py-12 text-cover-ink md:flex">
+          <Wordmark size="lg" className="text-cover-ink [&>span]:text-cover-ink/70" />
+          <div>
+            <p className="font-serif text-figure text-cover-ink/80">This notebook belongs to</p>
+            <div aria-hidden="true" className="mt-10 border-b-[1.5px] border-cover-ink/50" />
+            <p className="mt-10 max-w-[30ch] text-detail text-cover-ink/75">
+              A record of the gold you keep: what you bought, what it cost,
+              and what it’s worth today.
+            </p>
+          </div>
         </div>
 
-        {/* form panel — inherits the app's dark Clerk theme */}
-        <div className="flex min-w-0 flex-col items-center bg-background px-6 py-10 text-foreground sm:px-10 sm:py-14">
-          <span className="mb-6 flex size-12 items-center justify-center rounded-full bg-muted text-muted-foreground">
-            <UserRound className="size-6" />
-          </span>
-          <h1 className="text-center text-4xl font-extrabold tracking-tight text-foreground">
+        <div className="page page--plain flex min-w-0 flex-col items-center rounded-none px-6 py-10 sm:px-10 sm:py-12">
+          <h1 className="text-center font-serif text-figure-lg font-semibold leading-tight text-foreground">
             {heading}
           </h1>
-          <p className="mt-1.5 mb-8 text-sm font-medium text-muted-foreground">
-            {subheading}
-          </p>
+          <p className="mb-8 mt-1.5 text-center text-body text-muted-foreground">{subheading}</p>
           <div className="w-full min-w-0 max-w-[400px]">{children}</div>
           <div className="mt-6 flex justify-center">
             <BackToWelcome />
