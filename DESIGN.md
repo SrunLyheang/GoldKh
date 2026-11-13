@@ -21,7 +21,8 @@
 - **Space / peers:** Net-worth and bullion trackers — BullionVault, Empower,
   Kubera. GoldKh deliberately sits opposite them: record-keeping, not trading.
 - **Project type:** Data-dense web app (dashboard-first), plus one marketing
-  surface (the landing page) that redirects to the dashboard once signed in.
+  surface (the landing page) whose calls to action open the dashboard — there
+  is no sign-up.
 
 ### The memorable thing
 

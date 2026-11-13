@@ -1,7 +1,7 @@
 import { apiError } from "./response";
 
-// Lightweight CSRF guard for state-changing routes. Clerk authenticates
-// with a cookie, so a cross-site page could otherwise drive an authed
+// Lightweight CSRF guard for state-changing routes. Identity is a device
+// cookie (lib/identity/device.ts), so a cross-site page could otherwise drive an authed
 // request from a victim's browser. A browser always attaches `Origin` on a
 // cross-origin POST and cannot forge it, so a mismatch is a reliable
 // reject. A missing `Origin` (server-to-server callers, curl) is allowed

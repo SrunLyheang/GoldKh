@@ -23,7 +23,6 @@ import { SectionProgressNav } from "./section-progress-nav";
 import { SpotlightCard } from "./spotlight-card";
 import { SpotSparkline } from "./spot-sparkline";
 import { TryItSimulator } from "./try-it-simulator";
-import { useSignedIn } from "./use-signed-in";
 
 const SECTION_NAV = [
   { id: "try-it", label: "Try It" },
@@ -53,7 +52,6 @@ function BrandMark({ className }: { className?: string }) {
 }
 
 export function LiquidGlassLanding() {
-  const signedIn = useSignedIn();
   const [menuOpen, setMenuOpen] = useState(false);
 
   const navLinks = [
@@ -111,30 +109,13 @@ export function LiquidGlassLanding() {
 
           {/* Right CTAs */}
           <div className="hidden md:flex items-center gap-3">
-            {signedIn ? (
-              <Link
-                href="/dashboard"
-                className="bg-white text-black text-sm font-medium px-5 py-2.5 rounded-full hover:bg-white/90 transition-colors shadow-lg flex items-center gap-2"
-              >
-                <LayoutDashboard className="w-4 h-4" />
-                Go to Dashboard
-              </Link>
-            ) : (
-              <>
-                <Link
-                  href="/sign-in"
-                  className="liquid-glass text-white text-sm font-medium px-4 py-2.5 rounded-full hover:bg-white/5 transition-colors"
-                >
-                  Log in
-                </Link>
-                <Link
-                  href="/sign-up"
-                  className="bg-white text-black text-sm font-medium px-5 py-2.5 rounded-full hover:bg-white/90 transition-colors shadow-lg"
-                >
-                  Sign up
-                </Link>
-              </>
-            )}
+            <Link
+              href="/dashboard"
+              className="bg-white text-black text-sm font-medium px-5 py-2.5 rounded-full hover:bg-white/90 transition-colors shadow-lg flex items-center gap-2"
+            >
+              <LayoutDashboard className="w-4 h-4" />
+              Open the app
+            </Link>
           </div>
 
           {/* Mobile Menu Toggle */}
@@ -163,33 +144,14 @@ export function LiquidGlassLanding() {
               </a>
             ))}
             <div className="flex gap-2 mt-2 pt-3 border-t border-white/10">
-              {signedIn ? (
-                <Link
-                  href="/dashboard"
-                  onClick={() => setMenuOpen(false)}
-                  className="flex-1 bg-white text-black text-center text-sm font-medium px-4 py-2.5 rounded-full hover:bg-white/90 transition-colors flex items-center justify-center gap-2"
-                >
-                  <LayoutDashboard className="w-4 h-4" />
-                  Go to Dashboard
-                </Link>
-              ) : (
-                <>
-                  <Link
-                    href="/sign-in"
-                    onClick={() => setMenuOpen(false)}
-                    className="flex-1 liquid-glass text-center text-white text-sm font-medium px-4 py-2.5 rounded-full hover:bg-white/5 transition-colors"
-                  >
-                    Log in
-                  </Link>
-                  <Link
-                    href="/sign-up"
-                    onClick={() => setMenuOpen(false)}
-                    className="flex-1 bg-white text-black text-center text-sm font-medium px-4 py-2.5 rounded-full hover:bg-white/90 transition-colors"
-                  >
-                    Sign up
-                  </Link>
-                </>
-              )}
+              <Link
+                href="/dashboard"
+                onClick={() => setMenuOpen(false)}
+                className="flex-1 bg-white text-black text-center text-sm font-medium px-4 py-2.5 rounded-full hover:bg-white/90 transition-colors flex items-center justify-center gap-2"
+              >
+                <LayoutDashboard className="w-4 h-4" />
+                Open the app
+              </Link>
             </div>
           </div>
         )}
@@ -210,10 +172,10 @@ export function LiquidGlassLanding() {
           <div className="flex flex-wrap items-center gap-3">
             <Magnetic>
               <Link
-                href={signedIn ? "/dashboard" : "/sign-up"}
+                href="/dashboard"
                 className="bg-white text-black text-sm sm:text-base font-medium px-6 sm:px-7 py-3 rounded-full hover:bg-white/90 transition-colors shadow-xl inline-block"
               >
-                {signedIn ? "Go to Dashboard" : "Get Started"}
+                Start logging
               </Link>
             </Magnetic>
             <Magnetic>
@@ -262,7 +224,7 @@ export function LiquidGlassLanding() {
             </p>
           </div>
 
-          <TryItSimulator signedIn={signedIn} />
+          <TryItSimulator />
         </section>
 
         {/* ── 2. Features Section (#features) ─────────────────────────────────── */}
@@ -310,10 +272,11 @@ export function LiquidGlassLanding() {
                 01
               </div>
               <h3 className="text-xl font-semibold text-white mb-3">
-                Create an account
+                Open the app
               </h3>
               <p className="text-white/65 text-sm leading-relaxed">
-                Sign up with Clerk. No card, no bank details, nothing sensitive.
+                No sign-up, no email, no card. Your ledger lives on this device,
+                with a recovery code to carry it to another.
               </p>
             </SpotlightCard>
 
@@ -460,8 +423,8 @@ export function LiquidGlassLanding() {
                   Private to you
                 </h4>
                 <p className="text-xs text-white/60 leading-relaxed">
-                  Your transactions are only visible when you&apos;re signed in
-                  to your own account.
+                  No account, no email. Your ledger opens only on your device,
+                  or anywhere you paste its recovery code.
                 </p>
               </SpotlightCard>
               <SpotlightCard className="liquid-glass rounded-2xl p-6 border border-white/10">
@@ -489,35 +452,18 @@ export function LiquidGlassLanding() {
                 Start tracking your gold today.
               </h2>
               <p className="text-white/70 text-sm sm:text-base leading-relaxed mb-8 max-w-lg mx-auto">
-                Sign up to see your holdings, your average cost, and whether
-                you&apos;re up or down at today&apos;s price. Free to use.
+                Log your first buy and see your holdings, your average cost, and
+                whether you&apos;re up or down at today&apos;s price. Free, no
+                sign-up.
               </p>
               <div className="flex flex-wrap items-center justify-center gap-4">
-                {signedIn ? (
-                  <Link
-                    href="/dashboard"
-                    className="bg-white text-black text-sm font-semibold px-8 py-3.5 rounded-full shadow-2xl hover:bg-white/90 hover:scale-105 active:scale-95 transition-all flex items-center gap-2"
-                  >
-                    <LayoutDashboard className="w-4 h-4" />
-                    <span>Go to Dashboard</span>
-                  </Link>
-                ) : (
-                  <>
-                    <Link
-                      href="/sign-up"
-                      className="bg-white text-black text-sm font-semibold px-8 py-3.5 rounded-full shadow-2xl hover:bg-white/90 hover:scale-105 active:scale-95 transition-all flex items-center gap-2"
-                    >
-                      <span>Create Account</span>
-                      <ArrowRight className="w-4 h-4" />
-                    </Link>
-                    <Link
-                      href="/sign-in"
-                      className="liquid-glass text-white text-sm font-medium px-6 py-3.5 rounded-full hover:bg-white/10 transition-colors"
-                    >
-                      Log in
-                    </Link>
-                  </>
-                )}
+                <Link
+                  href="/dashboard"
+                  className="bg-white text-black text-sm font-semibold px-8 py-3.5 rounded-full shadow-2xl hover:bg-white/90 hover:scale-105 active:scale-95 transition-all flex items-center gap-2"
+                >
+                  <LayoutDashboard className="w-4 h-4" />
+                  <span>Open the app</span>
+                </Link>
               </div>
             </div>
           </div>
@@ -548,10 +494,10 @@ export function LiquidGlassLanding() {
               About
             </a>
             <Link
-              href={signedIn ? "/dashboard" : "/sign-in"}
+              href="/dashboard"
               className="hover:text-amber-300 transition-colors"
             >
-              {signedIn ? "Dashboard" : "Log in"}
+              Open the app
             </Link>
           </div>
         </footer>

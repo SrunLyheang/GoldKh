@@ -7,8 +7,9 @@ const REDACTED = "[redacted]";
 // can carry user PII:
 //   - `request.data` — the request body. The transaction `notes` field is
 //     free text a user may fill with names, account numbers, or amounts.
-//   - `request.cookies` / `request.headers` — the Clerk session cookie and
-//     any auth headers, which identify the user.
+//   - `request.cookies` / `request.headers` — the device-id cookie (a bearer
+//     secret that opens the user's ledger) and any other headers that
+//     could identify the user.
 //   - `request.query_string` and the query portion of `request.url` — a
 //     query string can carry ids, search terms, or tokens.
 //   - `breadcrumbs` — Sentry's automatic `fetch` / `xhr` / `console`

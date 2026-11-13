@@ -1,19 +1,19 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const {
-  authMock,
+  deviceIdMock,
   deleteOwnedTransactionMock,
   updateOwnedTransactionMock,
   isRateLimitedMock,
 } = vi.hoisted(() => ({
-  authMock: vi.fn(),
+  deviceIdMock: vi.fn(),
   deleteOwnedTransactionMock: vi.fn(),
   updateOwnedTransactionMock: vi.fn(),
   isRateLimitedMock: vi.fn(),
 }));
 
-vi.mock("@clerk/nextjs/server", () => ({
-  auth: authMock,
+vi.mock("@/lib/identity/server", () => ({
+  getDeviceId: deviceIdMock,
 }));
 
 vi.mock("@/lib/db/queries/transactions", () => ({
@@ -55,7 +55,7 @@ describe("PATCH /api/transactions/[id]", () => {
   });
 
   it("returns 429 when the session has exceeded the rate limit", async () => {
-    authMock.mockResolvedValue({ userId: "user_123" });
+    deviceIdMock.mockResolvedValue("dev_123");
     isRateLimitedMock.mockResolvedValue(true);
 
     const res = await PATCH(patchRequest(validPayload), ctx("tx_1"));
@@ -67,7 +67,7 @@ describe("PATCH /api/transactions/[id]", () => {
   });
 
   it("returns 401 when there is no session, before touching the DB", async () => {
-    authMock.mockResolvedValue({ userId: null });
+    deviceIdMock.mockResolvedValue(null);
 
     const res = await PATCH(patchRequest(validPayload), ctx("tx_1"));
 
@@ -76,7 +76,7 @@ describe("PATCH /api/transactions/[id]", () => {
   });
 
   it("rejects an invalid payload with 400 and does not call the DB", async () => {
-    authMock.mockResolvedValue({ userId: "user_123" });
+    deviceIdMock.mockResolvedValue("dev_123");
 
     const res = await PATCH(
       patchRequest({ ...validPayload, unit: "ounce" }),
@@ -90,7 +90,7 @@ describe("PATCH /api/transactions/[id]", () => {
   });
 
   it("rejects a non-JSON body with 400 and does not call the DB", async () => {
-    authMock.mockResolvedValue({ userId: "user_123" });
+    deviceIdMock.mockResolvedValue("dev_123");
 
     const res = await PATCH(
       new Request("http://localhost/api/transactions/tx_1", {
@@ -108,7 +108,7 @@ describe("PATCH /api/transactions/[id]", () => {
   });
 
   it("scopes the update to the session userId, never a client value", async () => {
-    authMock.mockResolvedValue({ userId: "user_123" });
+    deviceIdMock.mockResolvedValue("dev_123");
     updateOwnedTransactionMock.mockResolvedValue({
       ok: true,
       value: { id: "tx_1" },
@@ -118,7 +118,7 @@ describe("PATCH /api/transactions/[id]", () => {
     const body = await res.json();
 
     expect(updateOwnedTransactionMock).toHaveBeenCalledWith(
-      "user_123",
+      "dev_123",
       "tx_1",
       expect.objectContaining({ type: "buy", quantity: "10" })
     );
@@ -126,7 +126,7 @@ describe("PATCH /api/transactions/[id]", () => {
   });
 
   it("returns 404 when the row does not exist", async () => {
-    authMock.mockResolvedValue({ userId: "user_123" });
+    deviceIdMock.mockResolvedValue("dev_123");
     updateOwnedTransactionMock.mockResolvedValue({
       ok: false,
       reason: "not_found",
@@ -140,7 +140,7 @@ describe("PATCH /api/transactions/[id]", () => {
   });
 
   it("returns 403 when the row belongs to another user", async () => {
-    authMock.mockResolvedValue({ userId: "user_123" });
+    deviceIdMock.mockResolvedValue("dev_123");
     updateOwnedTransactionMock.mockResolvedValue({
       ok: false,
       reason: "forbidden",
@@ -161,7 +161,7 @@ describe("DELETE /api/transactions/[id]", () => {
   });
 
   it("returns 429 when the session has exceeded the rate limit", async () => {
-    authMock.mockResolvedValue({ userId: "user_123" });
+    deviceIdMock.mockResolvedValue("dev_123");
     isRateLimitedMock.mockResolvedValue(true);
 
     const res = await DELETE(new Request("http://localhost"), ctx("tx_1"));
@@ -173,7 +173,7 @@ describe("DELETE /api/transactions/[id]", () => {
   });
 
   it("returns 401 when there is no session, before touching the DB", async () => {
-    authMock.mockResolvedValue({ userId: null });
+    deviceIdMock.mockResolvedValue(null);
 
     const res = await DELETE(new Request("http://localhost"), ctx("tx_1"));
 
@@ -182,7 +182,7 @@ describe("DELETE /api/transactions/[id]", () => {
   });
 
   it("scopes the delete to the session userId, never a client value", async () => {
-    authMock.mockResolvedValue({ userId: "user_123" });
+    deviceIdMock.mockResolvedValue("dev_123");
     deleteOwnedTransactionMock.mockResolvedValue({
       ok: true,
       value: { id: "tx_1" },
@@ -191,12 +191,12 @@ describe("DELETE /api/transactions/[id]", () => {
     const res = await DELETE(new Request("http://localhost"), ctx("tx_1"));
     const body = await res.json();
 
-    expect(deleteOwnedTransactionMock).toHaveBeenCalledWith("user_123", "tx_1");
+    expect(deleteOwnedTransactionMock).toHaveBeenCalledWith("dev_123", "tx_1");
     expect(body).toEqual({ data: { id: "tx_1" } });
   });
 
   it("returns 404 when the row does not exist", async () => {
-    authMock.mockResolvedValue({ userId: "user_123" });
+    deviceIdMock.mockResolvedValue("dev_123");
     deleteOwnedTransactionMock.mockResolvedValue({
       ok: false,
       reason: "not_found",
@@ -210,7 +210,7 @@ describe("DELETE /api/transactions/[id]", () => {
   });
 
   it("returns 403 when the row belongs to another user", async () => {
-    authMock.mockResolvedValue({ userId: "user_123" });
+    deviceIdMock.mockResolvedValue("dev_123");
     deleteOwnedTransactionMock.mockResolvedValue({
       ok: false,
       reason: "forbidden",

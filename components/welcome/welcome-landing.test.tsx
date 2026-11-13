@@ -1,18 +1,7 @@
 // @vitest-environment jsdom
 import { render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { WelcomeLanding } from "./welcome-landing";
-
-// Mutable auth state so individual tests can flip to the signed-in view.
-const authState = { isLoaded: true, isSignedIn: false };
-
-vi.mock("@clerk/nextjs", () => ({
-  useAuth: () => authState,
-}));
-
-afterEach(() => {
-  authState.isSignedIn = false;
-});
 
 describe("WelcomeLanding / LiquidGlassLanding", () => {
   it("renders the main headline", () => {
@@ -42,50 +31,25 @@ describe("WelcomeLanding / LiquidGlassLanding", () => {
     for (const link of about) expect(link).toHaveAttribute("href", "#about");
   });
 
-  it("renders the primary sign up CTAs pointing to /sign-up", () => {
+  // No sign-up: every call to action opens the app directly.
+  it("points every call to action at /dashboard", () => {
     render(<WelcomeLanding />);
     const ctas = screen.getAllByRole("link", {
-      name: /Get Started|Sign up|Create Free Account/i,
+      name: /Start logging|Open the app|Build your real ledger/i,
     });
     expect(ctas.length).toBeGreaterThan(0);
     for (const cta of ctas) {
-      expect(cta).toHaveAttribute("href", "/sign-up");
+      expect(cta).toHaveAttribute("href", "/dashboard");
     }
   });
 
-  it("links Log in to /sign-in", () => {
-    render(<WelcomeLanding />);
-    const signIns = screen.getAllByRole("link", { name: /Log in/i });
-    expect(signIns.length).toBeGreaterThan(0);
-    for (const link of signIns) {
-      expect(link).toHaveAttribute("href", "/sign-in");
-    }
-  });
-
-  it("does not show a dashboard CTA when signed out", () => {
-    render(<WelcomeLanding />);
+  it("has no sign-in or sign-up links", () => {
+    const { container } = render(<WelcomeLanding />);
     expect(
-      screen.queryByRole("link", { name: /Go to Dashboard/i }),
-    ).not.toBeInTheDocument();
-  });
-
-  it("shows a dashboard CTA and hides sign-in/sign-up when signed in", () => {
-    authState.isSignedIn = true;
-    render(<WelcomeLanding />);
-    const dash = screen.getAllByRole("link", {
-      name: /Go to Dashboard|Start Today/i,
-    });
-    expect(dash.length).toBeGreaterThan(0);
-    for (const link of dash) {
-      expect(link).toHaveAttribute("href", "/dashboard");
-    }
+      container.querySelector('a[href^="/sign-in"], a[href^="/sign-up"]'),
+    ).toBeNull();
     expect(
-      screen.queryByRole("link", { name: /Log in/i }),
-    ).not.toBeInTheDocument();
-    expect(
-      screen.queryByRole("link", {
-        name: /Get Started|Sign up|Create Free Account|Start Today/i,
-      }),
+      screen.queryByRole("link", { name: /Log in|Sign up/i }),
     ).not.toBeInTheDocument();
   });
 

@@ -39,8 +39,9 @@ export const goldUnitEnum = pgEnum("gold_unit", ["chi", "damlung"]);
 
 export const currencyEnum = pgEnum("currency", ["USD", "KHR"]);
 
-// userId is always the Clerk session user id — never accepted from the
-// client. See CONTEXT.md invariant 6.
+// userId is always the anonymous device id from the httpOnly cookie
+// proxy.ts sets — never accepted from the request body or query. See
+// CONTEXT.md invariant 6.
 export const transactions = pgTable("transactions", {
   id: uuid("id").primaryKey().defaultRandom(),
   userId: text("user_id").notNull(),

@@ -1,6 +1,5 @@
 "use client";
 
-import { useUser } from "@clerk/nextjs";
 import { Settings, X } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -13,13 +12,11 @@ import {
 } from "@/components/icons";
 import { t } from "@/lib/i18n/dictionary";
 import { cn } from "@/lib/utils";
-import { AccountButton } from "./account-button";
-import { SignOutButton } from "./sign-out-button";
 import { ThemeToggle } from "./theme-toggle";
 
 // Nav destinations rendered with the bespoke dashboard icon set
 // (components/icons/). Settings is not here — it stays a separate
-// footer <Link> on the user/profile row.
+// footer <Link> beside the theme toggle.
 const NAV_ITEMS = [
   { labelKey: "dashboard" as const, href: "/dashboard", icon: DashboardIcon },
   {
@@ -47,10 +44,7 @@ export function Sidebar({
   onClose: () => void;
 }) {
   const pathname = usePathname();
-  const { user } = useUser();
   const settingsActive = pathname === "/dashboard/settings";
-  const identifier =
-    user?.primaryEmailAddress?.emailAddress ?? user?.username ?? "";
 
   return (
     <>
@@ -122,34 +116,20 @@ export function Sidebar({
             );
           })}
         </nav>
-        <div className="flex flex-col gap-3 border-t border-(--glass-border-to) px-4 py-5">
-          <ThemeToggle className="self-start" />
-          {identifier && (
-            <p
-              className="truncate text-detail text-muted-foreground"
-              title={identifier}
-            >
-              {identifier}
-            </p>
-          )}
-          <div className="flex items-center justify-between gap-2">
-            <AccountButton />
-            <div className="flex shrink-0 items-center gap-1.5">
-              <Link
-                href="/dashboard/settings"
-                onClick={onClose}
-                aria-label={t.nav.settings}
-                aria-current={settingsActive ? "page" : undefined}
-                className={cn(
-                  "inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-full border border-(--glass-border-to) bg-accent/60 transition-colors hover:bg-(--glow-color) hover:text-foreground",
-                  settingsActive ? "text-primary" : "text-muted-foreground"
-                )}
-              >
-                <Settings className="h-5 w-5" />
-              </Link>
-              <SignOutButton />
-            </div>
-          </div>
+        <div className="flex items-center justify-between gap-2 border-t border-(--glass-border-to) px-4 py-5">
+          <ThemeToggle />
+          <Link
+            href="/dashboard/settings"
+            onClick={onClose}
+            aria-label={t.nav.settings}
+            aria-current={settingsActive ? "page" : undefined}
+            className={cn(
+              "inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-full border border-(--glass-border-to) bg-accent/60 transition-colors hover:bg-(--glow-color) hover:text-foreground",
+              settingsActive ? "text-primary" : "text-muted-foreground"
+            )}
+          >
+            <Settings className="h-5 w-5" />
+          </Link>
         </div>
       </aside>
     </>

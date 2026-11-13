@@ -10,9 +10,6 @@ const en = {
     price: "Price",
     insights: "Insights",
     settings: "Settings",
-    signOut: "Sign out",
-    signingOut: "Signing you out…",
-    signOutError: "Couldn't sign out — try again.",
   },
   hero: {
     pricePer: (unit: string) => `Price per ${unit}`,
@@ -100,7 +97,7 @@ const en = {
       invalidInput:
         "Something in this transaction isn't valid. Check your entries and try again.",
       rateLimited: "You're saving too fast — wait a moment and try again.",
-      sessionExpired: "Your session expired. Sign in again to save.",
+      sessionExpired: "Couldn't recognise this device. Reload the page and try again.",
       serverError:
         "Couldn't save — something went wrong on our end. Try again.",
       network: "No connection. Check your internet and try again.",
@@ -260,10 +257,20 @@ const en = {
   },
   settings: {
     title: "Settings",
-    accountTitle: "Account",
-    signedInAs: "Signed in as",
-    signOut: "Sign out",
-    signOutDescription: "End your session on this device and return to the home page.",
+    deviceTitle: "This device",
+    recoveryCode: "Recovery code",
+    recoveryCodeDescription:
+      "Your ledger lives on this browser — no account needed. Keep this code somewhere safe: it's the only way to open the same ledger on another device, or get it back if this browser's data is cleared.",
+    recoveryShow: "Show",
+    recoveryHide: "Hide",
+    recoveryCopy: "Copy",
+    recoveryCopied: "Recovery code copied.",
+    restoreTitle: "Use a code from another device",
+    restoreDescription:
+      "Paste a recovery code to open that ledger here. Save this device's code first — the ledger currently on this browser is only reachable with it.",
+    restorePlaceholder: "dev_…",
+    restoreSubmit: "Open ledger",
+    restoreInvalid: "That doesn't look like a GoldKh recovery code.",
     preferencesTitle: "Preferences",
     dataTitle: "Data",
     defaultUnit: "Default display unit",
@@ -280,11 +287,11 @@ const en = {
     deleteAllConfirm: "Delete all transactions",
     deleteAllPrompt: "Type DELETE to confirm.",
     deleteAllToast: "All transactions deleted.",
-    deleteAccount: "Delete account",
-    deleteAccountDescription:
-      "Permanently delete your account and all associated data. This cannot be undone.",
-    deleteAccountConfirm: "Delete my account",
-    deleteAccountPrompt: "Type DELETE to confirm.",
+    startFresh: "Start a fresh ledger",
+    startFreshDescription:
+      "Erase every transaction on this ledger and issue a new recovery code. The old code stops opening anything. This cannot be undone.",
+    startFreshConfirm: "Erase and start fresh",
+    startFreshPrompt: "Type DELETE to confirm.",
     cancel: "Cancel",
     genericError: "Something went wrong — try again.",
   },
@@ -334,8 +341,8 @@ const en = {
     steps: {
       kicker: "How it works",
       title: "Tracked in three steps",
-      oneTitle: "Sign in",
-      oneBody: "Create an account. Your holdings are visible only to you.",
+      oneTitle: "Open the app",
+      oneBody: "No sign-up. Your ledger is tied to this device, with a recovery code to carry it elsewhere.",
       twoTitle: "Record buys and sells",
       twoBody:
         "Quantity, unit, price paid, and date. Edit or delete anything later.",

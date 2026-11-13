@@ -47,12 +47,12 @@ describe("DataActions destructive actions", () => {
     });
   });
 
-  it("does not call /api/account until DELETE is typed", async () => {
+  it("does not call /api/device until DELETE is typed", async () => {
     const user = userEvent.setup();
     render(<DataActions transactions={[]} />);
 
-    await user.click(screen.getByRole("button", { name: "Delete account" }));
-    const confirm = screen.getByRole("button", { name: "Delete my account" });
+    await user.click(screen.getByRole("button", { name: "Start a fresh ledger" }));
+    const confirm = screen.getByRole("button", { name: "Erase and start fresh" });
     expect(confirm).toBeDisabled();
 
     await user.type(

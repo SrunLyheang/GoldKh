@@ -1,11 +1,8 @@
-import { auth } from "@clerk/nextjs/server";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 
-export default async function DashboardLayout({ children }: LayoutProps<"/dashboard">) {
-  const { userId, redirectToSignIn } = await auth();
-  if (!userId) {
-    return redirectToSignIn();
-  }
-
+// No sign-in gate: proxy.ts guarantees every request here carries an
+// anonymous device id, and each page scopes its queries to it (see
+// lib/identity/device.ts).
+export default function DashboardLayout({ children }: LayoutProps<"/dashboard">) {
   return <DashboardShell>{children}</DashboardShell>;
 }

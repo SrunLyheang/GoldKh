@@ -13,7 +13,7 @@ function tileValue(label: RegExp): string {
 
 describe("TryItSimulator", () => {
   it("shows a seeded position with a non-zero average cost", () => {
-    render(<TryItSimulator signedIn={false} />);
+    render(<TryItSimulator />);
     // Two seed rows: 1 damlung + 5 chi.
     expect(screen.getByText(/1 damlung/)).toBeInTheDocument();
     expect(screen.getByText(/5 chi/)).toBeInTheDocument();
@@ -21,7 +21,7 @@ describe("TryItSimulator", () => {
   });
 
   it("recomputes the weighted average when a buy is added", () => {
-    render(<TryItSimulator signedIn={false} />);
+    render(<TryItSimulator />);
     const before = tileValue(/Average cost/);
 
     fireEvent.change(screen.getByLabelText(/How much/i), {
@@ -37,7 +37,7 @@ describe("TryItSimulator", () => {
   });
 
   it("flips the gain/loss sign as the spot slider crosses the average cost", () => {
-    render(<TryItSimulator signedIn={false} />);
+    render(<TryItSimulator />);
     const slider = screen.getByLabelText(/Drag today's price/i);
 
     fireEvent.change(slider, { target: { value: "2500" } });
@@ -47,15 +47,10 @@ describe("TryItSimulator", () => {
     expect(tileValue(/Up \/ down/)).toMatch(/^\+\$/);
   });
 
-  it("points the CTA at sign-up when signed out and the dashboard when signed in", () => {
-    const { rerender } = render(<TryItSimulator signedIn={false} />);
+  it("points the CTA at the app", () => {
+    render(<TryItSimulator />);
     expect(
       screen.getByRole("link", { name: /Build your real ledger/i }),
-    ).toHaveAttribute("href", "/sign-up");
-
-    rerender(<TryItSimulator signedIn />);
-    expect(
-      screen.getByRole("link", { name: /Open your dashboard/i }),
     ).toHaveAttribute("href", "/dashboard");
   });
 });

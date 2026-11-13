@@ -1,20 +1,15 @@
-import { auth } from "@clerk/nextjs/server";
-import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { WelcomeLanding } from "@/components/welcome/welcome-landing";
 
-// "/" is the public entry point: signed-out visitors get the marketing
-// landing page, already-authenticated users are handed straight to
-// /dashboard (which gates itself again in app/dashboard/layout.tsx).
+// "/" is the public entry point: the marketing landing page. There is no
+// sign-up — every call to action goes straight to /dashboard, where
+// proxy.ts gives the browser its anonymous device id on arrival.
 export const metadata: Metadata = {
   title: "GoldKh — Track your gold against the live spot price",
   description:
     "Record gold buys and sells in chi and damlung, and see your weighted-average cost, market value, and unrealized gain or loss against the live spot price. Not an exchange.",
 };
 
-export default async function Home() {
-  const { userId } = await auth();
-  if (userId) redirect("/dashboard");
-
+export default function Home() {
   return <WelcomeLanding />;
 }

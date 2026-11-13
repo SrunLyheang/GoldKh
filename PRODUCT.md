@@ -54,12 +54,13 @@ keeping their own tally.
   Binance PAXG) are called only on a cache miss. A snapshot older than 30 minutes
   is stale; a manual refresh within 5 minutes of the last is on cooldown.
   Snapshots are append-only, written on dashboard load — no scheduled job.
-- Signed-in surfaces: dashboard (price, position stats, realized gains,
+- App surfaces: dashboard (price, position stats, realized gains,
   transaction history, price chart), full-screen price chart, insights
   (plain-language readouts, portfolio value over time, per-buy quality, what-if
   calculator), full transactions table with CSV import/export, and settings
   (account, display preferences, data actions). The landing page at `/` is the
-  only marketing surface and redirects to the dashboard once signed in.
+  only marketing surface; there is no sign-up, so every call to action
+  opens the dashboard directly.
 
 ## Capabilities and Constraints
 
@@ -69,8 +70,10 @@ keeping their own tally.
   other unit or currency is a display-time conversion.
 - **No floating point for money or quantities** — decimal arithmetic throughout;
   every money/quantity database column is `numeric`.
-- **Server-owned identity.** Every query for a user's data is scoped to their
-  Clerk session; a user id from the request is never trusted.
+- **No accounts, server-owned identity.** Each browser gets an anonymous
+  device id in an httpOnly cookie; every query is scoped to it, and a user id
+  from the request is never trusted. Settings shows the id as a recovery code
+  for carrying the ledger to another device.
 - **Price layer is the only outbound.** Only `lib/price/` talks to an external
   price provider; API keys are read only on the server.
 - **Transaction shape:** type (buy/sell), quantity, unit (chi/damlung), price per
@@ -95,7 +98,7 @@ keeping their own tally.
 
 ## Evidence on Hand
 
-- A real, working application (Next.js 16 / React 19, Clerk auth, Neon Postgres,
+- A real, working application (Next.js 16 / React 19, Neon Postgres,
   deployed on Vercel). The money math in `lib/calc/` is the most thoroughly
   tested part of the codebase.
 - **No user base, testimonials, customer counts, press, or usage metrics.** A

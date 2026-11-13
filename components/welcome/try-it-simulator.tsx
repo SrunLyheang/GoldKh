@@ -31,16 +31,12 @@ function parseAmount(raw: string): number {
   return Number.isFinite(n) ? n : 0;
 }
 
-interface TryItSimulatorProps {
-  signedIn: boolean;
-}
-
 // The interactive heart of the landing page. A visitor builds a pretend
 // ledger, then drags "today's price" and watches the weighted-average
 // cost, holdings, market value, and gain/loss recompute live. All of it
 // is client-side arithmetic on an indicative price (see marketing-calc);
 // nothing is saved and nothing hits the real price feed.
-export function TryItSimulator({ signedIn }: TryItSimulatorProps) {
+export function TryItSimulator() {
   const [buys, setBuys] = useState<MarketingBuy[]>(SEED_BUYS);
   const [qty, setQty] = useState("1");
   const [unit, setUnit] = useState<GoldUnit>("damlung");
@@ -316,15 +312,15 @@ export function TryItSimulator({ signedIn }: TryItSimulatorProps) {
             </div>
 
             <p className="mt-5 font-mono text-[10px] leading-relaxed text-white/40">
-              Indicative price for illustration only. Sign in to track a real
+              Indicative price for illustration only. Open the app to track a real
               ledger against the current spot rate.
             </p>
 
             <Link
-              href={signedIn ? "/dashboard" : "/sign-up"}
+              href="/dashboard"
               className="mt-4 flex items-center justify-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-semibold text-black transition-all hover:scale-[1.02] hover:bg-white/90 active:scale-95"
             >
-              {signedIn ? "Open your dashboard" : "Build your real ledger"}
+              Build your real ledger
               <ArrowRight className="h-4 w-4" />
             </Link>
           </div>

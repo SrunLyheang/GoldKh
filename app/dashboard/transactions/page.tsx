@@ -1,4 +1,4 @@
-import { auth } from "@clerk/nextjs/server";
+import { getDeviceId } from "@/lib/identity/server";
 import { buildDamlungPriceSeries } from "@/lib/calc/priceHistory";
 import { listTransactionsForUser } from "@/lib/db/queries/transactions";
 import { listRecentPriceSnapshots } from "@/lib/db/queries/priceSnapshots";
@@ -10,7 +10,7 @@ import { TransactionsView } from "@/components/transactions/transactions-view";
 // price snapshots — plus the current price; all filtering, sorting, and
 // CSV import/export happen client-side in TransactionsView.
 export default async function TransactionsPage() {
-  const { userId } = await auth();
+  const userId = await getDeviceId();
   if (!userId) return null;
 
   const [price, transactions] = await Promise.all([

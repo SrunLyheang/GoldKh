@@ -1,14 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { authMock, createManyMock, deleteManyMock, isRateLimitedMock } =
+const { deviceIdMock, createManyMock, deleteManyMock, isRateLimitedMock } =
   vi.hoisted(() => ({
-    authMock: vi.fn(),
+    deviceIdMock: vi.fn(),
     createManyMock: vi.fn(),
     deleteManyMock: vi.fn(),
     isRateLimitedMock: vi.fn(),
   }));
 
-vi.mock("@clerk/nextjs/server", () => ({ auth: authMock }));
+vi.mock("@/lib/identity/server", () => ({
+  getDeviceId: deviceIdMock,
+}));
 vi.mock("@/lib/db/queries/transactions", () => ({
   createManyTransactionsForUser: createManyMock,
   deleteManyOwnedTransactions: deleteManyMock,
@@ -54,11 +56,11 @@ describe("POST /api/transactions/bulk", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     isRateLimitedMock.mockResolvedValue(false);
-    authMock.mockResolvedValue({ userId: "user_123" });
+    deviceIdMock.mockResolvedValue("dev_123");
   });
 
   it("returns 401 and never touches the DB without a session", async () => {
-    authMock.mockResolvedValue({ userId: null });
+    deviceIdMock.mockResolvedValue(null);
     const res = await POST(jsonRequest({ transactions: [validRow] }));
     expect(res.status).toBe(401);
     expect(createManyMock).not.toHaveBeenCalled();
@@ -109,7 +111,7 @@ describe("POST /api/transactions/bulk", () => {
     const body = await res.json();
     expect(res.status).toBe(201);
     expect(createManyMock).toHaveBeenCalledWith(
-      "user_123",
+      "dev_123",
       expect.arrayContaining([expect.objectContaining({ type: "buy" })])
     );
     expect(body).toEqual({ data: { inserted: 2 } });
@@ -126,12 +128,12 @@ describe("DELETE /api/transactions/bulk", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     isRateLimitedMock.mockResolvedValue(false);
-    authMock.mockResolvedValue({ userId: "user_123" });
+    deviceIdMock.mockResolvedValue("dev_123");
     deleteManyMock.mockResolvedValue([{ id: uuid(1) }, { id: uuid(2) }]);
   });
 
   it("returns 401 and never touches the DB without a session", async () => {
-    authMock.mockResolvedValue({ userId: null });
+    deviceIdMock.mockResolvedValue(null);
     const res = await DELETE(deleteRequest({ ids: [uuid(1)] }));
     expect(res.status).toBe(401);
     expect(deleteManyMock).not.toHaveBeenCalled();
@@ -186,7 +188,7 @@ describe("DELETE /api/transactions/bulk", () => {
     const res = await DELETE(deleteRequest({ ids: [uuid(1), uuid(9)] }));
     const body = await res.json();
     expect(res.status).toBe(200);
-    expect(deleteManyMock).toHaveBeenCalledWith("user_123", [uuid(1), uuid(9)]);
+    expect(deleteManyMock).toHaveBeenCalledWith("dev_123", [uuid(1), uuid(9)]);
     expect(body).toEqual({ data: { deleted: 1 } });
   });
 });

@@ -1,4 +1,4 @@
-import { auth } from "@clerk/nextjs/server";
+import { getDeviceId } from "@/lib/identity/server";
 import { listTransactionsForUser } from "@/lib/db/queries/transactions";
 import { listRecentPriceSnapshots } from "@/lib/db/queries/priceSnapshots";
 import { getPrice } from "@/lib/price/getPrice";
@@ -11,7 +11,7 @@ import { InsightsContent } from "@/components/insights/insights-content";
 // at read time from the ledger and stored price snapshots — no new table,
 // no cron (§8).
 export default async function InsightsPage() {
-  const { userId } = await auth();
+  const userId = await getDeviceId();
   if (!userId) return null;
 
   // getPrice() can append a fresh snapshot as a side effect, so

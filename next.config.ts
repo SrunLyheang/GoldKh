@@ -1,33 +1,10 @@
 import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
 
-// CSP origin groups. Clerk: *.clerk.accounts.dev + *.clerk.com, plus the
-// custom-domain Frontend API host decoded from the publishable key.
-// Turnstile: challenges.cloudflare.com (Clerk bot protection iframe).
-// Sentry: the single ingest host from the DSN, exact origin, no wildcard.
-// Images: img.clerk.com only (Clerk avatars).
-
-// The Frontend API host is base64url-encoded in the publishable key
-// (`pk_(test|live)_<base64url("<host>$")>`). Decoding it here means a
-// production custom domain needs no extra env var.
-function clerkFrontendApiOrigin(): string {
-  const key = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
-  if (!key) return "";
-  const encoded = key.replace(/^pk_(test|live)_/, "");
-  try {
-    const decoded = Buffer.from(encoded, "base64").toString("utf8");
-    const host = decoded.replace(/\$$/, "");
-    return /^[a-z0-9.-]+$/i.test(host) ? `https://${host}` : "";
-  } catch {
-    return "";
-  }
-}
-const clerkFrontendApi = clerkFrontendApiOrigin();
-
-const clerkOrigins =
-  `https://*.clerk.accounts.dev https://*.clerk.com ${clerkFrontendApi}`.trim();
-const clerkImageOrigin = "https://img.clerk.com";
-const turnstileOrigin = "https://challenges.cloudflare.com";
+// CSP origin groups. Everything is 'self' except Sentry: the single
+// ingest host from the DSN, exact origin, no wildcard. There is no
+// third-party auth provider — identity is a first-party device cookie
+// (lib/identity/device.ts).
 
 function sentryIngestOrigin(): string {
   const dsn = process.env.NEXT_PUBLIC_SENTRY_DSN;
@@ -56,12 +33,12 @@ const contentSecurityPolicy = [
   "object-src 'none'",
   "form-action 'self'",
   "frame-ancestors 'self'",
-  `script-src 'self' 'unsafe-inline'${devScriptSrc} ${clerkOrigins} ${turnstileOrigin}`,
+  `script-src 'self' 'unsafe-inline'${devScriptSrc}`,
   "style-src 'self' 'unsafe-inline'",
-  `img-src 'self' data: blob: ${clerkImageOrigin}`,
+  "img-src 'self' data: blob:",
   "font-src 'self' data:",
-  `connect-src 'self' ${clerkOrigins} ${sentryOrigins}`,
-  `frame-src 'self' ${clerkOrigins} ${turnstileOrigin}`,
+  `connect-src 'self' ${sentryOrigins}`.trim(),
+  "frame-src 'self'",
   "worker-src 'self' blob:",
   `report-uri ${cspReportUri}`,
 ].join("; ");

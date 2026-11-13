@@ -1,5 +1,3 @@
-import { ClerkProvider } from "@clerk/nextjs";
-import { shadcn } from "@clerk/ui/themes";
 import type { Metadata } from "next";
 import { IBM_Plex_Sans, IBM_Plex_Mono, Newsreader, Fraunces } from "next/font/google";
 import { cn } from "@/lib/utils";
@@ -58,15 +56,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         fraunces.variable
       )}
     >
-      <body className="font-sans">
-        <ClerkProvider
-          afterSignOutUrl="/"
-          appearance={{ theme: shadcn }}
-          localization={{ signIn: { start: { title: "Sign in" } } }}
-        >
-          {children}
-        </ClerkProvider>
-      </body>
+      <body className="font-sans">{children}</body>
     </html>
   );
 }

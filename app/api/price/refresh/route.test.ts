@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const {
-  authMock,
+  deviceIdMock,
   getLatestSnapshotMock,
   insertSnapshotMock,
   fetchGoldapiPriceMock,
@@ -9,7 +9,7 @@ const {
   isRateLimitedMock,
   captureExceptionMock,
 } = vi.hoisted(() => ({
-  authMock: vi.fn(),
+  deviceIdMock: vi.fn(),
   getLatestSnapshotMock: vi.fn(),
   insertSnapshotMock: vi.fn(),
   fetchGoldapiPriceMock: vi.fn(),
@@ -18,8 +18,8 @@ const {
   captureExceptionMock: vi.fn(),
 }));
 
-vi.mock("@clerk/nextjs/server", () => ({
-  auth: authMock,
+vi.mock("@/lib/identity/server", () => ({
+  getDeviceId: deviceIdMock,
 }));
 
 vi.mock("@sentry/nextjs", () => ({
@@ -61,7 +61,7 @@ describe("POST /api/price/refresh", () => {
     vi.clearAllMocks();
     isMarketOpenMock.mockReturnValue(true);
     isRateLimitedMock.mockResolvedValue(false);
-    authMock.mockResolvedValue({ userId: "user_123" });
+    deviceIdMock.mockResolvedValue("dev_123");
   });
 
   it("returns 409 MARKET_CLOSED without calling the provider when the market is closed", async () => {
@@ -76,7 +76,7 @@ describe("POST /api/price/refresh", () => {
   });
 
   it("returns 401 when there is no session", async () => {
-    authMock.mockResolvedValue({ userId: null });
+    deviceIdMock.mockResolvedValue(null);
 
     const res = await post();
 
@@ -154,8 +154,8 @@ describe("POST /api/price/refresh", () => {
       capturedAt: new Date(),
     });
 
-    authMock.mockResolvedValueOnce({ userId: "user_001" });
-    authMock.mockResolvedValueOnce({ userId: "user_002" });
+    deviceIdMock.mockResolvedValueOnce("dev_001");
+    deviceIdMock.mockResolvedValueOnce("dev_002");
 
     const [first, second] = await Promise.all([
       post({ headers: { origin: "http://localhost" } }),

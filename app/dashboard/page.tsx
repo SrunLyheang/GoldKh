@@ -1,4 +1,4 @@
-import { auth } from "@clerk/nextjs/server";
+import { getDeviceId } from "@/lib/identity/server";
 import { priceFromTroyOz } from "@/lib/calc/units";
 import { buildDamlungPriceSeries } from "@/lib/calc/priceHistory";
 import { listTransactionsForUser } from "@/lib/db/queries/transactions";
@@ -10,10 +10,9 @@ import { AutoRefresh } from "@/components/dashboard/auto-refresh";
 import { DashboardContent } from "@/components/dashboard/dashboard-content";
 
 export default async function DashboardPage() {
-  // The dashboard layout (app/dashboard/layout.tsx) already gates on auth and
-  // redirects unauthenticated users, so userId is non-null here. A second
-  // redirect gave the Clerk dev handshake another way to bounce the route.
-  const { userId } = await auth();
+  // proxy.ts sets the device id before this renders, so userId is
+  // non-null here in practice.
+  const userId = await getDeviceId();
   if (!userId) return null;
 
   // getPrice() can append a new row to price_snapshots as a side effect when

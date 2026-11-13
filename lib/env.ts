@@ -12,23 +12,6 @@ const envSchema = z.object({
     .regex(/^postgres(ql)?:\/\//, {
       message: "must be a postgres/postgresql connection string",
     }),
-  CLERK_SECRET_KEY: z
-    .string()
-    .startsWith("sk_", { message: "must be a Clerk secret key" }),
-  NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: z
-    .string()
-    .startsWith("pk_", { message: "must be a Clerk publishable key" }),
-  // Optional, not missing-required: verifyWebhook() in
-  // app/api/webhooks/clerk/route.ts already throws (caught, returned as
-  // a 400) if this is unset or wrong when a webhook actually arrives.
-  // Hard-requiring it here would block the entire app's boot over one
-  // route's secret — validated for shape when present, not required.
-  CLERK_WEBHOOK_SIGNING_SECRET: z
-    .string()
-    .startsWith("whsec_", {
-      message: "must be a Clerk webhook signing secret",
-    })
-    .optional(),
   GOLDAPI_IO_API_KEY: z.string().min(1, { message: "must not be empty" }),
 });
 

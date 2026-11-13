@@ -6,9 +6,7 @@ import { useState, type ReactNode } from "react";
 import { PrefsProvider } from "@/lib/prefs/prefs-context";
 import { ThemeProvider } from "@/lib/theme/theme-context";
 import { Toaster } from "@/components/ui/sonner";
-import { AccountButton } from "./account-button";
 import { Sidebar } from "./sidebar";
-import { SignOutButton } from "./sign-out-button";
 import { ThemeToggle } from "./theme-toggle";
 
 // Wraps the dashboard route so mobile can have a hamburger-triggered
@@ -56,11 +54,7 @@ export function DashboardShell({ children }: { children: ReactNode }) {
                 />
                 GoldKh
               </span>
-              <div className="flex shrink-0 items-center gap-2.5">
-                <ThemeToggle />
-                <AccountButton />
-                <SignOutButton />
-              </div>
+              <ThemeToggle />
             </header>
             <main className="flex-1 px-4 py-7 md:px-10 md:py-9">
               {children}

@@ -41,8 +41,12 @@ lives in `PRODUCT.md`; visual/UI rules live in `DESIGN.md`.
    this rule; per-row valuation blanks every USD figure for a KHR row.
 5. **Gain/loss is against spot, not a retail premium.** The UI carries a
    disclaimer that local shop prices won't match; the math does not adjust.
-6. **Server-owned identity.** Every query for a user's data is scoped to
-   their Clerk session. A user id from the request is never trusted.
+6. **Server-owned identity.** There are no accounts. `proxy.ts` gives each
+   browser an anonymous device id (128 random bits, httpOnly cookie) and
+   every query for a user's data is scoped to it (`lib/identity/`). The id
+   is a bearer secret — Settings shows it as a recovery code for opening
+   the same ledger on another device. A user id from the request body or
+   query is never trusted.
 7. **The price layer is the only outbound.** Nothing else calls a provider.
 8. **Always a price.** On total provider failure `getPrice()` falls back to
    the last cached snapshot; it only throws when there is no cache at all.
@@ -95,6 +99,6 @@ all UI state, timers, and copy.
 
 Transaction-mutating routes (`POST /api/transactions`, `PATCH`/`DELETE
 /api/transactions/[id]`, bulk) are hard-blocked (429) at 20 requests per
-5-minute window, keyed on Clerk `user_id`. Public signup means these are
+5-minute window, keyed on the device id (`user_id`). No sign-up gate means these are
 exposed to strangers, not just the developer. CSV import is capped at 200
 rows per file, enforced server-side and mirrored in the import dialog.
