@@ -257,6 +257,7 @@ const en = {
   },
   settings: {
     title: "Settings",
+    backToHome: "Back to home page",
     deviceTitle: "This device",
     recoveryCode: "Recovery code",
     recoveryCodeDescription:
