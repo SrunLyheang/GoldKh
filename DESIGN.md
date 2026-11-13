@@ -4,8 +4,10 @@
 > `context/ui-context.md` that older `globals.css` comments point at
 > (that file never existed — see [Sharpen #5](#5-the-phantom-ui-contextmd)).
 > Read this before any visual or UI change. The landing page
-> (`components/welcome/*`, `data-landing-theme`) is a separate scoped
-> tree and is out of scope here except where noted.
+> (`components/landing/*`, styled by its own `landing.module.css` tokens —
+> the shop counter: red velvet tray, gold, Koulen / Moul / Kantumruy Pro,
+> bilingual English/Khmer) is a separate scoped tree and is out of scope
+> here except where noted.
 
 ---
 
@@ -89,7 +91,7 @@ block is written `:root[data-theme="x"], [data-theme="x"]` so a nested
 | **UI / body** | IBM Plex Sans (400/500/600/700) | `--font-plex-sans` (next/font) | Humanist grotesque with real character — flared terminals, true italic — vs. a generic system stack. |
 | **Every figure** — price, quantity, cost basis, %  | IBM Plex Mono (400/500/600) | `--font-plex-mono` | Real tabular figures; pairs with Plex Sans as one family, so number columns read as typesetting, not "monospace = technical". |
 | **Ledger theme** headings + hero price | Newsreader (400/500/600, + italic) | `--font-newsreader` | Editorial serif. Referenced only from the `[data-theme="ledger"]` block. |
-| **Landing display** | Fraunces (400/500/600, + italic) | `--font-fraunces` | Marketing-page headings only (`components/welcome/*`). |
+| **Landing faces** | Koulen, Moul, Kantumruy Pro | `--font-koulen`, `--font-moul`, `--font-kantumruy` | Landing page only (`components/landing/*`); all three cover Khmer. |
 
 **Rule:** all numbers render on the mono face with `font-variant-numeric:
 tabular-nums`, reached through `.tt-display` for the hero figure and
@@ -397,3 +399,7 @@ preserve:
 | 2026-09-03 | Stale price = muted grey, never red | Users check in between in-person shop visits; a 30-min-old price is normal, not an error. Red is reserved for financial loss. Research: "showing staleness matters more than showing freshness." |
 | 2026-09-03 | Type scale uses semantic names (`text-label`, `text-figure`…), added as new tokens | Additive — does not override Tailwind's default `text-*` steps, so the landing tree is unaffected. Matches the role-based `.tt-*` philosophy. |
 | 2026-09-04 | `chart-2` retuned per theme off `chart-1`'s hue (was `--muted-foreground`) | On the Insights two-line chart the cost-basis line was near-indistinguishable from the market-value line in `midnight` / `emerald` / `ledger`. `chart-2` is used only there; the dashed reference line takes `--muted-foreground` directly. |
+| 2026-11-13 | Clerk removed; no sign-up anywhere | Owner: "I want it to be easier to just log your gold." Identity is an anonymous device cookie with a recovery code in Settings. Never reintroduce a sign-in gate in front of logging. |
+| 2026-11-13 | Landing redesigned as "the shop counter" (Unslop Design 1.7, full redesign, nothing kept) | Owner's words: the job is "track your gold in real time"; the hero should "just show gold"; Khmer: yes. Picked take B (price board) for its simplicity — "might be too simple", so the gold lives on a velvet tray beneath it. The board shows the real cached spot price, never an illustrative one. |
+| 2026-11-13 | Landing: desktop keeps the built-out version; phones stay simple | Owner: "For mobile the [original simple B] looked better… keep it simple. But more animations for mobile. For desktop that is good." Phones: board, button, three pieces of gold, no explainer section. Motion: gold settles into the tray, digits roll in from blank (never a wrong digit), light sweeps once, scroll-linked light on phones, tap a piece to lift it and see its value. |
+| 2026-11-13 | Landing Khmer is a draft | Written by the assistant, pending a native reader's review (`components/landing/copy.ts`). |

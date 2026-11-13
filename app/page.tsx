@@ -1,15 +1,21 @@
 import type { Metadata } from "next";
-import { WelcomeLanding } from "@/components/welcome/welcome-landing";
+import { Landing } from "@/components/landing/landing";
+import { loadLandingQuote } from "@/lib/landing/loadQuote";
 
-// "/" is the public entry point: the marketing landing page. There is no
-// sign-up — every call to action goes straight to /dashboard, where
-// proxy.ts gives the browser its anonymous device id on arrival.
+// "/" — the landing page: today's real spot price, set out like a gold
+// shop's price board over its velvet tray. Rendered per request so the
+// price is the same cached live price the dashboard shows (getPrice()
+// only calls a provider when the cache is older than 30 minutes).
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
-  title: "GoldKh — Track your gold against the live spot price",
+  title: "GoldKh — Track your gold in real time",
   description:
-    "Record gold buys and sells in chi and damlung, and see your weighted-average cost, market value, and unrealized gain or loss against the live spot price. Not an exchange.",
+    "Today's gold price per damlung, chi and gram, and a free ledger for the gold you bought at the shop. See what it's worth and whether you're up or down. No sign-up. Not an exchange.",
 };
 
-export default function Home() {
-  return <WelcomeLanding />;
+export default async function Home() {
+  const now = new Date();
+  const quote = await loadLandingQuote(now);
+  return <Landing quote={quote} year={now.getFullYear()} />;
 }

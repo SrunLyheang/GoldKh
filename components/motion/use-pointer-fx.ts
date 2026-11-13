@@ -9,7 +9,7 @@ import { useReducedMotion } from "motion/react";
 // The opt-in is deferred to an effect (starts `false`) so the SSR markup
 // and the client's first paint agree, and so jsdom — where `matchMedia`
 // is stubbed and there is no layout — always gets the static branch.
-// Mirrors the pattern in components/welcome/spotlight-card.tsx.
+// Mirrors the old landing page's spotlight-card pattern.
 export function usePointerFx(): boolean {
   const reduceMotion = useReducedMotion();
   const [matches, setMatches] = useState(false);

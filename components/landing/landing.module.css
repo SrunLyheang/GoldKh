@@ -1,0 +1,717 @@
+/* GoldKh landing — "the shop counter". A scoped tree, separate from the
+   app's DESIGN.md system (see DESIGN.md's header note). One deliberate
+   scheme: the deep red velvet and gold of a Cambodian gold shop's display
+   tray, so there is no light variant.
+
+   Tokens are OKLCH, hue ~22 (velvet) and ~85 (gold). Neutrals are tinted
+   toward the velvet so nothing reads as dead grey on red. */
+
+.root {
+  --gk-ground: oklch(0.25 0.08 22);
+  --gk-ground-deep: oklch(0.2 0.06 22);
+  --gk-board: oklch(0.19 0.06 22);
+  --gk-velvet: oklch(0.31 0.1 22);
+  --gk-velvet-dark: oklch(0.15 0.06 22);
+  --gk-rim-hi: oklch(0.37 0.1 22);
+  --gk-rim-lo: oklch(0.21 0.08 22);
+  --gk-frame: oklch(0.47 0.09 75);
+  --gk-gold: oklch(0.86 0.13 88);
+  --gk-gold-text: oklch(0.92 0.1 90);
+  --gk-gold-1: oklch(0.62 0.12 75);
+  --gk-gold-2: oklch(0.86 0.14 88);
+  --gk-gold-3: oklch(0.7 0.13 78);
+  --gk-gold-4: oklch(0.9 0.11 92);
+  --gk-gold-5: oklch(0.58 0.11 70);
+  --gk-gold-ink: oklch(0.5 0.1 70);
+  --gk-gold-edge: oklch(0.95 0.08 92);
+  --gk-on-gold: oklch(0.22 0.07 22);
+  --gk-ink: oklch(0.95 0.03 80);
+  --gk-ink-2: oklch(0.87 0.025 70);
+  --gk-ink-3: oklch(0.8 0.035 60);
+  --gk-gain: oklch(0.82 0.14 150);
+  --gk-loss: oklch(0.8 0.11 45);
+
+  --gk-ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --gk-ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  /* Settle: a small overshoot, like a leaf landing on soft velvet. */
+  --gk-ease-settle: cubic-bezier(0.34, 1.28, 0.64, 1);
+  --gk-dur-micro: 160ms;
+  --gk-dur-medium: 280ms;
+  --gk-radius: 14px;
+
+  min-height: 100svh;
+  background: var(--gk-ground);
+  color: var(--gk-ink);
+  font-family: var(--font-kantumruy), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+:global(html):has(.root),
+:global(html):has(.root) body {
+  background: var(--gk-ground-deep);
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* ── Header ─────────────────────────────────────────────────────────── */
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 16px 8px;
+}
+
+.wordmark {
+  font-family: var(--font-koulen), sans-serif;
+  font-size: 1.375rem;
+  letter-spacing: 0.04em;
+  color: var(--gk-gold);
+  text-decoration: none;
+}
+
+.headerEnd {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.lang {
+  display: inline-flex;
+  padding: 3px;
+  border-radius: 999px;
+  background: var(--gk-ground-deep);
+}
+
+.langButton {
+  min-height: 36px;
+  min-width: 44px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--gk-ink-3);
+  font: 600 0.875rem/1 var(--font-kantumruy), sans-serif;
+  cursor: pointer;
+  transition: background-color var(--gk-dur-micro) ease, color var(--gk-dur-micro) ease;
+}
+
+.langButton[aria-pressed="true"] {
+  background: var(--gk-velvet);
+  color: var(--gk-ink);
+}
+
+.openApp {
+  display: none;
+  min-height: 44px;
+  align-items: center;
+  padding: 0 14px;
+  color: var(--gk-ink);
+  font-weight: 600;
+  font-size: 0.9375rem;
+  text-decoration: none;
+  border-radius: 999px;
+  transition: background-color var(--gk-dur-micro) ease;
+}
+
+/* ── Hero: board over tray ──────────────────────────────────────────── */
+
+.hero {
+  display: flex;
+  flex-direction: column;
+}
+
+.board {
+  position: relative;
+  z-index: 1;
+  margin: 8px 16px 0;
+  padding: 22px 18px 20px;
+  border-radius: var(--gk-radius);
+  background: var(--gk-board);
+  text-align: center;
+  /* A gilt double frame, the way shop price boards are framed. Drawn as
+     inset rings so it adds no layout. */
+  box-shadow:
+    inset 0 0 0 1px color-mix(in oklch, var(--gk-frame) 60%, transparent),
+    inset 0 0 0 5px var(--gk-board),
+    inset 0 0 0 6px color-mix(in oklch, var(--gk-frame) 30%, transparent),
+    0 24px 48px -24px var(--gk-velvet-dark);
+}
+
+.boardKm {
+  display: block;
+  font-family: var(--font-moul), serif;
+  font-weight: 400;
+  font-size: 1.5rem;
+  line-height: 1.6;
+  color: var(--gk-gold);
+}
+
+.boardEn {
+  display: block;
+  font-family: var(--font-koulen), sans-serif;
+  font-weight: 400;
+  font-size: 2.25rem;
+  line-height: 1;
+  letter-spacing: 0.02em;
+}
+
+.rows {
+  display: grid;
+  grid-template-columns: auto auto;
+  justify-content: center;
+  column-gap: 32px;
+  row-gap: 10px;
+  margin: 18px 0 0;
+  text-align: left;
+}
+
+.rowLabel {
+  font-size: 1.0625rem;
+  line-height: 1.2;
+}
+
+.rowLabel small {
+  display: block;
+  font-size: 0.8125rem;
+  color: var(--gk-ink-3);
+}
+
+.rowValue {
+  margin: 0;
+  align-self: center;
+  justify-self: end;
+  font-size: 1.5rem;
+  font-weight: 600;
+  line-height: 1.15;
+  color: var(--gk-gold-text);
+}
+
+.changeLine {
+  display: block;
+}
+
+.status {
+  margin-top: 12px;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--gk-ink-3);
+}
+
+.up {
+  color: var(--gk-gain);
+}
+
+.down {
+  color: var(--gk-loss);
+}
+
+.unavailable {
+  margin: 18px auto 0;
+  max-width: 30ch;
+  font-size: 1rem;
+  line-height: 1.5;
+  color: var(--gk-ink-2);
+}
+
+.cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 48px;
+  margin-top: 18px;
+  padding: 0 24px;
+  border-radius: 999px;
+  background: var(--gk-gold);
+  color: var(--gk-on-gold);
+  font-weight: 700;
+  font-size: 1rem;
+  text-decoration: none;
+  transition: transform 120ms var(--gk-ease-out), background-color var(--gk-dur-micro) ease;
+}
+
+.cta:active {
+  transform: scale(0.97);
+}
+
+.cta:focus-visible,
+.langButton:focus-visible,
+.openApp:focus-visible,
+.wordmark:focus-visible,
+.pieceButton:focus-visible {
+  outline: 2px solid var(--gk-gold);
+  outline-offset: 3px;
+}
+
+.ctaNote {
+  margin-top: 10px;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--gk-ink-3);
+}
+
+/* ── Price roll (odometer digits) ───────────────────────────────────── */
+
+.roll {
+  display: inline-flex;
+  white-space: nowrap;
+}
+
+.digit {
+  position: relative;
+  display: inline-block;
+  height: 1.15em;
+  line-height: 1.15;
+  overflow: hidden;
+  /* Fade the digits in and out at the window's top and bottom edge so a
+     rolling column reads as a wheel, not a strip. */
+  mask-image: linear-gradient(transparent, #000 22%, #000 78%, transparent);
+}
+
+/* The final digit, invisible, sizes the window — so a narrow "1" gets a
+   narrow window even in a face without true tabular figures. */
+.digitSizer {
+  visibility: hidden;
+}
+
+.digitColumn {
+  position: absolute;
+  inset: 0 auto auto 50%;
+  margin-left: -0.5em;
+  width: 1em;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+  transform: translateY(calc(var(--to) * -1.15em));
+  animation: gk-roll 1050ms var(--gk-ease-out) both;
+  animation-delay: calc(250ms + var(--i) * 55ms);
+}
+
+@keyframes gk-roll {
+  from {
+    transform: translateY(calc(var(--from) * -1.15em));
+  }
+}
+
+/* ── The tray ───────────────────────────────────────────────────────── */
+
+.trayWrap {
+  position: relative;
+  margin-top: 12px;
+}
+
+.tray {
+  position: relative;
+  width: 100%;
+}
+
+.tray svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.trayDesktop {
+  display: none;
+}
+
+.piece {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: gk-settle 780ms var(--gk-ease-settle) both;
+  animation-delay: calc(150ms + var(--i) * 110ms);
+}
+
+.pieceLift {
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: transform var(--gk-dur-medium) var(--gk-ease-out);
+}
+
+.pieceShadow {
+  transform-box: fill-box;
+  transform-origin: center;
+  transition:
+    transform var(--gk-dur-medium) var(--gk-ease-out),
+    opacity var(--gk-dur-medium) var(--gk-ease-out);
+}
+
+.piece[data-lifted="true"] .pieceLift {
+  transform: translateY(-14px) scale(1.045);
+}
+
+.piece[data-lifted="true"] .pieceShadow {
+  transform: translateY(10px) scale(1.08);
+  opacity: 0.45;
+}
+
+@keyframes gk-settle {
+  0% {
+    opacity: 0;
+    transform: translateY(-40px) rotate(3deg) scale(1.03);
+  }
+  45% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* The pieces are drawn in SVG; these transparent buttons sit exactly over
+   them (percent geometry from the same numbers) so every piece is a real,
+   focusable control. */
+.pieceButton {
+  position: absolute;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.tag {
+  position: absolute;
+  z-index: 2;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: var(--gk-board);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in oklch, var(--gk-frame) 55%, transparent),
+    0 12px 24px -8px var(--gk-velvet-dark);
+  white-space: nowrap;
+  text-align: center;
+  pointer-events: none;
+  transform: translate(-50%, calc(-100% - 6px));
+  animation: gk-tag-in 200ms var(--gk-ease-out) both;
+}
+
+.tagName {
+  display: block;
+  font-size: 0.8125rem;
+  color: var(--gk-ink-3);
+}
+
+.tagValue {
+  display: block;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--gk-gold-text);
+}
+
+@keyframes gk-tag-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, calc(-100% + 2px)) scale(0.96);
+  }
+}
+
+/* Shop light. One band sweeps across the glass and the gold once the
+   price has landed (the page's signature moment), and on phones a second
+   band follows the scroll. A plain alpha band, not a blend mode, so it
+   moves on the compositor only. */
+.light {
+  position: absolute;
+  overflow: hidden;
+  pointer-events: none;
+  border-radius: 18px 18px 0 0;
+}
+
+.sweep,
+.scrollSweep {
+  position: absolute;
+  top: -10%;
+  bottom: -10%;
+  left: 0;
+  width: 26%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in oklch, white 16%, transparent) 50%,
+    transparent
+  );
+  transform: translateX(-140%) skewX(-20deg);
+}
+
+.sweep {
+  animation: gk-sweep 1300ms var(--gk-ease-in-out) 1500ms both;
+}
+
+.scrollSweep {
+  display: none;
+  opacity: 0.7;
+}
+
+@keyframes gk-sweep {
+  to {
+    transform: translateX(520%) skewX(-20deg);
+  }
+}
+
+/* Desktop: a soft pool of light follows the pointer over the tray. */
+.pointerLight {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 420px;
+  height: 420px;
+  margin: -210px 0 0 -210px;
+  border-radius: 50%;
+  background: radial-gradient(
+    closest-side,
+    color-mix(in oklch, white 10%, transparent),
+    transparent
+  );
+  opacity: 0;
+  transform: translate(var(--px, 50%), var(--py, 50%));
+  transition: opacity 400ms ease;
+}
+
+.tray[data-pointer="true"] .pointerLight {
+  opacity: 1;
+}
+
+.tapHint {
+  padding: 12px 16px 0;
+  font-size: 0.8125rem;
+  text-align: center;
+  color: var(--gk-ink-3);
+}
+
+/* ── Explainer (desktop) ────────────────────────────────────────────── */
+
+.explain {
+  display: none;
+}
+
+.explainTitle {
+  font-family: var(--font-koulen), sans-serif;
+  font-weight: 400;
+  font-size: 2.75rem;
+  line-height: 1.05;
+  letter-spacing: 0.01em;
+  color: var(--gk-gold);
+}
+
+.root[lang="km"] .explainTitle {
+  font-size: 2.25rem;
+  line-height: 1.5;
+}
+
+.explainBody {
+  margin-top: 18px;
+  max-width: 46ch;
+  font-size: 1.0625rem;
+  line-height: 1.6;
+  color: var(--gk-ink-2);
+}
+
+.explainNote {
+  margin-top: 16px;
+  max-width: 52ch;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: var(--gk-ink-3);
+}
+
+.example {
+  display: grid;
+  row-gap: 18px;
+  font-size: 1.0625rem;
+}
+
+.exampleRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 16px;
+}
+
+.exampleRow b {
+  font-weight: 600;
+  text-align: right;
+}
+
+.exampleWorth b {
+  font-size: 2rem;
+  color: var(--gk-gold-text);
+}
+
+.exampleCaption {
+  font-size: 0.8125rem;
+  color: var(--gk-ink-3);
+}
+
+/* ── Footer ─────────────────────────────────────────────────────────── */
+
+.footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px 16px;
+  padding: 28px 16px 32px;
+  background: var(--gk-ground-deep);
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  color: var(--gk-ink-3);
+}
+
+.footerNote {
+  flex-basis: 100%;
+  max-width: 60ch;
+}
+
+.footer a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  margin-block: -12px;
+  color: var(--gk-ink);
+}
+
+/* ── Phones: scroll-linked shop light (progressive enhancement) ─────── */
+
+@supports (animation-timeline: view()) {
+  @media (max-width: 767px) and (prefers-reduced-motion: no-preference) {
+    .scrollSweep {
+      display: block;
+      animation: gk-sweep linear both;
+      animation-timeline: view();
+      animation-range: entry 10% exit 60%;
+    }
+  }
+}
+
+/* ── Desktop ────────────────────────────────────────────────────────── */
+
+@media (min-width: 768px) {
+  .header {
+    padding: 20px 32px 8px;
+  }
+
+  .openApp {
+    display: inline-flex;
+  }
+
+  .board {
+    align-self: center;
+    width: min(460px, 100% - 64px);
+    margin-top: 4px;
+    padding: 24px 40px 26px;
+  }
+
+  .boardKm {
+    font-size: 1.875rem;
+  }
+
+  .boardEn {
+    font-size: 2.875rem;
+  }
+
+  .trayMobile {
+    display: none;
+  }
+
+  /* The board stands on the counter in front of the tray's back rim. */
+  .trayWrap {
+    margin-top: -64px;
+  }
+
+  .trayDesktop {
+    display: block;
+  }
+
+  .tapHint {
+    position: absolute;
+    right: 64px;
+    bottom: 20px;
+    padding: 0;
+    text-align: right;
+  }
+
+  .explain {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 64px;
+    align-items: start;
+    padding: 80px max(32px, 8vw);
+    background: var(--gk-ground-deep);
+  }
+
+  .footer {
+    display: flex;
+    justify-content: space-between;
+    gap: 24px;
+    padding: 24px max(32px, 8vw) 32px;
+    border-top: 1px solid var(--gk-ground);
+  }
+
+  .footerNote {
+    display: none;
+  }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .cta:hover {
+    background: var(--gk-gold-text);
+  }
+
+  .openApp:hover {
+    background: var(--gk-velvet);
+  }
+
+  .langButton:hover {
+    color: var(--gk-ink);
+  }
+}
+
+/* Reduced motion: keep the fades, drop the movement; long sequences
+   land at once. */
+@media (prefers-reduced-motion: reduce) {
+  .digitColumn,
+  .sweep,
+  .scrollSweep {
+    animation: none;
+  }
+
+  .sweep {
+    display: none;
+  }
+
+  .piece {
+    animation-name: gk-fade;
+    animation-duration: 200ms;
+    animation-delay: 0ms;
+  }
+
+  .pieceLift,
+  .pieceShadow {
+    transition: none;
+  }
+
+  .pointerLight {
+    display: none;
+  }
+}
+
+@keyframes gk-fade {
+  from {
+    opacity: 0;
+  }
+}
