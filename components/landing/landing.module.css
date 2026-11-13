@@ -40,6 +40,8 @@
   --gk-radius: 14px;
 
   min-height: 100svh;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
   background: var(--gk-ground);
   color: var(--gk-ink);
   font-family: var(--font-kantumruy), system-ui, sans-serif;
@@ -271,39 +273,70 @@
 }
 
 .digit {
+  --roll-delay: calc(250ms + var(--i) * 55ms);
   position: relative;
   display: inline-block;
-  height: 1.15em;
   line-height: 1.15;
   overflow: hidden;
-  /* Fade the digits in and out at the window's top and bottom edge so a
-     rolling column reads as a wheel, not a strip. */
-  mask-image: linear-gradient(transparent, #000 22%, #000 78%, transparent);
+  vertical-align: top;
 }
 
-/* The final digit, invisible, sizes the window — so a narrow "1" gets a
-   narrow window even in a face without true tabular figures. */
-.digitSizer {
-  visibility: hidden;
+/* The real digit: always in the layout and sizing the window (so a narrow
+   "1" gets a narrow window even without true tabular figures). Hidden only
+   while the wheel rolls over it. */
+.digitFinal {
+  display: block;
+  animation: gk-reveal 1050ms step-end both;
+  animation-delay: var(--roll-delay);
 }
 
+/* Decoration only: a wheel of cells that rolls up and then disappears.
+   Moved by a percentage of its own height, so cell rounding can't build
+   up into an offset. */
 .digitColumn {
   position: absolute;
-  inset: 0 auto auto 50%;
-  margin-left: -0.5em;
+  top: 0;
+  left: 50%;
   width: 1em;
+  margin-left: -0.5em;
   text-align: center;
-  display: flex;
-  flex-direction: column;
-  line-height: 1.15;
-  transform: translateY(calc(var(--to) * -1.15em));
+  opacity: 0;
+  pointer-events: none;
+  /* Fade the wheel at the window's top and bottom edge so it reads as a
+     wheel turning, not a strip sliding. */
+  -webkit-mask-image: linear-gradient(transparent, #000 22%, #000 78%, transparent);
+  mask-image: linear-gradient(transparent, #000 22%, #000 78%, transparent);
   animation: gk-roll 1050ms var(--gk-ease-out) both;
-  animation-delay: calc(250ms + var(--i) * 55ms);
+  animation-delay: var(--roll-delay);
+}
+
+.digitCell {
+  display: block;
+  height: 1.15em;
+  line-height: 1.15;
 }
 
 @keyframes gk-roll {
-  from {
-    transform: translateY(calc(var(--from) * -1.15em));
+  0% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  99.9% {
+    opacity: 1;
+    transform: translateY(calc(var(--to) / var(--cells) * -100%));
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(calc(var(--to) / var(--cells) * -100%));
+  }
+}
+
+@keyframes gk-reveal {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
   }
 }
 
@@ -684,6 +717,7 @@
 /* Reduced motion: keep the fades, drop the movement; long sequences
    land at once. */
 @media (prefers-reduced-motion: reduce) {
+  .digitFinal,
   .digitColumn,
   .sweep,
   .scrollSweep {

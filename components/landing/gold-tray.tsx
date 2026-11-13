@@ -130,7 +130,8 @@ function GoldDefs({ id }: { id: string }) {
           <feMergeNode in="SourceGraphic" />
         </feMerge>
       </filter>
-      <filter id={`${id}-soft`} x="-20%" y="-20%" width="140%" height="140%">
+      {/* A generous filter region: WebKit clips a blur to it hard. */}
+      <filter id={`${id}-soft`} x="-50%" y="-50%" width="200%" height="200%">
         <feGaussianBlur stdDeviation="7" />
       </filter>
       {/* Velvet nap. */}
@@ -139,6 +140,10 @@ function GoldDefs({ id }: { id: string }) {
         <feColorMatrix values="0 0 0 0 .55  0 0 0 0 .08  0 0 0 0 .12  0 0 0 .5 0" />
         <feComposite in2="SourceGraphic" operator="in" />
       </filter>
+      <linearGradient id={`${id}-shade`} x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" style={{ stopColor: "var(--gk-velvet-dark)" }} stopOpacity="0.55" />
+        <stop offset="1" style={{ stopColor: "var(--gk-velvet-dark)" }} stopOpacity="0" />
+      </linearGradient>
       <linearGradient id={`${id}-rim`} x1="0" y1="0" x2="0" y2="1">
         <stop offset="0" style={{ stopColor: "var(--gk-rim-hi)" }} />
         <stop offset="1" style={{ stopColor: "var(--gk-rim-lo)" }} />
@@ -342,16 +347,8 @@ export function GoldTray({
           style={{ fill: "var(--gk-velvet)" }}
         />
         <rect x="38" y="46" width={layout.w - 76} height={layout.h} rx="10" fill="#000" filter={`url(#${id}-nap)`} />
-        {/* Shade under the back rim. */}
-        <rect
-          x="38"
-          y="46"
-          width={layout.w - 76}
-          height="22"
-          style={{ fill: "var(--gk-velvet-dark)" }}
-          opacity="0.5"
-          filter={`url(#${id}-soft)`}
-        />
+        {/* Shade under the back rim: a plain gradient, no blur filter. */}
+        <rect x="38" y="46" width={layout.w - 76} height="34" fill={`url(#${id}-shade)`} />
         {layout.items.map((item, i) => (
           <g key={item.key} transform={`translate(${item.cx} ${item.cy}) rotate(${item.rot})`}>
             <g
