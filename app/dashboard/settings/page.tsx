@@ -1,18 +1,19 @@
-import { auth } from "@clerk/nextjs/server";
+import { getDeviceId } from "@/lib/identity/server";
 import { listTransactionsForUser } from "@/lib/db/queries/transactions";
 import { dictionary } from "@/lib/i18n/dictionary";
-import { AccountSettings } from "@/components/settings/account";
 import { DataActions } from "@/components/settings/data-actions";
+import { DeviceSettings } from "@/components/settings/device";
 import { PreferencesSettings } from "@/components/settings/preferences";
 
 // Settings: a server-component shell with
-// three client islands — Account (Clerk), Preferences (localStorage), and
-// Data (export + destructive actions). Only the transaction list is read
-// here, so Data's export can reuse the CSV serializer.
+// three client islands — Preferences (localStorage), This device (the
+// recovery code for the anonymous device id), and Data (export +
+// destructive actions). The device id is read here because its httpOnly
+// cookie isn't visible to client JS.
 const t = dictionary.en;
 
 export default async function SettingsPage() {
-  const { userId } = await auth();
+  const userId = await getDeviceId();
   if (!userId) return null;
 
   const transactions = await listTransactionsForUser(userId);
@@ -23,7 +24,7 @@ export default async function SettingsPage() {
         {t.settings.title}
       </h1>
       <PreferencesSettings />
-      <AccountSettings />
+      <DeviceSettings recoveryCode={userId} />
       <DataActions transactions={transactions} />
     </div>
   );

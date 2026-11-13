@@ -1,7 +1,5 @@
-import { ClerkProvider } from "@clerk/nextjs";
-import { shadcn } from "@clerk/ui/themes";
 import type { Metadata } from "next";
-import { IBM_Plex_Sans, IBM_Plex_Mono, Newsreader, Fraunces } from "next/font/google";
+import { IBM_Plex_Sans, IBM_Plex_Mono, Newsreader } from "next/font/google";
 import { cn } from "@/lib/utils";
 import "./globals.css";
 
@@ -33,15 +31,6 @@ const newsreader = Newsreader({
   variable: "--font-newsreader",
 });
 
-// Display face for the marketing / landing page headings. Referenced
-// only from the `.liquid-glass-landing-root` rules in globals.css.
-const fraunces = Fraunces({
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
-  style: ["normal", "italic"],
-  variable: "--font-fraunces",
-});
-
 export const metadata: Metadata = {
   title: "GoldKh",
   description: "Track personal gold holdings against the live spot price.",
@@ -54,19 +43,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={cn(
         plexSans.variable,
         plexMono.variable,
-        newsreader.variable,
-        fraunces.variable
+        newsreader.variable
       )}
     >
-      <body className="font-sans">
-        <ClerkProvider
-          afterSignOutUrl="/"
-          appearance={{ theme: shadcn }}
-          localization={{ signIn: { start: { title: "Sign in" } } }}
-        >
-          {children}
-        </ClerkProvider>
-      </body>
+      <body className="font-sans">{children}</body>
     </html>
   );
 }

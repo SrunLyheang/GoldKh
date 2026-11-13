@@ -106,7 +106,7 @@ function Row({
   );
 }
 
-// Settings → Data: export, delete all transactions, delete account.
+// Settings → Data: export, delete all transactions, start a fresh ledger.
 // `transactions` is passed from the server
 // page so export reuses the same serializer the CSV dialog uses.
 export function DataActions({
@@ -116,7 +116,7 @@ export function DataActions({
 }) {
   const router = useRouter();
   const [deletingAll, startDeleteAll] = useTransition();
-  const [deletingAccount, startDeleteAccount] = useTransition();
+  const [startingFresh, startStartFresh] = useTransition();
 
   function handleDeleteAll() {
     startDeleteAll(async () => {
@@ -136,11 +136,11 @@ export function DataActions({
     });
   }
 
-  function handleDeleteAccount() {
-    startDeleteAccount(async () => {
+  function handleStartFresh() {
+    startStartFresh(async () => {
       let res: Response;
       try {
-        res = await fetch("/api/account", { method: "DELETE" });
+        res = await fetch("/api/device", { method: "DELETE" });
       } catch {
         notify.error(t.settings.genericError);
         return;
@@ -149,11 +149,11 @@ export function DataActions({
         notify.error(t.settings.genericError);
         return;
       }
-      // Hard navigation on purpose: the Clerk session is now gone, and a
-      // full reload is the cleanest way to drop every piece of client
-      // state tied to the deleted account.
+      // Hard navigation on purpose: the response swapped in a new device
+      // id, and a full reload is the cleanest way to drop every piece of
+      // client state tied to the erased ledger.
       // eslint-disable-next-line @next/next/no-location-assign-relative-destination
-      window.location.href = "/";
+      window.location.href = "/dashboard";
     });
   }
 
@@ -191,15 +191,15 @@ export function DataActions({
         </Row>
 
         <Row
-          title={t.settings.deleteAccount}
-          description={t.settings.deleteAccountDescription}
+          title={t.settings.startFresh}
+          description={t.settings.startFreshDescription}
         >
           <ConfirmAction
-            label={t.settings.deleteAccount}
-            prompt={t.settings.deleteAccountPrompt}
-            confirmLabel={t.settings.deleteAccountConfirm}
-            pending={deletingAccount}
-            onConfirm={handleDeleteAccount}
+            label={t.settings.startFresh}
+            prompt={t.settings.startFreshPrompt}
+            confirmLabel={t.settings.startFreshConfirm}
+            pending={startingFresh}
+            onConfirm={handleStartFresh}
           />
         </Row>
       </Panel>

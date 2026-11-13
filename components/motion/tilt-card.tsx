@@ -28,7 +28,7 @@ interface TiltCardProps {
 // `prefers-reduced-motion` — it renders a plain `<div>` with the same
 // className, so touch and reduced-motion get the static card for free
 // (the vitest `motion/react` mock also forces this path). Recipe from
-// components/welcome/hero-to-dashboard.tsx.
+// the old landing page's hero-to-dashboard tilt.
 export function TiltCard({
   children,
   className,

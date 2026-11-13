@@ -1,4 +1,4 @@
-import { auth } from "@clerk/nextjs/server";
+import { getDeviceId } from "@/lib/identity/server";
 import Link from "next/link";
 import { DetailedChart } from "@/components/charts/detailed-chart";
 import { buildChartModel } from "@/components/charts/chart-model";
@@ -23,7 +23,7 @@ import { isMarketOpen } from "@/lib/price/marketHours";
 const t = dictionary.en;
 
 export default async function PricePage() {
-  const { userId } = await auth();
+  const userId = await getDeviceId();
   if (!userId) return null;
 
   // getPrice() can append a fresh snapshot as a side effect, so the

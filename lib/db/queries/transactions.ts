@@ -111,9 +111,9 @@ export async function deleteManyOwnedTransactions(
     .returning({ id: transactions.id });
 }
 
-// Clears every row owned by `userId`. Used by the Clerk `user.deleted`
-// webhook (account cleanup) and by the Settings "Delete all transactions"
-// action (DELETE /api/transactions).
+// Clears every row owned by `userId`. Used by the Settings "Delete all
+// transactions" action (DELETE /api/transactions) and "Start a fresh
+// ledger" (DELETE /api/device).
 export async function deleteAllTransactionsForUser(userId: string) {
   return db
     .delete(transactions)

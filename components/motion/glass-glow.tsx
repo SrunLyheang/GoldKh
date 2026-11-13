@@ -17,7 +17,7 @@ interface GlassGlowProps {
 // never re-renders React. Disabled outright off `usePointerFx` (coarse
 // pointer, narrow viewport, or `prefers-reduced-motion`), where it
 // renders exactly as it would without the wrapper. Generalised from
-// components/welcome/spotlight-card.tsx.
+// the old landing page's spotlight card.
 export function GlassGlow({ children, className }: GlassGlowProps) {
   const ref = useRef<HTMLDivElement>(null);
   const enabled = usePointerFx();

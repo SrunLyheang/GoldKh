@@ -35,26 +35,11 @@ describe("next.config security headers", () => {
     expect(csp()).toContain("report-uri /api/csp-report");
   });
 
-  // Regression: a production instance loads clerk-js from its custom
-  // domain (clerk.<prod-domain>), encoded in the pk_live_ key. That host
-  // must reach script-src / connect-src / frame-src or Clerk fails to
-  // load and hydration throws React #418.
-  it("allowlists the Clerk Frontend API host from the publishable key", async () => {
-    // base64("clerk.goldkh.xyz$") — the shape of a live custom-domain key.
-    const host = "clerk.goldkh.xyz";
-    const encoded = Buffer.from(`${host}$`).toString("base64");
-    vi.stubEnv("NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY", `pk_live_${encoded}`);
-    vi.resetModules();
-    const { securityHeaders: headers } = await import("./next.config");
-    const value = headers.find(
-      (h) => h.key === "Content-Security-Policy"
-    )!.value;
-    for (const directive of ["script-src", "connect-src", "frame-src"]) {
-      const line = value
-        .split("; ")
-        .find((d) => d.startsWith(`${directive} `));
-      expect(line).toContain(`https://${host}`);
-    }
+  it("allowlists no third-party script, frame, or image origins", () => {
+    const value = csp();
+    expect(value).not.toMatch(/clerk/i);
+    expect(value).toContain("frame-src 'self'");
+    expect(value).toContain("img-src 'self' data: blob:");
   });
 
   it("ships the other baseline security headers", () => {

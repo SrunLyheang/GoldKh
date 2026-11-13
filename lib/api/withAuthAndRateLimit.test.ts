@@ -1,12 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { authMock, isRateLimitedMock } = vi.hoisted(() => ({
-  authMock: vi.fn(),
+const { deviceIdMock, isRateLimitedMock } = vi.hoisted(() => ({
+  deviceIdMock: vi.fn(),
   isRateLimitedMock: vi.fn(),
 }));
 
-vi.mock("@clerk/nextjs/server", () => ({
-  auth: authMock,
+vi.mock("@/lib/identity/server", () => ({
+  getDeviceId: deviceIdMock,
 }));
 
 vi.mock("./rateLimit", () => ({
@@ -25,7 +25,7 @@ describe("withAuthAndRateLimit", () => {
   });
 
   it("returns 401 and never calls the handler when there is no session", async () => {
-    authMock.mockResolvedValue({ userId: null });
+    deviceIdMock.mockResolvedValue(null);
     const handler = vi.fn();
     const wrapped = withAuthAndRateLimit(handler);
 
@@ -39,7 +39,7 @@ describe("withAuthAndRateLimit", () => {
   });
 
   it("returns 429 and never calls the handler when rate-limited", async () => {
-    authMock.mockResolvedValue({ userId: "user_123" });
+    deviceIdMock.mockResolvedValue("dev_123");
     isRateLimitedMock.mockResolvedValue(true);
     const handler = vi.fn();
     const wrapped = withAuthAndRateLimit(handler);
@@ -53,18 +53,18 @@ describe("withAuthAndRateLimit", () => {
   });
 
   it("checks rate limit only after auth succeeds", async () => {
-    authMock.mockResolvedValue({ userId: "user_123" });
+    deviceIdMock.mockResolvedValue("dev_123");
     isRateLimitedMock.mockResolvedValue(false);
     const handler = vi.fn(async () => new Response(null, { status: 200 }));
     const wrapped = withAuthAndRateLimit(handler);
 
     await wrapped(req(), {});
 
-    expect(isRateLimitedMock).toHaveBeenCalledWith("user_123");
+    expect(isRateLimitedMock).toHaveBeenCalledWith("dev_123");
   });
 
   it("calls the handler with userId merged into the original context", async () => {
-    authMock.mockResolvedValue({ userId: "user_123" });
+    deviceIdMock.mockResolvedValue("dev_123");
     isRateLimitedMock.mockResolvedValue(false);
     const handler = vi.fn(async () => new Response(null, { status: 200 }));
     const wrapped = withAuthAndRateLimit<{ params: Promise<{ id: string }> }>(
@@ -76,7 +76,7 @@ describe("withAuthAndRateLimit", () => {
 
     expect(handler).toHaveBeenCalledWith(
       expect.any(Request),
-      { params, userId: "user_123" }
+      { params, userId: "dev_123" }
     );
   });
 });

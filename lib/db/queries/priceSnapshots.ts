@@ -1,4 +1,4 @@
-import { desc, sql } from "drizzle-orm";
+import { desc, lte, sql } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { priceSnapshots } from "@/lib/db/schema";
 
@@ -89,4 +89,19 @@ export async function listRecentPriceSnapshots(limit = 200) {
     .orderBy(desc(priceSnapshots.capturedAt))
     .limit(limit);
   return rows.sort((a, b) => a.capturedAt.getTime() - b.capturedAt.getTime());
+}
+
+// Newest snapshot captured at or before `at` — the landing page's "since
+// yesterday" and worked-example prices. Undefined when the table has no
+// row that old.
+export async function getSnapshotAtOrBefore(
+  at: Date
+): Promise<PriceSnapshot | undefined> {
+  const [row] = await db
+    .select()
+    .from(priceSnapshots)
+    .where(lte(priceSnapshots.capturedAt, at))
+    .orderBy(desc(priceSnapshots.capturedAt))
+    .limit(1);
+  return row;
 }
