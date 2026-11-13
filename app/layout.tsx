@@ -10,6 +10,7 @@ const plexSans = IBM_Plex_Sans({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
   variable: "--font-plex-sans",
+  display: "swap",
 });
 
 // Every price, quantity and cost-basis figure. IBM Plex Mono has real
@@ -20,6 +21,7 @@ const plexMono = IBM_Plex_Mono({
   subsets: ["latin"],
   weight: ["400", "500", "600"],
   variable: "--font-plex-mono",
+  display: "swap",
 });
 
 // Editorial serif for the Ledger theme's headings and hero price.
@@ -27,8 +29,9 @@ const plexMono = IBM_Plex_Mono({
 const newsreader = Newsreader({
   subsets: ["latin"],
   weight: ["400", "500", "600"],
-  style: ["normal", "italic"],
+  style: "normal",
   variable: "--font-newsreader",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
